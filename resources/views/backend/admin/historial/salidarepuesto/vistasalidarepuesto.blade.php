@@ -1,11 +1,10 @@
 @extends('adminlte::page')
 
-@section('title', 'Lista de Proyectos')
+@section('title', 'Historial - Salida Repuestos')
 
 @section('content_header')
-    <h1>Lista de Proyectos</h1>
+    <h1>Historial - Salida Repuestos</h1>
 @stop
-
 {{-- Activa plugins que necesitas --}}
 @section('plugins.Datatables', true)
 @section('plugins.DatatablesPlugins', true)
@@ -14,7 +13,10 @@
 @include('backend.urlglobal')
 
 @section('content_top_nav_right')
-    <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
+    <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet"/>
+    <link href="{{ asset('css/select2.min.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ asset('css/select2-bootstrap-5-theme.min.css') }}" type="text/css" rel="stylesheet">
+    <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
 
     <li class="nav-item dropdown">
         <a href="#" class="nav-link" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
@@ -42,35 +44,29 @@
             </button>
         </form>
     </li>
+
 @endsection
 
 @section('content')
+
 <style>
     table{
         /*Ajustar tablas*/
         table-layout:fixed;
     }
+    .select2-container{
+        height: 30px !important;
+    }
+
 </style>
 
 <div id="divcontenedor">
-
-    <section class="content-header">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <button type="button" onclick="modalAgregar()" class="btn btn-dark btn-sm">
-                    <i class="fas fa-plus-square"></i>
-                    Nuevo Proyecto
-                </button>
-            </div>
-
-        </div>
-    </section>
 
     <section class="content">
         <div class="container-fluid">
             <div class="card card-blue">
                 <div class="card-header">
-                    <h3 class="card-title">Listado de Proyectos</h3>
+                    <h3 class="card-title">Listado</h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -84,52 +80,18 @@
         </div>
     </section>
 
-    <div class="modal fade" id="modalAgregar">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title">Nuevo Proyecto</h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="formulario-nuevo" onsubmit="event.preventDefault(); nuevo();">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12">
-
-                                    <div class="form-group">
-                                        <label>Nombre</label>
-                                        <input type="text" maxlength="800" class="form-control" id="nombre-nuevo" autocomplete="off">
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" onclick="nuevo()">Guardar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- modal editar -->
     <div class="modal fade" id="modalEditar">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">Editar Proyecto</h4>
+                    <h4 class="modal-title">Editar</h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-
                 <div class="modal-body">
-                    <form id="formulario-editar" onsubmit="event.preventDefault(); editar();">
+                    <form id="formulario-editar">
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-12">
@@ -138,9 +100,14 @@
                                         <input type="hidden" id="id-editar">
                                     </div>
 
+                                    <div class="form-group" style="width: 30%">
+                                        <label>Fecha <span style="color: red">*</span></label>
+                                        <input type="date" class="form-control" id="fecha-editar">
+                                    </div>
+
                                     <div class="form-group">
-                                        <label>Nombre de Proyecto</label>
-                                        <input type="text" maxlength="800" class="form-control" id="nombre-editar" autocomplete="off">
+                                        <label>Descripción</label>
+                                        <input type="text" autocomplete="off" maxlength="800" class="form-control" id="descripcion-editar" placeholder="Descripción">
                                     </div>
 
                                 </div>
@@ -150,7 +117,7 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" onclick="editar()">Guardar</button>
+                    <button type="button" class="btn btn-primary" onclick="editar()">Actualizar</button>
                 </div>
             </div>
         </div>
@@ -161,14 +128,20 @@
 @stop
 
 @section('js')
+
+    <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
+
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
     <script src="{{ asset('js/select2.min.js') }}" type="text/javascript"></script>
 
+
     <script>
         $(function () {
-            const ruta = "{{ url('/admin/proyecto/tabla/index') }}";
+            const ruta = "{{ url('/admin/historial/salida/repuestos/tabla') }}";
 
             function initDataTable() {
                 // Si ya hay instancia, destrúyela antes de re-crear
@@ -227,67 +200,42 @@
         });
     </script>
 
+
+
     <script>
 
         function recargar(){
-            var ruta = "{{ url('/admin/proyecto/tabla/index') }}";
+            var ruta = "{{ url('/admin/historial/salida/repuestos/tabla') }}";
             $('#tablaDatatable').load(ruta);
         }
 
         function modalAgregar(){
             document.getElementById("formulario-nuevo").reset();
-            $('#modalAgregar').modal('show');
+
+            $('#modalAgregar').modal({backdrop: 'static', keyboard: false})
         }
 
-        function nuevo(){
-            var nombre = document.getElementById('nombre-nuevo').value;
 
-            if(nombre === ''){
-                toastr.error('Nombre es requerido');
-                return;
-            }
-
-            if(nombre.length > 800){
-                toastr.error('Nombre máximo 800 caracteres');
-                return;
-            }
-
-            openLoading();
-            var formData = new FormData();
-            formData.append('nombre', nombre);
-
-            axios.post(urlAdmin+'/admin/proyecto/nuevo', formData, {
-            })
-                .then((response) => {
-                    closeLoading();
-                    if(response.data.success === 1){
-                        toastr.success('Registrado correctamente');
-                        $('#modalAgregar').modal('hide');
-                        recargar();
-                    }
-                    else {
-                        toastr.error('Error al registrar');
-                    }
-                })
-                .catch((error) => {
-                    toastr.error('Error al registrar');
-                    closeLoading();
-                });
-        }
 
         function informacion(id){
             openLoading();
             document.getElementById("formulario-editar").reset();
 
-            axios.post(urlAdmin+'/admin/proyecto/informacion',{
+            axios.post(urlAdmin+'/admin/historial/salida/repuestos/informacion',{
                 'id': id
             })
                 .then((response) => {
                     closeLoading();
                     if(response.data.success === 1){
+
+                        $('#id-editar').val(id);
+
+                        $('#fecha-editar').val(response.data.info.fecha);
+                        $('#descripcion-editar').val(response.data.info.descripcion);
+
+
                         $('#modalEditar').modal('show');
-                        $('#id-editar').val(response.data.info.id);
-                        $('#nombre-editar').val(response.data.info.nombre);
+
 
                     }else{
                         toastr.error('Información no encontrada');
@@ -299,91 +247,46 @@
                 });
         }
 
+
         function editar(){
+
             var id = document.getElementById('id-editar').value;
-            var nombre = document.getElementById('nombre-editar').value;
-
-            if(nombre === ''){
-                toastr.error('Nombre es requerido');
-                return;
-            }
-
-            if(nombre.length > 800){
-                toastr.error('Nombre máximo 800 caracteres');
-                return;
-            }
+            var fecha = document.getElementById('fecha-editar').value;
+            var descripcion = document.getElementById('descripcion-editar').value;
 
             openLoading();
             var formData = new FormData();
             formData.append('id', id);
-            formData.append('nombre', nombre);
+            formData.append('fecha', fecha);
+            formData.append('descripcion', descripcion);
 
-            axios.post(urlAdmin+'/admin/proyecto/editar', formData, {
+
+            axios.post(urlAdmin+'/admin/historial/salida/repuestos/actualizar', formData, {
             })
                 .then((response) => {
                     closeLoading();
-
                     if(response.data.success === 1){
                         toastr.success('Actualizado correctamente');
                         $('#modalEditar').modal('hide');
                         recargar();
                     }
-                    else {
-                        toastr.error('Error al actualizar');
-                    }
 
+                    else {
+                        toastr.error('Error al registrar');
+                    }
                 })
                 .catch((error) => {
-                    toastr.error('Error al actualizar');
+                    toastr.error('Error al registrar');
                     closeLoading();
                 });
         }
 
-        function VerificarEliminar(id){
-            Swal.fire({
-                title: 'Eliminar Material?',
-                text: "",
-                type: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Si'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    eliminar(id);
-                }
-            })
+        function detalleHistorial(id){
+
+            window.location.href="{{ url('/admin/historial/salida/repuestos/detalle') }}/" + id;
         }
 
-        function eliminar(id){
-            openLoading();
-            var formData = new FormData();
-            formData.append('id', id);
 
-            axios.post(urlAdmin+'/admin/proyecto/eliminar', formData, {
-            })
-                .then((response) => {
-                    closeLoading();
-                    if(response.data.success === 1){
-                        toastr.success('Borrado correctamente');
-                        $('#modalAgregar').modal('hide');
-                        recargar();
-                    }
-                    else if(response.data.success === 2){
-                        toastr.error('Proyecto no se puede eliminar porque tiene registros de entradas o salidas');
-                        $('#modalAgregar').modal('hide');
-                        recargar();
-                    }
-                    else {
-                        toastr.error('Error al borrar');
-                    }
-                })
-                .catch((error) => {
-                    toastr.error('Error al borrar');
-                    closeLoading();
-                });
-        }
 
     </script>
 

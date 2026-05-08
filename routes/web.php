@@ -10,6 +10,10 @@ use App\Http\Controllers\Sistema\PermisoController;
 use App\Http\Controllers\Sistema\ConfiguracionController;
 use App\Http\Controllers\Sistema\RepuestosController;
 use App\Http\Controllers\Sistema\TipoProyectoController;
+use App\Http\Controllers\Sistema\SalidasController;
+use App\Http\Controllers\Sistema\HerramientasController;
+use App\Http\Controllers\Sistema\HistorialController;
+use App\Http\Controllers\Sistema\ReportesController;
 
 
 Route::get('/', [LoginController::class,'vistaLoginForm'])->name('login.admin');
@@ -72,6 +76,45 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
     Route::post('/admin/proyecto/informacion', [TipoProyectoController::class, 'informacionProyecto']);
     Route::post('/admin/proyecto/editar', [TipoProyectoController::class, 'editarProyecto']);
     Route::post('/admin/proyecto/eliminar', [TipoProyectoController::class, 'borrarProyecto']);
+
+    // --- REGISTRAR ENTRADA DE REPUESTOS ---
+    Route::get('/admin/registro/entrada', [RepuestosController::class,'indexRegistroEntrada'])->name('admin.entrada.registro.index');
+    Route::post('/admin/buscar/material',  [RepuestosController::class,'buscadorMaterial']);
+    Route::post('/admin/entrada/guardar',  [RepuestosController::class,'guardarEntrada']);
+
+    // --- REGISTRAR SALIDA DE REPUESTOS ---
+    Route::get('/admin/registro/salida', [SalidasController::class,'indexRegistroSalida'])->name('admin.salida.registro.index');
+    Route::post('/admin/salida/guardar',  [SalidasController::class,'guardarSalida']);
+
+    Route::post('/admin/buscar/material/porproyecto',  [SalidasController::class,'buscadorMaterialPorProyecto']);
+    Route::post('/admin/repuesto/cantidad/bloque', [SalidasController::class,'bloqueCantidades']);
+
+    // --- TRANSFERENCIAS ---
+    Route::get('/admin/transferecias/a/huesera', [SalidasController::class,'indexTransferencias'])->name('admin.transferencias.index');
+    Route::post('/admin/generar/salida/transferencia',  [SalidasController::class,'geenrarSalidaTransferencia']);
+
+    // --- HERRAMIENTAS ---
+
+    Route::get('/admin/inventario/herramientas/index', [HerramientasController::class,'indexInventarioHerramientas'])->name('admin.inventario.herramientas.index');
+    Route::get('/admin/inventario/herramientas/tabla', [HerramientasController::class,'tablaInventarioHerramientas']);
+    Route::post('/admin/inventario/herramientas/nuevo', [HerramientasController::class, 'nuevaHerramienta']);
+    Route::post('/admin/inventario/herramientas/informacion', [HerramientasController::class, 'informacionHerramienta']);
+    Route::post('/admin/inventario/herramienta/editar', [HerramientasController::class, 'editarMaterial']);
+
+
+    // --- HISTORIAL - LISTADO DE REPUESTAS DE SALIDA
+    Route::get('/admin/historial/salida/repuestos/index', [HistorialController::class,'indexHistorialRepuestosSalida'])->name('admin.historial.salidas.repuestos');
+    Route::get('/admin/historial/salida/repuestos/tabla', [HistorialController::class,'tablaHistorialRepuestosSalida']);
+    Route::post('/admin/historial/salida/repuestos/informacion',  [HistorialController::class,'informacionHistorialSalidaRepuesto']);
+    Route::post('/admin/historial/salida/repuestos/actualizar',  [HistorialController::class,'actualizarHistorialSalidaRepuesto']);
+
+    Route::get('/admin/historial/salida/repuestos/detalle/{id}', [HistorialController::class,'detalleIndexHistorialSalidas']);
+    Route::get('/admin/historial/salida/repuestos/detalletabla/{id}', [HistorialController::class,'detalleTablaHistorialSalidas']);
+
+
+    // --- REPORTES ---
+    Route::get('/admin/entrada/reporte/vista', [ReportesController::class,'indexEntradaReporte'])->name('admin.entrada.reporte.index');
+    Route::get('/admin/reporte/registro/{tipo}/{desde}/{hasta}', [ReportesController::class,'reportePdfEntradaSalida']);
 
 
 

@@ -17,6 +17,7 @@
 @section('content_top_nav_right')
     <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
 
+
     <li class="nav-item dropdown">
         <a href="#" class="nav-link" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
             <i class="fas fa-cogs"></i>
@@ -94,7 +95,7 @@
                                 <div class="col-md-12">
 
                                     <div class="form-group">
-                                        <label>Medida</label>
+                                        <label>Medida <span style="color: red">*</span> </label>
                                         <input type="text" maxlength="100" class="form-control" id="medida-nuevo" autocomplete="off">
                                     </div>
 
@@ -133,7 +134,7 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label>Medida</label>
+                                        <label>Medida <span style="color: red">*</span></label>
                                         <input type="text" maxlength="100" class="form-control" id="medida-editar" autocomplete="off">
                                     </div>
 
@@ -144,7 +145,7 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn btn-primary" onclick="editar()">Guardar</button>
+                    <button type="submit" class="btn btn-primary" onclick="editar()">Guardar</button>
                 </div>
             </div>
         </div>

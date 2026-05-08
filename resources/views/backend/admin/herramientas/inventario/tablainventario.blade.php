@@ -7,7 +7,7 @@
                         <table id="tabla" class="table table-bordered table-striped">
                             <thead>
                             <tr>
-                                <th style="width: 15%">Código</th>
+                                <th style="width: 12%">Código</th>
                                 <th style="width: 20%">Nombre</th>
                                 <th style="width: 10%">Medida</th>
                                 <th style="width: 10%">Cantidad</th>
@@ -21,17 +21,17 @@
                                     <td>{{ $dato->codigo }}</td>
                                     <td>{{ $dato->nombre }}</td>
                                     <td>{{ $dato->medida }}</td>
-                                    <td>{{ $dato->total }}</td>
+                                    <td>{{ $dato->cantidad }}</td>
                                     <td>
 
                                         <button type="button" class="btn btn-primary btn-xs" onclick="informacion({{ $dato->id }})">
                                             <i class="fas fa-edit" title="Editar"></i>&nbsp; Editar
                                         </button>
 
-
-                                        <button type="button" class="btn btn-success btn-xs" onclick="infoDetalle({{ $dato->id }})">
-                                            <i class="fas fa-eye" title="Detalle"></i>&nbsp; Detalle
+                                        <button type="button" class="btn btn-danger btn-xs" onclick="infoModalDescartar({{ $dato->id }})">
+                                            <i class="fas fa-edit" title="Descartar"></i>&nbsp; Descartar
                                         </button>
+
                                     </td>
                                 </tr>
                             @endforeach
@@ -44,5 +44,4 @@
         </div>
     </div>
 </section>
-
 

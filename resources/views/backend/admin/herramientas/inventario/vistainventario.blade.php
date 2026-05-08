@@ -1,10 +1,12 @@
 @extends('adminlte::page')
 
-@section('title', 'Inventario')
+@section('title', 'Inventario - Herramientas')
 
 @section('content_header')
-    <h1>Inventario</h1>
+    <h1>Inventario - Herramientas</h1>
 @stop
+
+
 {{-- Activa plugins que necesitas --}}
 @section('plugins.Datatables', true)
 @section('plugins.DatatablesPlugins', true)
@@ -13,17 +15,16 @@
 @include('backend.urlglobal')
 
 @section('content_top_nav_right')
-    <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet"/>
+    <link href="{{ asset('css/toastr.min.css') }}" type="text/css" rel="stylesheet" />
     <link href="{{ asset('css/select2.min.css') }}" type="text/css" rel="stylesheet">
     <link href="{{ asset('css/select2-bootstrap-5-theme.min.css') }}" type="text/css" rel="stylesheet">
-    <link href="{{ asset('css/estiloToggle.css') }}" type="text/css" rel="stylesheet" />
 
     <li class="nav-item dropdown">
         <a href="#" class="nav-link" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
             <i class="fas fa-cogs"></i>
             <span class="d-none d-md-inline">
-            {{ Auth::guard('admin')->user()->nombre }}
-        </span>
+                {{ Auth::guard('admin')->user()->nombre }}
+            </span>
         </a>
 
         <div class="dropdown-menu dropdown-menu-right">
@@ -44,7 +45,6 @@
             </button>
         </form>
     </li>
-
 @endsection
 
 @section('content')
@@ -65,10 +65,12 @@
 
     <section class="content-header">
         <div class="row">
+
             <button type="button" style="margin-left: 15px" onclick="modalAgregar()" class="btn btn-dark btn-sm">
                 <i class="fas fa-plus-square"></i>
-                Registrar Material
+                Registrar Herramienta
             </button>
+
         </div>
     </section>
 
@@ -76,7 +78,7 @@
         <div class="container-fluid">
             <div class="card card-blue">
                 <div class="card-header">
-                    <h3 class="card-title">Listado Catálogo de Materiales</h3>
+                    <h3 class="card-title">Listado Catálogo de Herramientas</h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -94,7 +96,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title">Nuevo Material</h4>
+                    <h4 class="modal-title">Nueva Herramienta</h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -104,8 +106,8 @@
                         <div class="card-body">
 
                             <div class="form-group">
-                                <label>Nombre: <span style="color: red">*</span> </label>
-                                <input type="text" class="form-control" autocomplete="off" onpaste="contarcaracteresIngreso();" onkeyup="contarcaracteresIngreso();" maxlength="300" id="nombre-nuevo" placeholder="Nombre del material">
+                                <label>Nombre:</label>
+                                <input type="text" class="form-control" autocomplete="off" onpaste="contarcaracteresIngreso();" onkeyup="contarcaracteresIngreso();" maxlength="300" id="nombre-nuevo" placeholder="Nombre de la herramienta">
                                 <div id="res-caracter-nuevo" style="float: right">0/300</div>
                             </div>
 
@@ -120,7 +122,7 @@
 
                             <div class="col-md-5">
                                 <div class="form-group">
-                                    <label>Unidad de Medida: <span style="color: red">*</span></label>
+                                    <label>Unidad de Medida:</label>
                                     <br>
                                     <select width="70%"  class="form-control" id="select-unidad-nuevo">
                                         <option value="" selected>Seleccione una opción (Opcional)...</option>
@@ -174,11 +176,11 @@
                                     <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Código:</label>
-                                            <input type="text" class="form-control" autocomplete="off" id="codigo-editar" maxlength="12">
+                                            <input type="text" class="form-control" autocomplete="off" id="codigo-editar" maxlength="100">
                                         </div>
                                     </div>
 
-                                    <div class="col-md-5">
+                                    <div class="col-md-7">
                                         <div class="form-group">
                                             <label>Unidad de Medida: <span style="color: red">*</span></label>
                                             <br>
@@ -186,7 +188,6 @@
                                             </select>
                                         </div>
                                     </div>
-
                                 </div>
                             </div>
                         </div>
@@ -200,21 +201,85 @@
         </div>
     </div>
 </div>
-@stop
 
+
+<div class="modal fade" id="modalDescartar">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Descartar Herramienta</h4>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="formulario-descartar">
+                    <div class="card-body">
+
+                        <div class="form-group">
+                            <input type="hidden" id="id-descartar">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Herramienta:</label>
+                            <input type="text" disabled class="form-control" autocomplete="off" id="nombre-herra">
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Cantidad Disponible:</label>
+                                <input type="number" disabled class="form-control" autocomplete="off" id="cantidad-actual">
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label>Descripción:</label>
+                                <input type="text" class="form-control" autocomplete="off" id="descripcion-descartar" maxlength="800">
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Cantidad a Descartar:</label>
+                                <input type="number" min="1" class="form-control" autocomplete="off" id="cantidad-descartar" maxlength="10">
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="registrarDescarto()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@stop
 @section('js')
+
+
+
+    <script src="{{ asset('js/jquery.dataTables.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/dataTables.bootstrap4.js') }}" type="text/javascript"></script>
+
     <script src="{{ asset('js/toastr.min.js') }}" type="text/javascript"></script>
     <script src="{{ asset('js/axios.min.js') }}" type="text/javascript"></script>
+    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
-    <script src="{{ asset('js/theme.js') }}"></script>
     <script src="{{ asset('js/select2.min.js') }}" type="text/javascript"></script>
-
-
 
 
     <script>
         $(function () {
-            const ruta = "{{ url('/admin/inventario/tabla/index') }}";
+            const ruta = "{{ url('/admin/inventario/herramientas/tabla') }}";
 
             function initDataTable() {
                 // Si ya hay instancia, destrúyela antes de re-crear
@@ -291,10 +356,12 @@
         });
     </script>
 
+
+
     <script>
 
         function recargar(){
-            var ruta = "{{ url('/admin/inventario/tabla/index') }}";
+            var ruta = "{{ url('/admin/inventario/herramientas/tabla') }}";
             $('#tablaDatatable').load(ruta);
         }
 
@@ -311,9 +378,9 @@
 
         function verificarGuardar(){
             Swal.fire({
-                title: 'Guardar Material?',
+                title: 'Guardar Herramienta?',
                 text: "",
-                type: 'question',
+                icon: 'question',
                 showCancelButton: true,
                 confirmButtonColor: '#28a745',
                 cancelButtonColor: '#d33',
@@ -337,18 +404,13 @@
                 return;
             }
 
-            if(unidad === ''){
-                toastr.error('Unidad Medida es requerido');
-                return;
-            }
-
             openLoading();
             var formData = new FormData();
             formData.append('nombre', nombre);
             formData.append('codigo', codigo);
             formData.append('unidad', unidad);
 
-            axios.post(urlAdmin+'/admin/inventario/nuevo', formData, {
+            axios.post(urlAdmin+'/admin/inventario/herramientas/nuevo', formData, {
             })
                 .then((response) => {
                     closeLoading();
@@ -357,6 +419,7 @@
                         $('#modalAgregar').modal('hide');
                         recargar();
                     }
+
                     else {
                         toastr.error('Error al registrar');
                     }
@@ -371,7 +434,7 @@
             openLoading();
             document.getElementById("formulario-editar").reset();
 
-            axios.post(urlAdmin+'/admin/inventario/informacion',{
+            axios.post(urlAdmin+'/admin/inventario/herramientas/informacion',{
                 'id': id
             })
                 .then((response) => {
@@ -380,8 +443,8 @@
                         $('#modalEditar').modal({backdrop: 'static', keyboard: false})
 
                         $('#id-editar').val(id);
-                        $('#nombre-editar').val(response.data.material.nombre);
-                        $('#codigo-editar').val(response.data.material.codigo);
+                        $('#nombre-editar').val(response.data.herramienta.nombre);
+                        $('#codigo-editar').val(response.data.herramienta.codigo);
 
                         contarcaracteresEditar();
 
@@ -390,7 +453,7 @@
 
                         // unidad de medida
                         $.each(response.data.unidad, function( key, val ){
-                            if(response.data.material.id_medida == val.id){
+                            if(response.data.herramienta.id_medida == val.id){
                                 $('#select-unidad-editar').append('<option value="' +val.id +'" selected="selected">'+ val.nombre +'</option>');
                             }else{
                                 $('#select-unidad-editar').append('<option value="' +val.id +'">'+ val.nombre +'</option>');
@@ -419,11 +482,6 @@
                 return;
             }
 
-            if(unidad === ''){
-                toastr.error('Unidad Medida es requerido');
-                return;
-            }
-
             openLoading();
             var formData = new FormData();
             formData.append('id', id);
@@ -431,7 +489,7 @@
             formData.append('codigo', codigo);
             formData.append('unidad', unidad);
 
-            axios.post(urlAdmin+'/admin/inventario/editar', formData, {
+            axios.post(urlAdmin+'/admin/inventario/herramienta/editar', formData, {
             })
                 .then((response) => {
                     closeLoading();
@@ -471,6 +529,119 @@
         function infoDetalle(id){
             window.location.href="{{ url('/admin/detalle/material/cantidad') }}/" + id;
         }
+
+
+        //************************************************
+
+        function infoModalDescartar(id){
+
+            openLoading();
+            document.getElementById("formulario-descartar").reset();
+
+            axios.post(urlAdmin+'/admin/informacion/herramienta/descartar',{
+                'id': id
+            })
+                .then((response) => {
+                    closeLoading();
+                    if(response.data.success === 1){
+                        $('#modalDescartar').modal({backdrop: 'static', keyboard: false})
+
+                        $('#id-descartar').val(id);
+                        $('#nombre-herra').val(response.data.info.nombre);
+                        $('#cantidad-actual').val(response.data.info.cantidad);
+
+                    }else{
+                        toastr.error('Información no encontrada');
+                    }
+                })
+                .catch((error) => {
+                    closeLoading();
+                    toastr.error('Información no encontrada');
+                });
+        }
+
+
+
+        function registrarDescarto(){
+
+            var id = document.getElementById('id-descartar').value;
+            var cantidadRe = document.getElementById('cantidad-descartar').value;
+            var descripcion = document.getElementById('descripcion-descartar').value;
+
+            var reglaNumeroEntero = /^[0-9]\d*$/;
+
+            if(cantidadRe === ''){
+                toastr.error('Cantidad a Descartar es requerido');
+                return;
+            }
+
+            if(!cantidadRe.match(reglaNumeroEntero)) {
+                toastr.error('Cantidad a Descartar debe ser número Entero y no Negativo');
+                return;
+            }
+
+            if(cantidadRe <= 0){
+                toastr.error('Cantidad a Descartar no debe ser negativo o cero');
+                return;
+            }
+
+            if(cantidadRe > 9000000){
+                toastr.error('Cantidad a Descartar no debe ser mayor 9 millones');
+                return;
+            }
+
+
+            if(descripcion === ''){
+                toastr.error('Descripción es requerido');
+                return;
+            }
+
+
+            openLoading();
+
+            var formData = new FormData();
+            formData.append('id', id);
+            formData.append('cantidad', cantidadRe);
+            formData.append('descripcion', descripcion);
+
+            axios.post(urlAdmin+'/admin/descartar/herramienta/inventario', formData, {
+            })
+                .then((response) => {
+                    closeLoading();
+                    if(response.data.success === 1){
+
+                        Swal.fire({
+                            title: 'Error',
+                            text: "La cantidad a Descartar es Mayor a la disponible",
+                            icon: 'info',
+                            showCancelButton: false,
+                            confirmButtonColor: '#28a745',
+                            cancelButtonColor: '#d33',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonText: 'Aceptar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+
+                            }
+                        })
+                    }
+
+                    else if(response.data.success === 2){
+
+                        toastr.success('Herramienta Descartada Correctamente');
+                        $('#modalDescartar').modal('hide');
+                        recargar();
+                    }
+                    else {
+                        toastr.error('Error al registrar');
+                    }
+                })
+                .catch((error) => {
+                    toastr.error('Error al registrar');
+                    closeLoading();
+                });
+        }
+
 
     </script>
 

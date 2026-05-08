@@ -10,4 +10,10 @@ class HistorialEntradas extends Model
     use HasFactory;
     protected $table = 'historial_entradas';
     public $timestamps = false;
+
+    protected $fillable = [
+        'id_tipoproyecto',
+        'fecha',
+        'descripcion',
+    ];
 }

@@ -7,8 +7,8 @@
                         <table id="tabla" class="table table-bordered table-striped">
                             <thead>
                             <tr>
-                                <th>Proyecto</th>
-                                <th>Opciones</th>
+                                <th style="width: 80%">Proyecto</th>
+                                <th style="width: 13%">Opciones</th>
                             </tr>
                             </thead>
                             <tbody>

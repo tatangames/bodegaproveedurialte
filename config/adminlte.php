@@ -348,7 +348,70 @@ return [
             ],
         ],
 
+        [
+            'text'    => 'Registro de Materiales',
+            'icon'    => 'fas fa-pen-alt',
+            'can'     => 'sidebar.inventario',
+            'submenu' => [
+                [
+                    'text' => 'Registrar Entradas',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.entrada.registro.index',
+                ],
+                [
+                    'text' => 'Registrar Salidas',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.salida.registro.index',
+                ],
+                [
+                    'text' => 'Cierre de Proyectos',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.transferencias.index',
+                ],
 
+            ],
+        ],
+
+        /*[
+            'text'    => 'Herramientas',
+            'icon'    => 'fas fa-pen-alt',
+            'can'     => 'sidebar.inventario',
+            'submenu' => [
+                [
+                    'text' => 'Inventario',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.inventario.herramientas.index',
+                ],
+
+            ],
+        ],*/
+
+        [
+            'text'    => 'Historial',
+            'icon'    => 'fas fa-pen-alt',
+            'can'     => 'sidebar.inventario',
+            'submenu' => [
+                [
+                    'text' => 'Salida de Materiales',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.historial.salidas.repuestos',
+                ],
+            ],
+        ],
+
+
+        [
+            'text'    => 'Reportes',
+            'icon'    => 'fas fa-pen-alt',
+            'can'     => 'sidebar.inventario',
+            'submenu' => [
+                [
+                    'text' => 'Entradas y Salidas',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.entrada.reporte.index',
+                ],
+            ],
+        ],
 
 
 
