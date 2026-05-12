@@ -34,7 +34,7 @@ class SalidasController extends Controller
         );
 
         $validator = Validator::make($request->all(), $rules);
-        if ( $validator->fails()){
+        if ($validator->fails()){
             return ['success' => 0];
         }
 
@@ -42,59 +42,68 @@ class SalidasController extends Controller
 
         try {
 
-            // GUARDAR UN HISTORIAL DE SALIDAS
-
+            // GUARDAR HISTORIAL DE SALIDAS
             $histoSalida = new HistorialSalidas();
-            $histoSalida->fecha = $request->fecha;
-            $histoSalida->descripcion = $request->descripcion;
+            $histoSalida->fecha        = $request->fecha;
+            $histoSalida->descripcion  = $request->descripcion;
             $histoSalida->id_tipoproyecto = $request->idproyecto;
             $histoSalida->save();
 
-
-            // HOY GUARDAR HISTORIAL DEL DETALLE
+            // VALIDAR CANTIDADES ANTES DE GUARDAR DETALLE
             for ($i = 0; $i < count($request->salida); $i++) {
 
-                $histoDetalle = new HistorialSalidasDeta();
-                $histoDetalle->id_historial_salidas = $histoSalida->id;
-                $histoDetalle->id_material = $request->idmaterial[$i];
-                $histoDetalle->cantidad = $request->salida[$i];
-                $histoDetalle->save();
-            }
-
-
-            for ($i = 0; $i < count($request->salida); $i++) {
-
-                if($infoEntrada = Entradas::where('id_material', $request->idmaterial[$i])
+                $infoEntrada = Entradas::where('id_material', $request->idmaterial[$i])
                     ->where('id_tipoproyecto', $request->idproyecto)
-                    ->first()){
+                    ->first();
 
-                    $resta = $infoEntrada->cantidad - $request->salida[$i];
+                if (!$infoEntrada) {
+                    DB::rollback();
+                    return ['success' => 2, 'fila' => $i];
+                }
 
-                    if($resta < 0){
-                        // ERROR, LA CANTIDAD NO PUEDE SER MENOR A 0
-                        return ['success' => 1, 'fila' => ($i),
-                            'cantidadactual' => $infoEntrada->cantidad,
-                            'cantidadrestar' => $request->salida[$i]];
-                    }
+                $resta = $infoEntrada->cantidad - $request->salida[$i];
 
-                    // RESTAR LA CANTIDAD
-                    Entradas::where('id', $infoEntrada->id)->update([
-                        'cantidad' => $resta
-                    ]);
-                }else{
-
-                    // ERROR MATERIAL NO ENCONTRADO EN PROYECTO
-                    return ['success' => 2, 'fila' => ($i)];
+                if ($resta < 0) {
+                    DB::rollback();
+                    return ['success' => 1, 'fila' => $i,
+                        'cantidadactual' => $infoEntrada->cantidad,
+                        'cantidadrestar' => $request->salida[$i]];
                 }
             }
 
+            // GUARDAR DETALLE Y RESTAR INVENTARIO
+            for ($i = 0; $i < count($request->salida); $i++) {
 
-            // CORRECTO
+                // BUSCAR EL ULTIMO historial_entradas_deta DE ESE MATERIAL
+                $ultimaEntradaDeta = DB::table('historial_entradas_deta AS hed')
+                    ->join('historial_entradas AS he', 'hed.id_historial', '=', 'he.id')
+                    ->where('hed.id_material', $request->idmaterial[$i])
+                    ->where('he.id_tipoproyecto', $request->idproyecto)
+                    ->orderBy('hed.id', 'DESC')
+                    ->select('hed.id')
+                    ->first();
+
+                $histoDetalle = new HistorialSalidasDeta();
+                $histoDetalle->id_historial_salidas       = $histoSalida->id;
+                $histoDetalle->id_material                = $request->idmaterial[$i];
+                $histoDetalle->cantidad                   = $request->salida[$i];
+                $histoDetalle->id_historial_entradas_deta = $ultimaEntradaDeta ? $ultimaEntradaDeta->id : null;
+                $histoDetalle->save();
+
+                // RESTAR INVENTARIO
+                $infoEntrada = Entradas::where('id_material', $request->idmaterial[$i])
+                    ->where('id_tipoproyecto', $request->idproyecto)
+                    ->first();
+
+                Entradas::where('id', $infoEntrada->id)->update([
+                    'cantidad' => $infoEntrada->cantidad - $request->salida[$i]
+                ]);
+            }
 
             DB::commit();
             return ['success' => 3];
 
-        }catch(\Throwable $e){
+        } catch(\Throwable $e) {
             Log::info('ee' . $e);
             DB::rollback();
             return ['success' => 99];
@@ -111,20 +120,12 @@ class SalidasController extends Controller
 
             $idproyecto = $request->tipoproyecto;
 
-
-            // BUSCAR MATERIAL QUE COINCIDA CON NOMBRE O CODIGO DE LAS ENTRADAS DE UN ID PROYECTO
-            /*$arrayEntradas = Materiales::where('nombre', 'LIKE', "%{$nombre}%")
-                ->orWhere('codigo', 'LIKE', "%{$nombre}%")
-                ->get();*/
-
-
             $arrayEntradas = DB::table('entradas AS en')
                 ->join('materiales AS ma', 'en.id_material', '=', 'ma.id')
-                ->select('ma.nombre', 'ma.id', 'ma.codigo', 'en.cantidad', 'en.id_tipoproyecto')
+                ->select('ma.nombre', 'ma.id', 'en.cantidad', 'en.id_tipoproyecto')
                 ->where('en.id_tipoproyecto', $idproyecto)
                 ->where(function ($query) use ($nombre) {
-                    $query->where('ma.nombre', 'like', "%{$nombre}%")
-                        ->orWhere('ma.codigo', 'like', "%{$nombre}%");
+                    $query->where('ma.nombre', 'like', "%{$nombre}%");
                 })
                 ->orderBy('ma.nombre', 'ASC')
                 ->get();
@@ -150,12 +151,6 @@ class SalidasController extends Controller
                 }else{
                     $dd->medida = "";
                 }
-
-                if($dd->codigo != null){
-                    $dd->code = "- " . $dd->codigo;
-                }else{
-                    $dd->code = "";
-                }
             }
 
             $output = '<ul class="dropdown-menu" style="display:block; position:relative;">';
@@ -167,7 +162,7 @@ class SalidasController extends Controller
                     if(!empty($row)){
                         $tiene = false;
                         $output .= '
-                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . '  ' .$row->medida . ' ' .$row->code .'</a></li>
+                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . '  ' .$row->medida . '</a></li>
                 ';
                     }
                 }
@@ -176,7 +171,7 @@ class SalidasController extends Controller
                     if(!empty($row)){
                         $tiene = false;
                         $output .= '
-                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . ' ' .$row->medida . ' ' .$row->code .'</a></li>
+                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . ' ' .$row->medida . '</a></li>
                    <hr>
                 ';
                     }
@@ -255,7 +250,6 @@ class SalidasController extends Controller
             // EVITAR QUE SEA TRANSFERIDO 2 VECES
             if(TipoProyecto::where('id', $request->idproyecto)
                 ->where('transferido', 1)->first()){
-
                 return ['success' => 1];
             }
 
@@ -263,8 +257,6 @@ class SalidasController extends Controller
             TipoProyecto::where('id', $request->idproyecto)->update([
                 'transferido' => 1
             ]);
-
-
 
             if ($request->hasFile('documento')) {
 
@@ -280,9 +272,6 @@ class SalidasController extends Controller
 
                 if ($archivo) {
 
-
-                    // GUARDAR UN HISTORIAL DE TRANSFERENCIA
-
                     $histoSalida = new HistorialTransferido();
                     $histoSalida->fecha = $request->fecha;
                     $histoSalida->descripcion = $request->descripcion;
@@ -290,15 +279,11 @@ class SalidasController extends Controller
                     $histoSalida->documento = $nomDocumento;
                     $histoSalida->save();
 
-                    // HOY GUARDAR HISTORIAL DEL DETALLE DE LAS CANTIDADES MAYOR A 0
                     $arrayMateriales = Entradas::where('id_tipoproyecto', $request->idproyecto)->get();
-
-                    $boolHayMateriales = false;
 
                     foreach ($arrayMateriales as $info){
 
                         if($info->cantidad > 0){
-                            $boolHayMateriales = true;
 
                             $histoDetalle = new HistorialTransferidoDetalle();
                             $histoDetalle->id_historial_transf = $histoSalida->id;
@@ -306,21 +291,10 @@ class SalidasController extends Controller
                             $histoDetalle->cantidad = $info->cantidad;
                             $histoDetalle->save();
 
-
-                            // ACTUALIZAR CANTIDAD A INVENTARIO GENERAL O AGREGAR EL NUEVO MATERIAL SINO EXISTE
-
-                            if($infoEn = Entradas::where('id_tipoproyecto', 1)->where('id_material', $info->id_material)
-                                ->first()){
-                                // EXISTE EN INVENTARIO GENERAL, ASI QUE SOLO SUMAR LA CANTIDAD
+                            if($infoEn = Entradas::where('id_tipoproyecto', 1)->where('id_material', $info->id_material)->first()){
                                 $suma = $infoEn->cantidad + $info->cantidad;
-
-                                Entradas::where('id', $infoEn->id)->update([
-                                    'cantidad' => $suma
-                                ]);
-
+                                Entradas::where('id', $infoEn->id)->update(['cantidad' => $suma]);
                             }else{
-                                //MATERIAL NO EXISTE EN INVENTARIO GENERAL, CREAR NUEVO MATERIAL
-
                                 $nuevo = new Entradas();
                                 $nuevo->id_material = $info->id_material;
                                 $nuevo->id_tipoproyecto = 1;
@@ -328,30 +302,15 @@ class SalidasController extends Controller
                                 $nuevo->save();
                             }
 
-                            // ELIMINAR LA CANTIDAD DEL PROYECTO QUE TENIA
-                            Entradas::where('id', $info->id)->update([
-                                'cantidad' => 0
-                            ]);
+                            Entradas::where('id', $info->id)->update(['cantidad' => 0]);
                         }
                     }
 
-                    if(!$boolHayMateriales){
-                        // EL PROYECTO NO TIENE MATERIALES O NO TIENE CANTIDAD NINGUNO
-                        return ['success' => 2];
-                    }
-
-
-                    // CORRECTO
-
                     DB::commit();
                     return ['success' => 3];
-
-
                 }
-            }else{
 
-
-                // GUARDAR UN HISTORIAL DE TRANSFERENCIA
+            } else {
 
                 $histoSalida = new HistorialTransferido();
                 $histoSalida->fecha = $request->fecha;
@@ -359,15 +318,11 @@ class SalidasController extends Controller
                 $histoSalida->id_tipoproyecto = $request->idproyecto;
                 $histoSalida->save();
 
-                // HOY GUARDAR HISTORIAL DEL DETALLE DE LAS CANTIDADES MAYOR A 0
                 $arrayMateriales = Entradas::where('id_tipoproyecto', $request->idproyecto)->get();
-
-                $boolHayMateriales = false;
 
                 foreach ($arrayMateriales as $info){
 
                     if($info->cantidad > 0){
-                        $boolHayMateriales = true;
 
                         $histoDetalle = new HistorialTransferidoDetalle();
                         $histoDetalle->id_historial_transf = $histoSalida->id;
@@ -375,21 +330,10 @@ class SalidasController extends Controller
                         $histoDetalle->cantidad = $info->cantidad;
                         $histoDetalle->save();
 
-
-                        // ACTUALIZAR CANTIDAD A INVENTARIO GENERAL O AGREGAR EL NUEVO MATERIAL SINO EXISTE
-
-                        if($infoEn = Entradas::where('id_tipoproyecto', 1)->where('id_material', $info->id_material)
-                            ->first()){
-                            // EXISTE EN INVENTARIO GENERAL, ASI QUE SOLO SUMAR LA CANTIDAD
+                        if($infoEn = Entradas::where('id_tipoproyecto', 1)->where('id_material', $info->id_material)->first()){
                             $suma = $infoEn->cantidad + $info->cantidad;
-
-                            Entradas::where('id', $infoEn->id)->update([
-                                'cantidad' => $suma
-                            ]);
-
+                            Entradas::where('id', $infoEn->id)->update(['cantidad' => $suma]);
                         }else{
-                            //MATERIAL NO EXISTE EN INVENTARIO GENERAL, CREAR NUEVO MATERIAL
-
                             $nuevo = new Entradas();
                             $nuevo->id_material = $info->id_material;
                             $nuevo->id_tipoproyecto = 1;
@@ -397,20 +341,9 @@ class SalidasController extends Controller
                             $nuevo->save();
                         }
 
-                        // ELIMINAR LA CANTIDAD DEL PROYECTO QUE TENIA
-                        Entradas::where('id', $info->id)->update([
-                            'cantidad' => 0
-                        ]);
+                        Entradas::where('id', $info->id)->update(['cantidad' => 0]);
                     }
                 }
-
-                if(!$boolHayMateriales){
-                    // EL PROYECTO NO TIENE MATERIALES O NO TIENE CANTIDAD NINGUNO
-                    return ['success' => 2];
-                }
-
-
-                // CORRECTO
 
                 DB::commit();
                 return ['success' => 3];
@@ -422,6 +355,5 @@ class SalidasController extends Controller
             return ['success' => 99];
         }
     }
-
 
 }

@@ -18,9 +18,17 @@ class TipoProyectoController extends Controller
         return view('backend.admin.tipoproyecto.vistatipoproyecto');
     }
 
-    public function tablaProyectos(){
+    public function tablaProyectos(Request $request){
+        $filtro = $request->get('filtro', 'vigente'); // por defecto vigentes
 
-        $lista = TipoProyecto::orderBy('nombre', 'ASC')->get();
+        if($filtro === 'cerrado'){
+            $lista = TipoProyecto::where('transferido', 1)->orderBy('nombre', 'ASC')->get();
+        } elseif($filtro === 'todos'){
+            $lista = TipoProyecto::orderBy('nombre', 'ASC')->get();
+        } else {
+            $lista = TipoProyecto::where('transferido', 0)->orderBy('nombre', 'ASC')->get();
+        }
+
         return view('backend.admin.tipoproyecto.tablatipoproyecto', compact('lista'));
     }
 

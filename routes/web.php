@@ -11,7 +11,6 @@ use App\Http\Controllers\Sistema\ConfiguracionController;
 use App\Http\Controllers\Sistema\RepuestosController;
 use App\Http\Controllers\Sistema\TipoProyectoController;
 use App\Http\Controllers\Sistema\SalidasController;
-use App\Http\Controllers\Sistema\HerramientasController;
 use App\Http\Controllers\Sistema\HistorialController;
 use App\Http\Controllers\Sistema\ReportesController;
 
@@ -93,13 +92,6 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
     Route::get('/admin/transferecias/a/huesera', [SalidasController::class,'indexTransferencias'])->name('admin.transferencias.index');
     Route::post('/admin/generar/salida/transferencia',  [SalidasController::class,'geenrarSalidaTransferencia']);
 
-    // --- HERRAMIENTAS ---
-
-    Route::get('/admin/inventario/herramientas/index', [HerramientasController::class,'indexInventarioHerramientas'])->name('admin.inventario.herramientas.index');
-    Route::get('/admin/inventario/herramientas/tabla', [HerramientasController::class,'tablaInventarioHerramientas']);
-    Route::post('/admin/inventario/herramientas/nuevo', [HerramientasController::class, 'nuevaHerramienta']);
-    Route::post('/admin/inventario/herramientas/informacion', [HerramientasController::class, 'informacionHerramienta']);
-    Route::post('/admin/inventario/herramienta/editar', [HerramientasController::class, 'editarMaterial']);
 
 
     // --- HISTORIAL - LISTADO DE REPUESTAS DE SALIDA
@@ -114,7 +106,11 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
 
     // --- REPORTES / ENTRADA Y SALIDAS ---
     Route::get('/admin/entrada/reporte/vista', [ReportesController::class,'indexEntradaReporte'])->name('admin.entrada.reporte.index');
-    Route::get('/admin/reporte/registro/{tipo}/{desde}/{hasta}', [ReportesController::class,'reportePdfEntradaSalida']);
+    Route::get('admin/reporte/registro/{tipo}/{desde}/{hasta}', [ReportesController::class, 'reportePdfEntradaSalida']);
+
+
+
+
 
     // --- REPORTES / INVENTARIO ---
     Route::get('/admin/reporte/inventario', [ReportesController::class,'vistaParaReporteInventario'])->name('admin.reporte.inventario.index');

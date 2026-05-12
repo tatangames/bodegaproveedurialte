@@ -68,7 +68,6 @@ class RepuestosController extends Controller
         $dato = new Materiales();
         $dato->id_medida = $request->unidad;
         $dato->nombre = $request->nombre;
-        $dato->codigo = $request->codigo;
 
         if($dato->save()){
             return ['success' => 1];
@@ -109,7 +108,6 @@ class RepuestosController extends Controller
         Materiales::where('id', $request->id)->update([
             'id_medida' => $request->unidad,
             'nombre' => $request->nombre,
-            'codigo' => $request->codigo
         ]);
 
         return ['success' => 1];
@@ -199,7 +197,9 @@ class RepuestosController extends Controller
 
     public function indexRegistroEntrada(){
 
-        $tipoproyecto = TipoProyecto::orderBy('nombre')->get();
+        $tipoproyecto = TipoProyecto::where('transferido', 0)
+            ->orderBy('nombre')
+            ->get();
 
         return view('backend.admin.repuestos.registros.vistaentradaregistro', compact('tipoproyecto'));
     }
@@ -210,7 +210,6 @@ class RepuestosController extends Controller
         if($request->get('query')){
             $query = $request->get('query');
             $data = Materiales::where('nombre', 'LIKE', "%{$query}%")
-                ->orWhere('codigo', 'LIKE', "%{$query}%")
                 ->get();
 
             foreach ($data as $dd){
@@ -218,12 +217,6 @@ class RepuestosController extends Controller
                     $dd->medida = "- " . $info->nombre;
                 }else{
                     $dd->medida = "";
-                }
-
-                if($dd->codigo != null){
-                    $dd->code = "- " . $dd->codigo;
-                }else{
-                    $dd->code = "";
                 }
             }
 
@@ -236,7 +229,7 @@ class RepuestosController extends Controller
                     if(!empty($row)){
                         $tiene = false;
                         $output .= '
-                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . '  ' .$row->medida . ' ' .$row->code .'</a></li>
+                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . '  ' .$row->medida .'</a></li>
                 ';
                     }
                 }
@@ -245,7 +238,7 @@ class RepuestosController extends Controller
                     if(!empty($row)){
                         $tiene = false;
                         $output .= '
-                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . ' ' .$row->medida . ' ' .$row->code .'</a></li>
+                 <li onclick="modificarValor(this)" id="'.$row->id.'"><a href="#" style="margin-left: 3px">'.$row->nombre . ' ' .$row->medida .'</a></li>
                    <hr>
                 ';
                     }

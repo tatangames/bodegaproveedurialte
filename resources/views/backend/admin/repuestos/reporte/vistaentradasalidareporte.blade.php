@@ -148,17 +148,17 @@
     <script>
 
         function generarPdf() {
-            var tipo = document.getElementById('select-tipo').value;
+            var tipo  = document.getElementById('select-tipo').value;
             var desde = document.getElementById('fecha-desde').value;
             var hasta = document.getElementById('fecha-hasta').value;
 
-            if(desde === ''){
-                toastr.error('Fecha desde es requerido');
+            if (desde === '') {
+                toastr.error('Fecha desde es requerida');
                 return;
             }
 
-            if(hasta === ''){
-                toastr.error('Fecha hasta es requerido');
+            if (hasta === '') {
+                toastr.error('Fecha hasta es requerida');
                 return;
             }
 

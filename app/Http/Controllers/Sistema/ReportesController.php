@@ -23,284 +23,312 @@ class ReportesController extends Controller
         return view('backend.admin.repuestos.reporte.vistaentradasalidareporte');
     }
 
-    public function reportePdfEntradaSalida($tipo, $desde, $hasta){
+    public function reportePdfEntradaSalida($tipo, $desde = null, $hasta = null)
+    {
+        $sinFiltro = ($desde === 'todos' || $desde === null);
 
         $start = Carbon::parse($desde)->startOfDay();
-        $end = Carbon::parse($hasta)->endOfDay();
-
-        $resultsBloque = array();
-        $index = 0;
+        $end   = Carbon::parse($hasta)->endOfDay();
 
         $desdeFormat = date("d-m-Y", strtotime($desde));
         $hastaFormat = date("d-m-Y", strtotime($hasta));
 
+        $resultsBloque = [];
+        $index = 0;
 
-        // entrada
-        if($tipo == 1) {
+        // ────────────────────────────────────────────
+        // ENTRADAS
+        // ────────────────────────────────────────────
+        if ($tipo == 1) {
 
-            // lista de entradas
-            $listaEntrada = HistorialEntradas::whereBetween('fecha', [$start, $end])
-                ->orderBy('fecha', 'ASC')
-                ->get();
+            $query = HistorialEntradas::orderBy('fecha', 'ASC');
+            if (!$sinFiltro) {
+                $query->whereBetween('fecha', [$start, $end]);
+            }
+            $listaEntrada = $query->get();
 
-            foreach ($listaEntrada as $ll){
+            foreach ($listaEntrada as $ll) {
 
                 $ll->fecha = date("d-m-Y", strtotime($ll->fecha));
 
-                $infoProyecto = TipoProyecto::where('id', $ll->id_tipoproyecto)->first();
-
-                $ll->nombreproy = $infoProyecto->nombre;
+                $infoProyecto   = TipoProyecto::where('id', $ll->id_tipoproyecto)->first();
+                $ll->nombreproy = $infoProyecto ? $infoProyecto->nombre : '—';
 
                 array_push($resultsBloque, $ll);
 
-                // obtener detalle
                 $listaDetalle = DB::table('historial_entradas_deta AS ed')
                     ->join('materiales AS m', 'ed.id_material', '=', 'm.id')
-                    ->select('m.nombre', 'm.codigo', 'ed.cantidad', 'm.id_medida')
+                    ->select('m.nombre', 'ed.cantidad', 'm.id_medida', 'ed.precio', 'ed.codigo')
                     ->where('ed.id_historial', $ll->id)
                     ->orderBy('m.id', 'ASC')
                     ->get();
 
-                foreach ($listaDetalle as $dd){
-                    if($info = UnidadMedida::where('id', $dd->id_medida)->first()){
-                        $dd->medida = $info->nombre;
-                    }else{
-                        $dd->medida = "";
-                    }
+                foreach ($listaDetalle as $dd) {
+                    $info       = UnidadMedida::where('id', $dd->id_medida)->first();
+                    $dd->medida = $info ? $info->nombre : '';
+                    $dd->total  = $dd->cantidad * $dd->precio;
                 }
 
                 $resultsBloque[$index]->detalle = $listaDetalle;
                 $index++;
             }
 
-
-            //$mpdf = new \Mpdf\Mpdf(['format' => 'LETTER']);
             $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER']);
             $mpdf->SetTitle('Entradas');
-
-            // mostrar errores
             $mpdf->showImageErrors = false;
 
             $logoalcaldia = 'images/logo.png';
-
+            $periodoTexto = $sinFiltro ? 'Todo el historial' : "Fecha: $desdeFormat  -  $hastaFormat";
 
             $tabla = "
-                <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
+    <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
+        <tr>
+            <td style='width:30%; border:1px solid #000; padding:6px 8px;'>
+                <table width='100%'>
                     <tr>
-                        <td style='width:30%; border:0.8px solid #000; padding:6px 8px;'>
-                            <table width='100%'>
-                                <tr>
-                                    <td style='width:35%; text-align:left;'>
-                                        <img src='{$logoalcaldia}' style='height:40px'>
-                                    </td>
-                                    <td style='width:65%; text-align:left; color:#104e8c;
-                                                font-size:12px; font-weight:bold; line-height:1.4;'>
-                                        SANTA ANA NORTE<br>EL SALVADOR
-                                    </td>
-                                </tr>
-                            </table>
+                        <td style='width:35%; text-align:left;'>
+                            <img src='{$logoalcaldia}' style='height:40px'>
                         </td>
-
-                        <td style='width:70%; border:0.8px solid #000;
-                                    padding:8px; text-align:center; vertical-align:middle;'>
-
-                            <h2 style='margin:0;'>Reporte de Entradas</h2>
-                            <p style='margin:0; font-size:12px;'>Fecha: $desdeFormat  -  $hastaFormat</p>
-
+                        <td style='width:65%; text-align:left; color:#104e8c;
+                                    font-size:12px; font-weight:bold; line-height:1.4;'>
+                            SANTA ANA NORTE<br>EL SALVADOR
                         </td>
                     </tr>
                 </table>
-                ";
-
+            </td>
+            <td style='width:70%; border:1px solid #000;
+                        padding:8px; text-align:center; vertical-align:middle;'>
+                <h2 style='margin:0;'>Reporte de Entradas</h2>
+                <p style='margin:0; font-size:12px;'>{$periodoTexto}</p>
+            </td>
+        </tr>
+    </table>
+    ";
 
             foreach ($listaEntrada as $dd) {
 
-                $tabla .= "<table width='100%' id='tablaFor'>
-                <tbody>";
-
-                $tabla .= "<tr>
-                    <td style='font-weight: bold; width: 20%; font-size: 13px'>Fecha</td>
-                     <td style='font-weight: bold; width: 45%; font-size: 13px'>Proyecto</td>
-                     <td style='font-weight: bold; width: 15%; font-size: 13px'>Descripción</td>
+                $tabla .= "
+        <table width='100%' style='border-collapse:collapse; margin-bottom:4px;'>
+            <tbody>
+                <tr>
+                    <td style='width:20%; font-size:13px; font-weight:bold; border:1px solid #000; padding:4px 6px;'>Fecha</td>
+                    <td style='width:45%; font-size:13px; font-weight:bold; border:1px solid #000; padding:4px 6px;'>Proyecto</td>
+                    <td style='width:35%; font-size:13px; font-weight:bold; border:1px solid #000; padding:4px 6px;'>Descripción</td>
                 </tr>
-                ";
-
-                $tabla .= "<tr>
-                    <td style='font-size: 12px'>$dd->fecha</td>
-                     <td style='font-size: 12px'>$dd->nombreproy</td>
-                     <td style='font-size: 12px'>$dd->descripcion</td>
+                <tr>
+                    <td style='width:20%; font-size:12px; border:1px solid #000; padding:4px 6px;'>$dd->fecha</td>
+                    <td style='width:45%; font-size:12px; border:1px solid #000; padding:4px 6px;'>$dd->nombreproy</td>
+                    <td style='width:35%; font-size:12px; border:1px solid #000; padding:4px 6px;'>$dd->descripcion</td>
                 </tr>
-                ";
+            </tbody>
+        </table>
 
+        <table width='100%' style='margin-top:6px; border-collapse:collapse;'>
+            <thead>
+                <tr>
+                    <td style='font-weight:bold; width:10%; font-size:12px; padding:4px 6px; border:1px solid #000;'>Código</td>
+                    <td style='font-weight:bold; width:35%; font-size:12px; padding:4px 6px; border:1px solid #000;'>Repuesto</td>
+                    <td style='font-weight:bold; width:15%; font-size:12px; padding:4px 6px; border:1px solid #000;'>Medida</td>
+                    <td style='font-weight:bold; width:10%; font-size:12px; padding:4px 6px; text-align:center; border:1px solid #000;'>Cantidad</td>
+                    <td style='font-weight:bold; width:15%; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>Precio Unit.</td>
+                    <td style='font-weight:bold; width:15%; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>Total</td>
+                </tr>
+            </thead>
+            <tbody>
+        ";
 
-                $tabla .= "</tbody></table>";
-
-                $tabla .= "<table width='100%' id='tablaFor' style='margin-top: 20px'>
-            <tbody>";
-
-                $tabla .= "<tr>
-                    <td style='font-weight: bold; width: 25%; font-size: 13px'>Repuesto</td>
-                    <td style='font-weight: bold; width: 8%; font-size: 13px'>Medida</td>
-                    <td style='font-weight: bold; width: 8%; font-size: 13px'>Cantidad</td>
-                </tr>";
+                $totalGeneral = 0;
 
                 foreach ($dd->detalle as $gg) {
-                    $tabla .= "<tr>
-                    <td style='font-size: 12px'>$gg->nombre</td>
-                    <td style='font-size: 12px'>$gg->medida</td>
-                    <td style='font-size: 12px'>$gg->cantidad</td>
-                </tr>";
+                    $totalGeneral += $gg->total;
+                    $precioFormat  = number_format($gg->precio, 2);
+                    $totalFormat   = number_format($gg->total,  2);
+
+                    $tabla .= "
+                <tr>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000;'>$gg->codigo</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000;'>$gg->nombre</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000;'>$gg->medida</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000; text-align:center;'>$gg->cantidad</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000; text-align:right;'>$ $precioFormat</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000; text-align:right;'>$ $totalFormat</td>
+                </tr>
+            ";
                 }
 
-                $tabla .= "</tbody></table>";
+                $totalGeneralFormat = number_format($totalGeneral, 2);
+
+                $tabla .= "
+                <tr>
+                    <td colspan='5' style='font-weight:bold; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>
+                        Total General:
+                    </td>
+                    <td style='font-weight:bold; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>
+                        $ $totalGeneralFormat
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        ";
             }
 
-
-            $tabla .= "<table width='100%' id='tablaFor'>
-            <tbody>";
-
-            $tabla .= "</tbody></table>";
-
             $stylesheet = file_get_contents('css/cssregistro.css');
-            $mpdf->WriteHTML($stylesheet,1);
-
+            $mpdf->WriteHTML($stylesheet, 1);
             $mpdf->setFooter("Página: " . '{PAGENO}' . "/" . '{nb}');
-            //$mpdf->WriteHTML($tabla,2);
             $mpdf->WriteHTML($tabla, 2);
-
             $mpdf->Output();
+        }
+        else {
 
-        }else {
-            // salida
+            $query = HistorialSalidas::orderBy('fecha', 'ASC');
+            if (!$sinFiltro) {
+                $query->whereBetween('fecha', [$start, $end]);
+            }
+            $listaSalida = $query->get();
 
-            // lista de salidas
-            $listaSalida = HistorialSalidas::whereBetween('fecha', [$start, $end])
-                ->orderBy('fecha', 'ASC')
-                ->get();
+            foreach ($listaSalida as $ll) {
 
-            foreach ($listaSalida as $ll){
-
-                $infoProyecto = TipoProyecto::where('id', $ll->id_tipoproyecto)->first();
-
-                $ll->nombreproy = $infoProyecto->nombre;
-
-                $ll->fecha = date("d-m-Y", strtotime($ll->fecha));
+                $infoProyecto   = TipoProyecto::where('id', $ll->id_tipoproyecto)->first();
+                $ll->nombreproy = $infoProyecto ? $infoProyecto->nombre : '—';
+                $ll->fecha      = date("d-m-Y", strtotime($ll->fecha));
 
                 array_push($resultsBloque, $ll);
 
-                // obtener detalle
                 $listaDetalle = DB::table('historial_salidas_deta AS ed')
                     ->join('materiales AS m', 'ed.id_material', '=', 'm.id')
-                    ->select( 'm.id', 'm.nombre', 'm.codigo', 'ed.cantidad', 'm.id_medida', 'ed.id_historial_salidas')
+                    ->leftJoin('historial_entradas_deta AS hed', 'ed.id_historial_entradas_deta', '=', 'hed.id')
+                    ->select(
+                        'm.id',
+                        'm.nombre',
+                        'ed.cantidad',
+                        'm.id_medida',
+                        'ed.id_historial_salidas',
+                        DB::raw('COALESCE(hed.precio, 0) AS precio'),
+                        DB::raw('COALESCE(hed.codigo, "") AS codigo')
+                    )
                     ->where('ed.id_historial_salidas', $ll->id)
                     ->orderBy('m.id', 'ASC')
                     ->get();
 
-                foreach ($listaDetalle as $dd){
-                    if($info = UnidadMedida::where('id', $dd->id_medida)->first()){
-                        $dd->medida = $info->nombre;
-                    }else{
-                        $dd->medida = "";
-                    }
+                foreach ($listaDetalle as $dd) {
+                    $info       = UnidadMedida::where('id', $dd->id_medida)->first();
+                    $dd->medida = $info ? $info->nombre : '';
+                    $dd->total  = $dd->cantidad * $dd->precio;
                 }
 
                 $resultsBloque[$index]->detalle = $listaDetalle;
                 $index++;
             }
 
-
-            //$mpdf = new \Mpdf\Mpdf(['format' => 'LETTER']);
             $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER']);
             $mpdf->SetTitle('Salidas');
-
-            // mostrar errores
             $mpdf->showImageErrors = false;
 
             $logoalcaldia = 'images/logo.png';
+            $periodoTexto = $sinFiltro ? 'Todo el historial' : "Fecha: $desdeFormat  -  $hastaFormat";
 
             $tabla = "
-                <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
+    <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
+        <tr>
+            <td style='width:30%; border:1px solid #000; padding:6px 8px;'>
+                <table width='100%'>
                     <tr>
-                        <td style='width:30%; border:0.8px solid #000; padding:6px 8px;'>
-                            <table width='100%'>
-                                <tr>
-                                    <td style='width:35%; text-align:left;'>
-                                        <img src='{$logoalcaldia}' style='height:40px'>
-                                    </td>
-                                    <td style='width:65%; text-align:left; color:#104e8c;
-                                                font-size:12px; font-weight:bold; line-height:1.4;'>
-                                        SANTA ANA NORTE<br>EL SALVADOR
-                                    </td>
-                                </tr>
-                            </table>
+                        <td style='width:35%; text-align:left;'>
+                            <img src='{$logoalcaldia}' style='height:40px'>
                         </td>
-
-                        <td style='width:70%; border:0.8px solid #000;
-                                    padding:8px; text-align:center; vertical-align:middle;'>
-
-                            <h2 style='margin:0;'>Reporte de Salidas</h2>
-                            <p style='margin:0; font-size:12px;'>Fecha: $desdeFormat  -  $hastaFormat</p>
-
+                        <td style='width:65%; text-align:left; color:#104e8c;
+                                    font-size:12px; font-weight:bold; line-height:1.4;'>
+                            SANTA ANA NORTE<br>EL SALVADOR
                         </td>
                     </tr>
                 </table>
-                ";
+            </td>
+            <td style='width:70%; border:1px solid #000;
+                        padding:8px; text-align:center; vertical-align:middle;'>
+                <h2 style='margin:0;'>Reporte de Salidas</h2>
+                <p style='margin:0; font-size:12px;'>{$periodoTexto}</p>
+            </td>
+        </tr>
+    </table>
+    ";
 
             foreach ($listaSalida as $dd) {
 
-                $tabla .= "<table width='100%' id='tablaFor'>
-                    <tbody>";
-
-                $tabla .= "<tr>
-                     <td  style='width: 20%; font-size: 13px; font-weight: bold'>Fecha</td>
-                     <td  style='width: 45%; font-size: 13px; font-weight: bold'>Proyecto</td>
-                     <td  style='width: 15%; font-size: 13px; font-weight: bold'>Descripción</td>
+                $tabla .= "
+        <table width='100%' style='border-collapse:collapse; margin-bottom:4px;'>
+            <tbody>
+                <tr>
+                    <td style='width:20%; font-size:13px; font-weight:bold; border:1px solid #000; padding:4px 6px;'>Fecha</td>
+                    <td style='width:45%; font-size:13px; font-weight:bold; border:1px solid #000; padding:4px 6px;'>Proyecto</td>
+                    <td style='width:35%; font-size:13px; font-weight:bold; border:1px solid #000; padding:4px 6px;'>Descripción</td>
                 </tr>
-                ";
-
-                $tabla .= "<tr>
-                    <td style='width: 20%; font-size: 12px'>$dd->fecha</td>
-                     <td style='width: 45%; font-size: 12px'>$dd->nombreproy</td>
-                     <td style='width: 15%; font-size: 12px'>$dd->descripcion</td>
+                <tr>
+                    <td style='width:20%; font-size:12px; border:1px solid #000; padding:4px 6px;'>$dd->fecha</td>
+                    <td style='width:45%; font-size:12px; border:1px solid #000; padding:4px 6px;'>$dd->nombreproy</td>
+                    <td style='width:35%; font-size:12px; border:1px solid #000; padding:4px 6px;'>$dd->descripcion</td>
                 </tr>
-                ";
+            </tbody>
+        </table>
 
+        <table width='100%' style='margin-top:6px; border-collapse:collapse;'>
+            <thead>
+                <tr>
+                    <td style='font-weight:bold; width:10%; font-size:12px; padding:4px 6px; border:1px solid #000;'>Código</td>
+                    <td style='font-weight:bold; width:35%; font-size:12px; padding:4px 6px; border:1px solid #000;'>Repuesto</td>
+                    <td style='font-weight:bold; width:15%; font-size:12px; padding:4px 6px; border:1px solid #000;'>Medida</td>
+                    <td style='font-weight:bold; width:10%; font-size:12px; padding:4px 6px; text-align:center; border:1px solid #000;'>Cantidad</td>
+                    <td style='font-weight:bold; width:15%; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>Precio Unit.</td>
+                    <td style='font-weight:bold; width:15%; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>Total</td>
+                </tr>
+            </thead>
+            <tbody>
+        ";
 
-                $tabla .= "</tbody></table>";
-
-                $tabla .= "<table width='100%' id='tablaFor' style='margin-top: 20px'>
-            <tbody>";
-
-                $tabla .= "<tr>
-                    <td style='width: 25%; font-size: 13px; font-weight: bold'>Repuesto</td>
-                    <td style='width: 8%; font-size: 13px; font-weight: bold'>Medida</td>
-                    <td style='width: 20%; font-size: 13px; font-weight: bold'>Cantidad</td>
-                </tr>";
+                $totalGeneral = 0;
 
                 foreach ($dd->detalle as $gg) {
-                    $tabla .= "<tr>
-                        <td style='width: 25%; font-size: 12px'>$gg->nombre</td>
-                        <td style='width: 8%; font-size: 12px'>$gg->medida</td>
-                        <td style='width: 20%; font-size: 12px'>$gg->cantidad</td>
-                    </tr>";
+                    $totalGeneral += $gg->total;
+                    $precioFormat  = number_format($gg->precio, 2);
+                    $totalFormat   = number_format($gg->total,  2);
+
+                    $tabla .= "
+                <tr>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000;'>$gg->codigo</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000;'>$gg->nombre</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000;'>$gg->medida</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000; text-align:center;'>$gg->cantidad</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000; text-align:right;'>$ $precioFormat</td>
+                    <td style='font-size:11px; padding:3px 6px; border:1px solid #000; text-align:right;'>$ $totalFormat</td>
+                </tr>
+            ";
                 }
 
-                $tabla .= "</tbody></table>";
+                $totalGeneralFormat = number_format($totalGeneral, 2);
+
+                $tabla .= "
+                <tr>
+                    <td colspan='5' style='font-weight:bold; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>
+                        Total General:
+                    </td>
+                    <td style='font-weight:bold; font-size:12px; padding:4px 6px; text-align:right; border:1px solid #000;'>
+                        $ $totalGeneralFormat
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        ";
             }
 
-
             $stylesheet = file_get_contents('css/cssregistro.css');
-            $mpdf->WriteHTML($stylesheet,1);
-
+            $mpdf->WriteHTML($stylesheet, 1);
             $mpdf->setFooter("Página: " . '{PAGENO}' . "/" . '{nb}');
-            $mpdf->WriteHTML($tabla,2);
-
+            $mpdf->WriteHTML($tabla, 2);
             $mpdf->Output();
         }
+
     }
-
-
-
 
 
 
@@ -311,6 +339,149 @@ class ReportesController extends Controller
 
     public function reporteInventarioActual($tipo){
         // JUNTOS
+
+
+        // Limpiar primero
+       /* DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        DB::table('salidas_detalle')->delete();
+        DB::table('salidas')->delete();
+        DB::table('entradas_detalle')->delete();
+        DB::table('entrada')->delete();
+        DB::statement('ALTER TABLE salidas_detalle AUTO_INCREMENT = 1');
+        DB::statement('ALTER TABLE salidas AUTO_INCREMENT = 1');
+        DB::statement('ALTER TABLE entradas_detalle AUTO_INCREMENT = 1');
+        DB::statement('ALTER TABLE entrada AUTO_INCREMENT = 1');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
+
+        $tipoproyectos = DB::table('tipoproyecto')->pluck('id');
+
+        foreach ($tipoproyectos as $tipoproyectoId) {
+
+            $materiales = DB::select("
+        SELECT
+            m.id as material_id,
+            COALESCE(e.total_entradas, 0) - COALESCE(s.total_salidas, 0) as stock_neto
+        FROM materiales m
+
+        LEFT JOIN (
+            SELECT hed.id_material, SUM(hed.cantidad) as total_entradas
+            FROM historial_entradas_deta hed
+            INNER JOIN historial_entradas he ON he.id = hed.id_historial
+            WHERE he.id_tipoproyecto = ?
+            GROUP BY hed.id_material
+        ) e ON e.id_material = m.id
+
+        LEFT JOIN (
+            SELECT hsd.id_material, SUM(hsd.cantidad) as total_salidas
+            FROM historial_salidas_deta hsd
+            INNER JOIN historial_salidas hs ON hs.id = hsd.id_historial_salidas
+            WHERE hs.id_tipoproyecto = ?
+            GROUP BY hsd.id_material
+        ) s ON s.id_material = m.id
+
+        HAVING stock_neto > 0
+    ", [$tipoproyectoId, $tipoproyectoId]);
+
+            if (empty($materiales)) {
+                continue;
+            }
+
+            $entradaId = DB::table('entrada')->insertGetId([
+                'tipoproyecto_id' => $tipoproyectoId,
+                'fecha'           => Carbon::today()->toDateString(),
+                'descripcion'     => 'Migración inicial',
+            ]);
+
+            $detalles = array_map(fn($m) => [
+                'entradas_id'      => $entradaId,
+                'material_id'      => $m->material_id,
+                'cantidad_inicial' => (int) $m->stock_neto,
+                'precio'           => 0,
+            ], $materiales);
+
+            DB::table('entradas_detalle')->insert($detalles);
+
+            echo "Proyecto {$tipoproyectoId}: entrada #{$entradaId} con " . count($detalles) . " materiales\n";
+        }
+
+        echo "Migración completada.\n";*/
+
+
+
+        // Obtener todas las salidas viejas
+        $historialSalidas = DB::table('historial_salidas')->get();
+
+        foreach ($historialSalidas as $salida) {
+
+            // Crear cabecera en salidas nueva
+            $salidaId = DB::table('salidas')->insertGetId([
+                'tipoproyecto_id' => $salida->id_tipoproyecto,
+                'fecha'           => $salida->fecha,
+                'descripcion'     => $salida->descripcion,
+            ]);
+
+            // Obtener detalles de esta salida
+            $detalles = DB::table('historial_salidas_deta as hsd')
+                ->select(
+                    'hsd.cantidad',
+                    'hsd.id_historial_entradas_deta',
+                )
+                ->where('hsd.id_historial_salidas', $salida->id)
+                ->whereNotNull('hsd.id_historial_entradas_deta')
+                ->get();
+
+            if ($detalles->isEmpty()) {
+                continue;
+            }
+
+            $nuevosDetalles = $detalles->map(fn($d) => [
+                'salida_id'          => $salidaId,
+                'entrada_detalle_id' => $d->id_historial_entradas_deta,
+                'cantidad_salida'    => (int) $d->cantidad,
+            ])->toArray();
+
+            DB::table('salidas_detalle')->insert($nuevosDetalles);
+
+            echo "Salida #{$salidaId} (proyecto {$salida->id_tipoproyecto}): " . count($nuevosDetalles) . " detalles\n";
+        }
+
+        echo "Migración de salidas completada.\n";
+
+
+
+        return
+
+
+
+        $tipoproyectoId = 2;
+
+        $materiales = DB::table('materiales as m')
+            ->select(
+                'm.id',
+                'm.nombre',
+                DB::raw('COALESCE(SUM(ed.cantidad_inicial), 0) as total_entradas'),
+                DB::raw('COALESCE(SUM(sd.cantidad_salida), 0) as total_salidas'),
+                DB::raw('COALESCE(SUM(ed.cantidad_inicial), 0) - COALESCE(SUM(sd.cantidad_salida), 0) as stock_actual')
+            )
+            ->join('entradas_detalle as ed', 'ed.material_id', '=', 'm.id')
+            ->join('entradas as e', function ($join) use ($tipoproyectoId) {
+                $join->on('e.id', '=', 'ed.entradas_id')
+                    ->where('e.tipoproyecto_id', '=', $tipoproyectoId);
+            })
+            ->leftJoin('salidas_detalle as sd', 'sd.entrada_detalle_id', '=', 'ed.id')
+            ->groupBy('m.id', 'm.nombre')
+            ->orderBy('m.nombre')
+            ->get();
+
+
+
+
+
+
+
+
+
+
         if($tipo == 1){
 
             $lista = Materiales::orderBy('nombre', 'ASC')->get();
@@ -380,7 +551,7 @@ class ReportesController extends Controller
                 <tr>
                     <td style='font-weight:bold; width:13%; font-size:13px;'>Código</td>
                     <td style='font-weight:bold; width:35%; font-size:13px;'>Material</td>
-                    <td style='font-weight:bold; width:10%; font-size:13px;'>Medida</td>
+                    <td style='font-weight:bold; width:13%; font-size:13px;'>Medida</td>
                     <td style='font-weight:bold; width:13%; font-size:13px;'>Cantidad</td>
                     <td style='font-weight:bold; width:16%; font-size:13px;'>Precio Unit.</td>
                     <td style='font-weight:bold; width:16%; font-size:13px;'>Total ($)</td>

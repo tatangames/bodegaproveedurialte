@@ -100,7 +100,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="formulario-nuevo" onsubmit="event.preventDefault(); verificarGuardar();">
+                    <form id="formulario-nuevo" onsubmit="event.preventDefault(); nuevo();">
                         <div class="card-body">
 
                             <div class="form-group">
@@ -108,15 +108,6 @@
                                 <input type="text" class="form-control" autocomplete="off" onpaste="contarcaracteresIngreso();" onkeyup="contarcaracteresIngreso();" maxlength="300" id="nombre-nuevo" placeholder="Nombre del material">
                                 <div id="res-caracter-nuevo" style="float: right">0/300</div>
                             </div>
-
-                            <br>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>Código (Opcional):</label>
-                                    <input type="text" class="form-control" autocomplete="off" id="codigo-nuevo" maxlength="100">
-                                </div>
-                            </div>
-
 
                             <div class="col-md-5">
                                 <div class="form-group">
@@ -136,7 +127,7 @@
                 </div>
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary" onclick="verificarGuardar()">Guardar</button>
+                    <button type="submit" class="btn btn-primary" onclick="nuevo()">Guardar</button>
                 </div>
             </div>
         </div>
@@ -169,14 +160,6 @@
                                         <div id="res-caracter-editar" style="float: right">0/300</div>
                                     </div>
 
-                                    <br>
-
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Código:</label>
-                                            <input type="text" class="form-control" autocomplete="off" id="codigo-editar" maxlength="12">
-                                        </div>
-                                    </div>
 
                                     <div class="col-md-5">
                                         <div class="form-group">
@@ -309,27 +292,10 @@
             $('#modalAgregar').modal({backdrop: 'static', keyboard: false})
         }
 
-        function verificarGuardar(){
-            Swal.fire({
-                title: 'Guardar Material?',
-                text: "",
-                type: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Si'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    nuevo();
-                }
-            })
-        }
 
         function nuevo(){
 
             var nombre = document.getElementById('nombre-nuevo').value;
-            var codigo = document.getElementById('codigo-nuevo').value;
             var unidad = document.getElementById('select-unidad-nuevo').value; // nullable
 
             if(nombre === ''){
@@ -345,7 +311,6 @@
             openLoading();
             var formData = new FormData();
             formData.append('nombre', nombre);
-            formData.append('codigo', codigo);
             formData.append('unidad', unidad);
 
             axios.post(urlAdmin+'/admin/inventario/nuevo', formData, {
@@ -381,7 +346,6 @@
 
                         $('#id-editar').val(id);
                         $('#nombre-editar').val(response.data.material.nombre);
-                        $('#codigo-editar').val(response.data.material.codigo);
 
                         contarcaracteresEditar();
 
@@ -411,7 +375,6 @@
 
             var id = document.getElementById('id-editar').value;
             var nombre = document.getElementById('nombre-editar').value;
-            var codigo = document.getElementById('codigo-editar').value;
             var unidad = document.getElementById('select-unidad-editar').value; // nullable
 
             if(nombre === ''){
@@ -428,7 +391,6 @@
             var formData = new FormData();
             formData.append('id', id);
             formData.append('nombre', nombre);
-            formData.append('codigo', codigo);
             formData.append('unidad', unidad);
 
             axios.post(urlAdmin+'/admin/inventario/editar', formData, {

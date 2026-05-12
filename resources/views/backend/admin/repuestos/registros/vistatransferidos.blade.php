@@ -227,22 +227,6 @@
                             }
                         })
                     }
-
-                    else if(response.data.success === 2){
-                        // NO TIENE REGISTRADO MATERIALES O NO TIENE CANTIDAD YA PARA TRANSFERIR
-                        Swal.fire({
-                            title: 'No Guardado',
-                            text: "el Proyecto no tiene Registrados Materiales o No tiene cantidad ya disponibles",
-                            icon: 'info',
-                            showCancelButton: false,
-                            confirmButtonColor: '#28a745',
-                            confirmButtonText: 'Aceptar'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-
-                            }
-                        })
-                    }
                     else if(response.data.success === 3){
 
                         // TRANSFERENCIA CORRECTA
