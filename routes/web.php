@@ -96,14 +96,19 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
     // --- HISTORIAL / ENTRADAS ---
     Route::get('/admin/historial/entradas', [HistorialController::class,'indexHistorialEntradas'])->name('admin.historial.entradas.index');
     Route::get('/admin/historial/entradas/tabla',  [HistorialController::class,'tablaHistorialEntradas']);
-
     Route::post('/admin/historial/entradas/informacion', [HistorialController::class, 'informacionEntrada']);
     Route::post('/admin/historial/entradas/editar',      [HistorialController::class, 'editarEntrada']);
     Route::post('/admin/historial/entradas/eliminar',    [HistorialController::class, 'eliminarEntrada']);
+    Route::post('/admin/historial/entradas/detalle',        [HistorialController::class, 'detalleEntrada']);
+    Route::post('/admin/historial/entradas/detalle/editar', [HistorialController::class, 'editarDetalleEntrada']);
 
-
-
-
+    // --- HISTORIAL / SALIDAS ---
+    Route::get('/admin/historial/salidas', [HistorialController::class,'indexHistorialSalidas'])->name('admin.historial.salidas.index');
+    Route::get('/admin/historial/salidas/tabla',  [HistorialController::class,'tablaHistorialSalidas']);
+    Route::post('/admin/historial/salidas/informacion', [HistorialController::class, 'informacionSalida']);
+    Route::post('/admin/historial/salidas/editar',      [HistorialController::class, 'editarSalida']);
+    Route::post('/admin/historial/salidas/eliminar',    [HistorialController::class, 'eliminarSalida']);
+    Route::post('/admin/historial/salidas/detalle', [HistorialController::class, 'detalleSalida']);
 
 
 
@@ -122,11 +127,6 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
 
 
 
-
-
-
-  //  Route::get('/admin/historial/salida/repuestos/detalle/{id}', [HistorialController::class,'detalleIndexHistorialSalidas']);
-  //  Route::get('/admin/historial/salida/repuestos/detalletabla/{id}', [HistorialController::class,'detalleTablaHistorialSalidas']);
 
 
 

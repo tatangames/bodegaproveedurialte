@@ -7,7 +7,9 @@ use App\Models\Entradas;
 use App\Models\EntradasDetalle;
 use App\Models\Materiales;
 use App\Models\Salidas;
+use App\Models\SalidasDetalle;
 use App\Models\TipoProyecto;
+use App\Models\Transferencia;
 use App\Models\TransferenciaDetalle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -28,11 +30,17 @@ class HistorialController extends Controller
             'tipoproyectoTransferencia'
         ])
             ->orderBy('fecha', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                // Formatear fecha con AM/PM
+                $item->fecha_fmt = date('d/m/Y h:i A', strtotime($item->fecha));
+                return $item;
+            });
 
         return view('backend.admin.historial.entradas.tablahistorialentradas',
             compact('arrayEntradas'));
     }
+
 
     public function informacionEntrada(Request $request)
     {
@@ -78,40 +86,197 @@ class HistorialController extends Controller
             return response()->json(['success' => 0]);
         }
 
-        // 1. IDs de los detalles de esta entrada
         $idsDetalle = $entrada->detalle()->pluck('id');
 
         if ($idsDetalle->isNotEmpty()) {
 
-            // 2. IDs de transferencias afectadas (antes de borrar sus detalles)
-            $idsTransferencia = \App\Models\TransferenciaDetalle::whereIn('id_entrada_detalle', $idsDetalle)
+            // 1. IDs de transferencias afectadas
+            $idsTransferencia = TransferenciaDetalle::whereIn('id_entrada_detalle', $idsDetalle)
                 ->pluck('id_transferencia')
                 ->unique();
 
-            // 3. Borrar transferencia_detalle que apuntan a estos entradas_detalle
-            \App\Models\TransferenciaDetalle::whereIn('id_entrada_detalle', $idsDetalle)->delete();
+            // 2. Borrar transferencia_detalle
+            TransferenciaDetalle::whereIn('id_entrada_detalle', $idsDetalle)->delete();
 
-            // 4. Borrar las transferencias que quedaron sin detalles
+            // 3. Borrar transferencias huérfanas
             if ($idsTransferencia->isNotEmpty()) {
-                \App\Models\Transferencia::whereIn('id', $idsTransferencia)->delete();
+                Transferencia::whereIn('id', $idsTransferencia)->delete();
             }
 
-            // 5. Ahora sí borrar entradas_detalle
+            // 4. IDs de salidas afectadas ANTES de borrar sus detalles
+            $idsSalidas = SalidasDetalle::whereIn('id_entrada_detalle', $idsDetalle)
+                ->pluck('id_salida')
+                ->unique();
+
+            // 5. Borrar salidas_detalle que apuntan a estos entradas_detalle
+            SalidasDetalle::whereIn('id_entrada_detalle', $idsDetalle)->delete();
+
+            // 6. Borrar salidas que quedaron sin ningún detalle
+            if ($idsSalidas->isNotEmpty()) {
+                $salidasHuerfanas = Salidas::whereIn('id', $idsSalidas)
+                    ->whereDoesntHave('detalle')
+                    ->pluck('id');
+
+                if ($salidasHuerfanas->isNotEmpty()) {
+                    Salidas::whereIn('id', $salidasHuerfanas)->delete();
+                }
+            }
+
+            // 7. Borrar entradas_detalle
             $entrada->detalle()->delete();
         }
 
-        // 6. Finalmente borrar la entrada
+        // 8. Borrar la entrada
         $entrada->delete();
+
+        return response()->json(['success' => 1]);
+    }
+
+    public function detalleEntrada(Request $request)
+    {
+        $entrada = Entradas::find($request->id);
+
+        if (!$entrada) {
+            return response()->json(['success' => 0]);
+        }
+
+        $detalle = $entrada->detalle()
+            ->with('material')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id'             => $item->id,
+                    'codigo'         => $item->codigo ?? '—',
+                    'material'       => $item->material->nombre ?? '—',
+                    'cantidad_inicial'=> $item->cantidad_inicial,
+                    'precio'         => number_format($item->precio, 4),
+                    'precio_raw'     => $item->precio,  // sin formato para el input
+                ];
+            });
+
+        return response()->json([
+            'success' => 1,
+            'detalle' => $detalle,
+        ]);
+    }
+
+    public function editarDetalleEntrada(Request $request)
+    {
+        $detalle = \App\Models\EntradasDetalle::find($request->id);
+
+        if (!$detalle) {
+            return response()->json(['success' => 0]);
+        }
+
+        $detalle->codigo = $request->codigo ?: null;
+        $detalle->precio = $request->precio;
+        $detalle->save();
 
         return response()->json(['success' => 1]);
     }
 
 
 
+    //***** ========================================================================================= **********
+
+
+    public function indexHistorialSalidas()
+    {
+        return view('backend.admin.historial.salidas.vistahistorialsalidas');
+    }
+
+    public function tablaHistorialSalidas()
+    {
+        $arraySalidas = Salidas::with('tipoproyecto')
+            ->orderBy('fecha', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $item->fecha_fmt = date('d/m/Y h:i A', strtotime($item->fecha));
+                return $item;
+            });
+
+        return view('backend.admin.historial.salidas.tablahistorialsalidas',
+            compact('arraySalidas'));
+    }
+
+
+    public function informacionSalida(Request $request)
+    {
+        $salida = Salidas::find($request->id);
+
+        if (!$salida) {
+            return response()->json(['success' => 0]);
+        }
+
+        return response()->json([
+            'success' => 1,
+            'salida'  => [
+                'id'          => $salida->id,
+                'fecha'       => $salida->fecha,
+                'descripcion' => $salida->descripcion,
+            ]
+        ]);
+    }
+
+    public function editarSalida(Request $request)
+    {
+        $salida = Salidas::find($request->id);
+
+        if (!$salida) {
+            return response()->json(['success' => 0]);
+        }
+
+        $salida->fecha       = $request->fecha;
+        $salida->descripcion = $request->descripcion ?: null;
+        $salida->save();
+
+        return response()->json(['success' => 1]);
+    }
+
+    public function eliminarSalida(Request $request)
+    {
+        $salida = Salidas::find($request->id);
+
+        if (!$salida) {
+            return response()->json(['success' => 0]);
+        }
+
+        // salidas_detalle apunta a salidas, hay que borrarla primero
+        $salida->detalle()->delete();
+        $salida->delete();
+
+        return response()->json(['success' => 1]);
+    }
+
+    public function detalleSalida(Request $request)
+    {
+        $salida = Salidas::find($request->id);
+
+        if (!$salida) {
+            return response()->json(['success' => 0]);
+        }
+
+        $detalle = $salida->detalle()
+            ->with('entradaDetalle.material')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'codigo'         => $item->entradaDetalle->id_material ?? '—',
+                    'material'       => $item->entradaDetalle->material->nombre ?? '—',
+                    'cantidad_salida'=> $item->cantidad_salida,
+                    'precio'         => number_format($item->entradaDetalle->precio, 4),
+                ];
+            });
+
+        return response()->json([
+            'success' => 1,
+            'detalle' => $detalle,
+        ]);
+    }
 
 
 
-    public function indexHistorialRepuestosSalida(){
+    /*public function indexHistorialRepuestosSalida(){
 
         return view('backend.admin.historial.salidarepuesto.vistasalidarepuesto');
     }
@@ -159,7 +324,7 @@ class HistorialController extends Controller
 
         return view('backend.admin.historial.salidarepuesto.tabladetalle', compact('lista'));
     }
-
+*/
 
 
 

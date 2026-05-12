@@ -92,7 +92,7 @@
                             <div class="row">
                                 <div class="col-md-2">
                                     <div class="form-group">
-                                        <label>Fecha:</label>
+                                        <label>Fecha: <span style="color: red">*</span></label>
                                         <input type="date" class="form-control" id="fecha">
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label>Proyecto:</label>
+                                        <label>Proyecto: <span style="color: red">*</span></label>
                                         <select class="form-control" id="select-proyecto">
                                             @foreach($arrayProyecto as $sel)
                                                 <option value="{{ $sel->id }}">{{ $sel->nombre }}</option>
@@ -161,7 +161,7 @@
                         <div class="card-body">
 
                             <div class="form-group">
-                                <label class="control-label">Repuesto</label>
+                                <label class="control-label">Repuesto <span style="color: red">*</span></label>
                                 <p>La busqueda regresa: Material - Medida - Marca - Normativa - Color - Talla</p>
                                 <table class="table" id="matriz-busqueda" data-toggle="table">
                                     <tbody>
@@ -176,7 +176,7 @@
                             </div>
 
                             <div class="form-group" >
-                                <label class="control-label">Cantidad</label>
+                                <label class="control-label">Cantidad <span style="color: red">*</span></label>
                                 <div class="col-md-6">
                                     <input type="number" id="cantidad" min="0" max="1000000"  class='form-control' autocomplete="off" placeholder="0">
                                 </div>
@@ -185,12 +185,12 @@
                             <div class="form-group" >
                                 <label class="control-label">Código</label>
                                 <div class="col-md-6">
-                                    <input type="text" id="codigo" maxlength="100" class='form-control' autocomplete="off" placeholder="0">
+                                    <input type="text" id="codigo" maxlength="100" class='form-control' autocomplete="off" placeholder="">
                                 </div>
                             </div>
 
                             <div class="form-group col-md-4" style="margin-top: 5px">
-                                <label class="control-label" style="color: #686868">Precio (4 decimales máximo): </label>
+                                <label class="control-label" style="color: #686868">Precio (4 decimales máximo): <span style="color: red">*</span></label>
                                 <div>
                                     <input type="number" min="0" max="1000000" autocomplete="off" class="form-control" id="precio-producto" placeholder="0.00">
                                 </div>

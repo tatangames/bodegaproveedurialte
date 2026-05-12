@@ -290,6 +290,7 @@ class RepuestosController extends Controller
                 $detalle->id_material        = $fila['idMaterial'];
                 $detalle->cantidad_inicial   = $fila['infoCantidad'];
                 $detalle->precio             = $fila['infoPrecio'];
+                $detalle->codigo             = $fila['infoCodigo'];
                 $detalle->save();
             }
 
@@ -302,6 +303,10 @@ class RepuestosController extends Controller
             return ['success' => 99];
         }
     }
+
+
+
+
 
 
 

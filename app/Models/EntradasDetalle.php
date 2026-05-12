@@ -18,5 +18,8 @@ class EntradasDetalle extends Model
         'precio'
     ];
 
-
+    public function material()
+    {
+        return $this->belongsTo(Materiales::class, 'id_material');
+    }
 }

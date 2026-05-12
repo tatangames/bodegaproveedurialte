@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('entradas', function (Blueprint $table) {
             $table->id();
             $table->bigInteger('id_tipoproyecto')->unsigned();
-            $table->date('fecha');
+            $table->dateTime('fecha');
             $table->string('factura', 100)->nullable();
             $table->string('descripcion', 800)->nullable();
 

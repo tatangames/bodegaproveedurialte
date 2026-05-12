@@ -1,9 +1,9 @@
 @extends('adminlte::page')
 
-@section('title', 'Historial / Entradas')
+@section('title', 'Historial / Salidas')
 
 @section('content_header')
-    <h1>Historial / Entradas</h1>
+    <h1>Historial / Salidas</h1>
 @stop
 
 @section('plugins.Datatables', true)
@@ -44,7 +44,7 @@
             <div class="container-fluid">
                 <div class="card card-blue">
                     <div class="card-header">
-                        <h3 class="card-title">Listado de Entradas</h3>
+                        <h3 class="card-title">Listado de Salidas</h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -58,14 +58,13 @@
         </section>
     </div>
 
-
-    {{-- Modal Editar Entrada --}}
+    {{-- Modal Editar Salida --}}
     <div class="modal fade" id="modalEditar" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-md" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title text-white">
-                        <i class="fas fa-edit mr-2"></i>Editar Entrada
+                        <i class="fas fa-edit mr-2"></i>Editar Salida
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal">
                         <span>&times;</span>
@@ -78,15 +77,6 @@
                         <div class="form-group">
                             <label>Fecha <span class="text-danger">*</span></label>
                             <input type="date" id="fecha-editar" class="form-control">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Factura</label>
-                            <input type="text"
-                                   id="factura-editar"
-                                   class="form-control"
-                                   placeholder="Número de factura (opcional)"
-                                   maxlength="100">
                         </div>
 
                         <div class="form-group">
@@ -112,14 +102,14 @@
     </div>
 
 
-    {{-- Modal Detalle Entrada --}}
+    {{-- Modal Detalle Salida --}}
     <div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-info">
                     <h5 class="modal-title text-white">
                         <i class="fas fa-list mr-2"></i>
-                        Detalle de Entrada —
+                        Detalle de Salida —
                         <span id="detalle-proyecto"></span>
                         <small class="ml-2" id="detalle-fecha"></small>
                     </h5>
@@ -133,83 +123,32 @@
                     </div>
                     <div id="detalle-contenido" style="display:none;">
                         <table class="table table-bordered table-striped table-sm">
-                            <thead class="thead-dark">
+                            <thead class="thead-default">
                             <tr>
                                 <th>#</th>
                                 <th>Código</th>
                                 <th>Material</th>
                                 <th class="text-center">Cantidad</th>
                                 <th class="text-right">Precio unitario</th>
-                                <th class="text-center">Acción</th>
                             </tr>
                             </thead>
-                            <tbody id="detalle-tbody"></tbody>
+                            <tbody id="detalle-tbody">
+                            </tbody>
                         </table>
                     </div>
                     <div id="detalle-vacio" class="text-center text-muted py-4" style="display:none;">
                         <i class="fas fa-inbox fa-2x mb-2"></i>
-                        <p>Esta entrada no tiene materiales registrados.</p>
+                        <p>Esta salida no tiene materiales registrados.</p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Modal Editar Detalle --}}
-    <div class="modal fade" id="modalEditarDetalle" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-sm" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-warning">
-                    <h5 class="modal-title text-white">
-                        <i class="fas fa-edit mr-2"></i>Editar Material
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="formulario-editar-detalle">
-                        <input type="hidden" id="detalle-id-editar">
-
-                        <div class="form-group">
-                            <label>Material</label>
-                            <input type="text" id="detalle-material-editar" class="form-control" disabled>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Código</label>
-                            <input type="text"
-                                   id="detalle-codigo-editar"
-                                   class="form-control"
-                                   maxlength="100"
-                                   placeholder="Código (opcional)">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Precio unitario <span class="text-danger">*</span></label>
-                            <input type="number"
-                                   id="detalle-precio-editar"
-                                   class="form-control"
-                                   step="0.0001"
-                                   min="0"
-                                   placeholder="0.0000">
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-warning" onclick="editarDetalle()">
-                        <i class="fas fa-save mr-1"></i>Guardar
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        Cerrar
                     </button>
                 </div>
             </div>
         </div>
     </div>
-
-
 
 @stop
 
@@ -220,13 +159,12 @@
 
     <script>
         $(function () {
-            const ruta = "{{ url('/admin/historial/entradas/tabla') }}";
+            const ruta = "{{ url('/admin/historial/salidas/tabla') }}";
 
             function initDataTable() {
                 if ($.fn.DataTable.isDataTable('#tabla')) {
                     $('#tabla').DataTable().destroy();
                 }
-
                 $('#tabla').DataTable({
                     paging: true,
                     lengthChange: true,
@@ -238,19 +176,17 @@
                     pagingType: "full_numbers",
                     lengthMenu: [[50, 100, -1], [50, 100, "Todo"]],
                     language: {
-                        sProcessing:     "Procesando...",
-                        sLengthMenu:     "Mostrar _MENU_ registros",
-                        sZeroRecords:    "No se encontraron resultados",
-                        sEmptyTable:     "Ningún dato disponible en esta tabla",
-                        sInfo:           "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                        sInfoEmpty:      "Mostrando 0 a 0 de 0 registros",
-                        sInfoFiltered:   "(filtrado de _MAX_ registros)",
-                        sSearch:         "Buscar:",
+                        sProcessing:   "Procesando...",
+                        sLengthMenu:   "Mostrar _MENU_ registros",
+                        sZeroRecords:  "No se encontraron resultados",
+                        sEmptyTable:   "Ningún dato disponible en esta tabla",
+                        sInfo:         "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                        sInfoEmpty:    "Mostrando 0 a 0 de 0 registros",
+                        sInfoFiltered: "(filtrado de _MAX_ registros)",
+                        sSearch:       "Buscar:",
                         oPaginate: {
-                            sFirst:    "Primero",
-                            sLast:     "Último",
-                            sNext:     "Siguiente",
-                            sPrevious: "Anterior"
+                            sFirst: "Primero", sLast: "Último",
+                            sNext: "Siguiente", sPrevious: "Anterior"
                         }
                     },
                     dom:
@@ -258,7 +194,6 @@
                         "tr" +
                         "<'row align-items-center'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
                 });
-
                 $('#tabla_length select').addClass('form-control form-control-sm');
                 $('#tabla_filter input').addClass('form-control form-control-sm').css('display', 'inline-block');
             }
@@ -278,21 +213,18 @@
     </script>
 
     <script>
-
-        // ── Editar ──────────────────────────────────────────────
         function modalEditar(id) {
             openLoading();
             document.getElementById('formulario-editar').reset();
 
-            axios.post(urlAdmin + '/admin/historial/entradas/informacion', { id: id })
+            axios.post(urlAdmin + '/admin/historial/salidas/informacion', { id: id })
                 .then((response) => {
                     closeLoading();
                     if (response.data.success === 1) {
-                        const e = response.data.entrada;
-                        $('#id-editar').val(e.id);
-                        $('#fecha-editar').val(e.fecha);           // formato YYYY-MM-DD
-                        $('#factura-editar').val(e.factura ?? '');
-                        $('#descripcion-editar').val(e.descripcion ?? '');
+                        const s = response.data.salida;
+                        $('#id-editar').val(s.id);
+                        $('#fecha-editar').val(s.fecha);
+                        $('#descripcion-editar').val(s.descripcion ?? '');
                         $('#modalEditar').modal('show');
                     } else {
                         toastr.error('No se pudo cargar la información');
@@ -307,15 +239,10 @@
         function editar() {
             const id          = $('#id-editar').val();
             const fecha       = $('#fecha-editar').val().trim();
-            const factura     = $('#factura-editar').val().trim();
             const descripcion = $('#descripcion-editar').val().trim();
 
             if (fecha === '') {
                 toastr.error('La fecha es requerida');
-                return;
-            }
-            if (factura.length > 100) {
-                toastr.error('Factura máximo 100 caracteres');
                 return;
             }
             if (descripcion.length > 800) {
@@ -327,14 +254,13 @@
             const formData = new FormData();
             formData.append('id',          id);
             formData.append('fecha',       fecha);
-            formData.append('factura',     factura);
             formData.append('descripcion', descripcion);
 
-            axios.post(urlAdmin + '/admin/historial/entradas/editar', formData)
+            axios.post(urlAdmin + '/admin/historial/salidas/editar', formData)
                 .then((response) => {
                     closeLoading();
                     if (response.data.success === 1) {
-                        toastr.success('Entrada actualizada correctamente');
+                        toastr.success('Salida actualizada correctamente');
                         $('#modalEditar').modal('hide');
                         recargar();
                     } else {
@@ -347,26 +273,24 @@
                 });
         }
 
-
-        // ── Eliminar ─────────────────────────────────────────────
         function eliminar(id) {
             Swal.fire({
-                title: '¿Eliminar entrada?',
+                title: '¿Eliminar salida?',
                 text: 'Se eliminarán también todos los detalles relacionados. Esta acción no se puede deshacer.',
-                type: 'warning',                    // ← era 'type', debe ser 'icon'
+                type: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
-                if (result.value) {                 // ← era result.isConfirmed
+                if (result.value) {
                     openLoading();
-                    axios.post(urlAdmin + '/admin/historial/entradas/eliminar', { id: id })
+                    axios.post(urlAdmin + '/admin/historial/salidas/eliminar', { id: id })
                         .then((response) => {
                             closeLoading();
                             if (response.data.success === 1) {
-                                toastr.success('Entrada eliminada correctamente');
+                                toastr.success('Salida eliminada correctamente');
                                 recargar();
                             } else {
                                 toastr.error('Error al eliminar');
@@ -380,10 +304,8 @@
             });
         }
 
-
-        // ── Detalle entrada ───────────────────────────────────────
         function verDetalle(id, proyecto, fecha) {
-            $('#detalle-id-editar').data('entrada-id', id);
+            // Limpiar y preparar modal
             $('#detalle-proyecto').text(proyecto);
             $('#detalle-fecha').text(fecha);
             $('#detalle-tbody').html('');
@@ -392,26 +314,25 @@
             $('#detalle-loading').show();
             $('#modalDetalle').modal('show');
 
-            axios.post(urlAdmin + '/admin/historial/entradas/detalle', { id: id })
+            axios.post(urlAdmin + '/admin/historial/salidas/detalle', { id: id })
                 .then((response) => {
                     $('#detalle-loading').hide();
-                    if (response.data.success === 1 && response.data.detalle.length > 0) {
+                    if (response.data.success === 1) {
+                        const filas = response.data.detalle;
+                        if (filas.length === 0) {
+                            $('#detalle-vacio').show();
+                            return;
+                        }
                         let html = '';
-                        response.data.detalle.forEach((fila, index) => {
+                        filas.forEach((fila, index) => {
                             html += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${fila.codigo}</td>
-                            <td>${fila.material}</td>
-                            <td class="text-center">${fila.cantidad_inicial}</td>
-                            <td class="text-right">$${fila.precio}</td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-warning btn-xs"
-                                        onclick="modalEditarDetalle(${fila.id}, '${fila.material}', '${fila.codigo}', '${fila.precio_raw}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </td>
-                        </tr>`;
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${fila.codigo}</td>
+                                <td>${fila.material}</td>
+                                <td class="text-center">${fila.cantidad_salida}</td>
+                                <td class="text-right">$${fila.precio}</td>
+                            </tr>`;
                         });
                         $('#detalle-tbody').html(html);
                         $('#detalle-contenido').show();
@@ -426,57 +347,6 @@
                 });
         }
 
-        // ── Editar fila de detalle ────────────────────────────────
-        function modalEditarDetalle(id, material, codigo, precio) {
-            document.getElementById('formulario-editar-detalle').reset();
-            $('#detalle-id-editar').val(id);
-            $('#detalle-material-editar').val(material);
-            $('#detalle-codigo-editar').val(codigo !== '—' ? codigo : '');
-            $('#detalle-precio-editar').val(precio);
-            $('#modalEditarDetalle').modal('show');
-        }
-
-        function editarDetalle() {
-            const id     = $('#detalle-id-editar').val();
-            const codigo = $('#detalle-codigo-editar').val().trim();
-            const precio = $('#detalle-precio-editar').val().trim();
-
-            if (precio === '' || isNaN(precio) || parseFloat(precio) < 0) {
-                toastr.error('Precio inválido');
-                return;
-            }
-            if (codigo.length > 100) {
-                toastr.error('Código máximo 100 caracteres');
-                return;
-            }
-
-            openLoading();
-            const formData = new FormData();
-            formData.append('id',     id);
-            formData.append('codigo', codigo);
-            formData.append('precio', precio);
-
-            axios.post(urlAdmin + '/admin/historial/entradas/detalle/editar', formData)
-                .then((response) => {
-                    closeLoading();
-                    if (response.data.success === 1) {
-                        toastr.success('Actualizado correctamente');
-                        $('#modalEditarDetalle').modal('hide');
-
-                        // Recargar las filas del modal de detalle
-                        const id      = $('#detalle-id-editar').data('entrada-id');
-                        const proyecto = $('#detalle-proyecto').text();
-                        const fecha    = $('#detalle-fecha').text();
-                        verDetalle(id, proyecto, fecha);
-                    } else {
-                        toastr.error('Error al actualizar');
-                    }
-                })
-        }
-
-
 
     </script>
-
-
 @endsection

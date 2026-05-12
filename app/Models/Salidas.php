@@ -15,4 +15,9 @@ class Salidas extends Model
     {
         return $this->belongsTo(TipoProyecto::class, 'id_tipoproyecto');
     }
+
+    public function detalle()
+    {
+        return $this->hasMany(SalidasDetalle::class, 'id_salida');
+    }
 }

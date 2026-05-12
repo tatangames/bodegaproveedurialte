@@ -22,6 +22,8 @@ return new class extends Migration
             // 4 DECIMALES PARA PRECIO UNITARIO
             $table->decimal('precio', 10,4)->default(0);
 
+            $table->string('codigo', 100)->nullable();
+
             $table->foreign('id_entradas')->references('id')->on('entradas');
             $table->foreign('id_material')->references('id')->on('materiales');
         });

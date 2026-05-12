@@ -221,6 +221,7 @@ class SalidasController extends Controller
             $salida->fecha           = $request->fecha;
             $salida->descripcion     = $request->descripcion;
             $salida->id_tipoproyecto = $request->proyecto;
+            $salida->es_transferencia= 0;
             $salida->save();
 
             // Guardar detalle en salidas_detalle
@@ -347,7 +348,7 @@ class SalidasController extends Controller
             $entrada                             = new Entradas();
             $entrada->id_tipoproyecto            = 1;
             $entrada->fecha                      = $request->fecha;
-            $entrada->descripcion                = 'Transferencia desde proyecto #' . $request->idproyecto;
+            $entrada->descripcion                = $request->descripcion;
             $entrada->es_transferencia           = 1;
             $entrada->id_tipoproyecto_transferencia = $request->idproyecto;
             $entrada->save();

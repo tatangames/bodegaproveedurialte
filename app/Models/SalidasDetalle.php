@@ -11,4 +11,9 @@ class SalidasDetalle extends Model
     protected $table = 'salidas_detalle';
     public $timestamps = false;
     protected $fillable = ['id_salida', 'id_entrada_detalle', 'cantidad_salida'];
+
+    public function entradaDetalle()
+    {
+        return $this->belongsTo(EntradasDetalle::class, 'id_entrada_detalle');
+    }
 }

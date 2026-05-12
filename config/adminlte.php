@@ -397,6 +397,12 @@ return [
                     'route' => 'admin.historial.entradas.index',
                 ],
                 [
+                    'text' => 'Salidas',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.historial.salidas.index',
+                ],
+
+                [
                     'text' => 'Salida de Materiales',
                     'icon' => 'far fa-circle',
                     'route' => 'admin.historial.salidas.repuestos',
