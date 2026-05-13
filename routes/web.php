@@ -80,6 +80,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
     Route::get('/admin/registro/entrada', [RepuestosController::class,'indexRegistroEntrada'])->name('admin.entrada.registro.index');
     Route::post('/admin/buscar/material',  [RepuestosController::class,'buscadorMaterial']);
     Route::post('/admin/entradas/guardar',  [RepuestosController::class,'guardarEntrada']);
+    Route::post('/admin/inventario/proyectos', [RepuestosController::class, 'proyectosPorMaterial']);
 
     // --- REGISTRAR SALIDA ---
     Route::get('/admin/registro/salida', [SalidasController::class,'indexRegistroSalida'])->name('admin.salida.registro.index');
@@ -102,6 +103,9 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
     Route::post('/admin/historial/entradas/detalle',        [HistorialController::class, 'detalleEntrada']);
     Route::post('/admin/historial/entradas/detalle/editar', [HistorialController::class, 'editarDetalleEntrada']);
 
+    Route::get('/admin/historial/entradas/extras/{id}', [HistorialController::class, 'vistaExtrasEntrada'])->name('admin.historial.entradas.extras');
+    Route::post('/admin/historial/entradas/extras/guardar', [HistorialController::class, 'guardarExtrasEntrada']);
+
     // --- HISTORIAL / SALIDAS ---
     Route::get('/admin/historial/salidas', [HistorialController::class,'indexHistorialSalidas'])->name('admin.historial.salidas.index');
     Route::get('/admin/historial/salidas/tabla',  [HistorialController::class,'tablaHistorialSalidas']);
@@ -109,25 +113,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
     Route::post('/admin/historial/salidas/editar',      [HistorialController::class, 'editarSalida']);
     Route::post('/admin/historial/salidas/eliminar',    [HistorialController::class, 'eliminarSalida']);
     Route::post('/admin/historial/salidas/detalle', [HistorialController::class, 'detalleSalida']);
-
-
-
-
-
-    // --- HISTORIAL - LISTADO DE REPUESTAS DE SALIDA
-    Route::get('/admin/historial/salida/repuestos/index', [HistorialController::class,'indexHistorialRepuestosSalida'])->name('admin.historial.salidas.repuestos');
-    Route::get('/admin/historial/salida/repuestos/tabla', [HistorialController::class,'tablaHistorialRepuestosSalida']);
-
-
-
-
-
-
-
-
-
-
-
+    Route::get('/admin/historial/salidas/extras/{id}',      [HistorialController::class, 'vistaExtrasSalida'])->name('admin.historial.salidas.extras');
+    Route::post('/admin/historial/salidas/extras/guardar',  [HistorialController::class, 'guardarExtrasSalida']);
 
 
 

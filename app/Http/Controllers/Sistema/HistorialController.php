@@ -175,7 +175,49 @@ class HistorialController extends Controller
         return response()->json(['success' => 1]);
     }
 
+    public function vistaExtrasEntrada($id)
+    {
+        $entrada = Entradas::with('tipoproyecto')->find($id);
 
+        if (!$entrada || $entrada->tipoproyecto->transferido == 1) {
+            return redirect()->route('admin.historial.entradas.index')
+                ->with('error', 'El proyecto está cerrado, no se pueden agregar extras');
+        }
+
+        return view('backend.admin.historial.entradas.vistaextras', compact('entrada'));
+    }
+
+    public function guardarExtrasEntrada(Request $request)
+    {
+        $entrada = Entradas::find($request->id_entrada);
+
+        if (!$entrada) {
+            return response()->json(['success' => 0]);
+        }
+
+        // Verificar que el proyecto no esté cerrado
+        if ($entrada->tipoproyecto->transferido == 1) {
+            return response()->json(['success' => 1, 'mensaje' => 'El proyecto está cerrado']);
+        }
+
+        $contenedor = json_decode($request->contenedorArray, true);
+
+        if (empty($contenedor)) {
+            return response()->json(['success' => 0]);
+        }
+
+        foreach ($contenedor as $item) {
+            EntradasDetalle::create([
+                'id_entradas'      => $entrada->id,
+                'id_material'      => $item['idMaterial'],
+                'cantidad_inicial' => $item['infoCantidad'],
+                'codigo'           => $item['infoCodigo'] ?: null,
+                'precio'           => $item['infoPrecio'],
+            ]);
+        }
+
+        return response()->json(['success' => 2]);
+    }
 
     //***** ========================================================================================= **********
 
@@ -273,6 +315,73 @@ class HistorialController extends Controller
             'detalle' => $detalle,
         ]);
     }
+
+
+    public function vistaExtrasSalida($id)
+    {
+        $salida = Salidas::with('tipoproyecto')->find($id);
+
+        if (!$salida || $salida->tipoproyecto->transferido == 1) {
+            return redirect()->route('admin.historial.salidas.index')
+                ->with('error', 'El proyecto está cerrado, no se pueden agregar extras');
+        }
+
+        if (!$salida) {
+            return redirect()->route('admin.historial.salidas.index');
+        }
+
+        return view('backend.admin.historial.salidas.vistaextrassalidas', compact('salida'));
+    }
+
+    public function guardarExtrasSalida(Request $request)
+    {
+        $salida = Salidas::find($request->id_salida);
+
+        if (!$salida) {
+            return response()->json(['success' => 0]);
+        }
+
+        if ($salida->tipoproyecto->transferido == 1) {
+            return response()->json(['success' => 0, 'mensaje' => 'El proyecto está cerrado']);
+        }
+
+        $contenedor = json_decode($request->contenedorArray, true);
+
+        if (empty($contenedor)) {
+            return response()->json(['success' => 0]);
+        }
+
+        // Misma validación que el guardado original
+        foreach ($contenedor as $index => $item) {
+            $entradasDetalle = EntradasDetalle::find($item['infoIdEntradaDeta']);
+
+            if (!$entradasDetalle) {
+                return response()->json(['success' => 2, 'fila' => $index + 1]);
+            }
+
+            // Calcular cantidad disponible actual
+            $totalSalido = SalidasDetalle::where('id_entrada_detalle', $entradasDetalle->id)
+                ->sum('cantidad_salida');
+
+            $disponible = $entradasDetalle->cantidad_inicial - $totalSalido;
+
+            if ($item['infoCantidad'] > $disponible) {
+                return response()->json(['success' => 2, 'fila' => $index + 1]);
+            }
+        }
+
+        foreach ($contenedor as $item) {
+            SalidasDetalle::create([
+                'id_salida'          => $salida->id,
+                'id_entrada_detalle' => $item['infoIdEntradaDeta'],
+                'cantidad_salida'    => $item['infoCantidad'],
+            ]);
+        }
+
+        return response()->json(['success' => 10]);
+    }
+
+
 
 
 

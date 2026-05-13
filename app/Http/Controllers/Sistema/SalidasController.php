@@ -16,6 +16,7 @@ use App\Models\TipoProyecto;
 use App\Models\Transferencia;
 use App\Models\TransferenciaDetalle;
 use App\Models\UnidadMedida;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -28,7 +29,8 @@ class SalidasController extends Controller
 
     public function indexRegistroSalida(){
 
-        $arrayProyectos = TipoProyecto::orderBy('nombre')->get();
+        $arrayProyectos = Tipoproyecto::where('transferido', 0)->orderBy('nombre')->get();
+
         return view('backend.admin.repuestos.salidas.vistasalidaregistro', compact('arrayProyectos'));
     }
 
@@ -218,7 +220,8 @@ class SalidasController extends Controller
 
             // Guardar cabecera en tabla salidas
             $salida = new Salidas();
-            $salida->fecha           = $request->fecha;
+            $salida->fecha = Carbon::parse($request->fecha)
+                ->setTimeFrom(Carbon::now());
             $salida->descripcion     = $request->descripcion;
             $salida->id_tipoproyecto = $request->proyecto;
             $salida->es_transferencia= 0;
@@ -330,7 +333,8 @@ class SalidasController extends Controller
 
             // Cabecera en salidas para descontar inventario del proyecto origen
             $salidaTransf                   = new Salidas();
-            $salidaTransf->fecha            = $request->fecha;
+            $salidaTransf->fecha = Carbon::parse($request->fecha)
+                ->setTimeFrom(Carbon::now());
             $salidaTransf->descripcion      = $request->descripcion;
             $salidaTransf->id_tipoproyecto  = $request->idproyecto;
             $salidaTransf->es_transferencia = 1;
@@ -347,7 +351,8 @@ class SalidasController extends Controller
             // Cabecera entrada en bodega general (id_tipoproyecto = 1)
             $entrada                             = new Entradas();
             $entrada->id_tipoproyecto            = 1;
-            $entrada->fecha                      = $request->fecha;
+            $entrada->fecha = Carbon::parse($request->fecha)
+                ->setTimeFrom(Carbon::now());
             $entrada->descripcion                = $request->descripcion;
             $entrada->es_transferencia           = 1;
             $entrada->id_tipoproyecto_transferencia = $request->idproyecto;

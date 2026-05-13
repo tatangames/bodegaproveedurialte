@@ -73,26 +73,20 @@
                 <div class="modal-body">
                     <form id="formulario-editar">
                         <input type="hidden" id="id-editar">
-
                         <div class="form-group">
                             <label>Fecha <span class="text-danger">*</span></label>
                             <input type="date" id="fecha-editar" class="form-control">
                         </div>
-
                         <div class="form-group">
                             <label>Descripción</label>
-                            <textarea id="descripcion-editar"
-                                      class="form-control"
-                                      rows="3"
-                                      maxlength="800"
+                            <textarea id="descripcion-editar" class="form-control"
+                                      rows="3" maxlength="800"
                                       placeholder="Descripción opcional"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        Cancelar
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-warning" onclick="editar()">
                         <i class="fas fa-save mr-1"></i>Guardar cambios
                     </button>
@@ -100,7 +94,6 @@
             </div>
         </div>
     </div>
-
 
     {{-- Modal Detalle Salida --}}
     <div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog">
@@ -112,6 +105,9 @@
                         Detalle de Salida —
                         <span id="detalle-proyecto"></span>
                         <small class="ml-2" id="detalle-fecha"></small>
+                        <span id="detalle-badge-cerrado" class="badge badge-danger ml-2" style="display:none;">
+                            Proyecto Cerrado
+                        </span>
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal">
                         <span>&times;</span>
@@ -123,7 +119,7 @@
                     </div>
                     <div id="detalle-contenido" style="display:none;">
                         <table class="table table-bordered table-striped table-sm">
-                            <thead class="thead-default">
+                            <thead class="thead-dark">
                             <tr>
                                 <th>#</th>
                                 <th>Código</th>
@@ -132,8 +128,7 @@
                                 <th class="text-right">Precio unitario</th>
                             </tr>
                             </thead>
-                            <tbody id="detalle-tbody">
-                            </tbody>
+                            <tbody id="detalle-tbody"></tbody>
                         </table>
                     </div>
                     <div id="detalle-vacio" class="text-center text-muted py-4" style="display:none;">
@@ -142,14 +137,11 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        Cerrar
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
     </div>
-
 @stop
 
 @section('js')
@@ -205,14 +197,13 @@
             }
 
             cargarTabla();
-
-            window.recargar = function () {
-                cargarTabla();
-            };
+            window.recargar = function () { cargarTabla(); };
         });
     </script>
 
     <script>
+
+        // ── Editar cabecera ───────────────────────────────────────
         function modalEditar(id) {
             openLoading();
             document.getElementById('formulario-editar').reset();
@@ -230,10 +221,7 @@
                         toastr.error('No se pudo cargar la información');
                     }
                 })
-                .catch(() => {
-                    closeLoading();
-                    toastr.error('Error al obtener información');
-                });
+                .catch(() => { closeLoading(); toastr.error('Error al obtener información'); });
         }
 
         function editar() {
@@ -241,14 +229,8 @@
             const fecha       = $('#fecha-editar').val().trim();
             const descripcion = $('#descripcion-editar').val().trim();
 
-            if (fecha === '') {
-                toastr.error('La fecha es requerida');
-                return;
-            }
-            if (descripcion.length > 800) {
-                toastr.error('Descripción máximo 800 caracteres');
-                return;
-            }
+            if (fecha === '')             { toastr.error('La fecha es requerida'); return; }
+            if (descripcion.length > 800) { toastr.error('Descripción máximo 800 caracteres'); return; }
 
             openLoading();
             const formData = new FormData();
@@ -267,12 +249,10 @@
                         toastr.error('Error al actualizar');
                     }
                 })
-                .catch(() => {
-                    closeLoading();
-                    toastr.error('Error al actualizar');
-                });
+                .catch(() => { closeLoading(); toastr.error('Error al actualizar'); });
         }
 
+        // ── Eliminar ──────────────────────────────────────────────
         function eliminar(id) {
             Swal.fire({
                 title: '¿Eliminar salida?',
@@ -296,43 +276,42 @@
                                 toastr.error('Error al eliminar');
                             }
                         })
-                        .catch(() => {
-                            closeLoading();
-                            toastr.error('Error al eliminar');
-                        });
+                        .catch(() => { closeLoading(); toastr.error('Error al eliminar'); });
                 }
             });
         }
 
-        function verDetalle(id, proyecto, fecha) {
-            // Limpiar y preparar modal
+        // ── Detalle salida ────────────────────────────────────────
+        function verDetalle(id, proyecto, fecha, cerrado) {
             $('#detalle-proyecto').text(proyecto);
             $('#detalle-fecha').text(fecha);
             $('#detalle-tbody').html('');
             $('#detalle-contenido').hide();
             $('#detalle-vacio').hide();
             $('#detalle-loading').show();
+
+            if (cerrado) {
+                $('#detalle-badge-cerrado').show();
+            } else {
+                $('#detalle-badge-cerrado').hide();
+            }
+
             $('#modalDetalle').modal('show');
 
             axios.post(urlAdmin + '/admin/historial/salidas/detalle', { id: id })
                 .then((response) => {
                     $('#detalle-loading').hide();
-                    if (response.data.success === 1) {
-                        const filas = response.data.detalle;
-                        if (filas.length === 0) {
-                            $('#detalle-vacio').show();
-                            return;
-                        }
+                    if (response.data.success === 1 && response.data.detalle.length > 0) {
                         let html = '';
-                        filas.forEach((fila, index) => {
+                        response.data.detalle.forEach((fila, index) => {
                             html += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${fila.codigo}</td>
-                                <td>${fila.material}</td>
-                                <td class="text-center">${fila.cantidad_salida}</td>
-                                <td class="text-right">$${fila.precio}</td>
-                            </tr>`;
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${fila.codigo}</td>
+                                    <td>${fila.material}</td>
+                                    <td class="text-center">${fila.cantidad_salida}</td>
+                                    <td class="text-right">$${fila.precio}</td>
+                                </tr>`;
                         });
                         $('#detalle-tbody').html(html);
                         $('#detalle-contenido').show();
@@ -346,7 +325,6 @@
                     toastr.error('Error al cargar el detalle');
                 });
         }
-
 
     </script>
 @endsection

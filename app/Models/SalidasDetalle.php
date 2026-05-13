@@ -16,4 +16,9 @@ class SalidasDetalle extends Model
     {
         return $this->belongsTo(EntradasDetalle::class, 'id_entrada_detalle');
     }
+
+    public function salida()
+    {
+        return $this->belongsTo(\App\Models\Salidas::class, 'id_salida');
+    }
 }

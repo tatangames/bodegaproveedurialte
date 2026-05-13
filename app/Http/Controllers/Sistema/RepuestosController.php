@@ -10,6 +10,7 @@ use App\Models\HistoHerramientaDescartada;
 use App\Models\HistorialEntradas;
 use App\Models\HistorialEntradasDeta;
 use App\Models\Materiales;
+use App\Models\SalidasDetalle;
 use App\Models\TipoProyecto;
 use App\Models\UnidadMedida;
 use Carbon\Carbon;
@@ -276,7 +277,8 @@ class RepuestosController extends Controller
             // ── Cabecera ──
             $registro = new Entradas();
             $registro->id_tipoproyecto = $request->tipoproyecto;
-            $registro->fecha = $request->fecha;
+            $registro->fecha = Carbon::parse($request->fecha)
+                ->setTimeFrom(Carbon::now());
             $registro->descripcion = $request->descripcion;
             $registro->factura = $request->factura;
             $registro->es_transferencia = 0;
@@ -305,7 +307,47 @@ class RepuestosController extends Controller
     }
 
 
+    public function proyectosPorMaterial(Request $request)
+    {
+        $idMaterial = $request->id;
 
+        // IDs de entradas_detalle de este material
+        $idsEntradasDetalle = EntradasDetalle::where('id_material', $idMaterial)
+            ->pluck('id');
+
+        // Entradas por proyecto
+        $entradas = EntradasDetalle::where('id_material', $idMaterial)
+            ->with('entrada.tipoproyecto')
+            ->get()
+            ->groupBy(fn($item) => $item->entrada->id_tipoproyecto)
+            ->map(fn($grupo) => [
+                'proyecto' => $grupo->first()->entrada->tipoproyecto->nombre ?? '—',
+                'entradas' => $grupo->sum('cantidad_inicial'),
+            ]);
+
+        // Salidas por proyecto usando whereIn
+        $salidas = \App\Models\SalidasDetalle::whereIn('id_entrada_detalle', $idsEntradasDetalle)
+            ->with('salida.tipoproyecto')
+            ->get()
+            ->groupBy(fn($item) => $item->salida->id_tipoproyecto)
+            ->map(fn($grupo) => $grupo->sum('cantidad_salida'));
+
+        // Combinar
+        $proyectos = $entradas->map(function ($dato, $idProyecto) use ($salidas) {
+            $sal = $salidas[$idProyecto] ?? 0;
+            return [
+                'proyecto'   => $dato['proyecto'],
+                'entradas'   => $dato['entradas'],
+                'salidas'    => $sal,
+                'disponible' => $dato['entradas'] - $sal,
+            ];
+        })->values();
+
+        return response()->json([
+            'success'   => 1,
+            'proyectos' => $proyectos,
+        ]);
+    }
 
 
 

@@ -15,11 +15,17 @@ class EntradasDetalle extends Model
         'id_entradas',
         'id_material',
         'cantidad_inicial',
-        'precio'
+        'precio',
+        'codigo'
     ];
 
     public function material()
     {
         return $this->belongsTo(Materiales::class, 'id_material');
+    }
+
+    public function entrada()
+    {
+        return $this->belongsTo(\App\Models\Entradas::class, 'id_entradas');
     }
 }

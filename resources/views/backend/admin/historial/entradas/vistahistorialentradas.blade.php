@@ -58,7 +58,6 @@
         </section>
     </div>
 
-
     {{-- Modal Editar Entrada --}}
     <div class="modal fade" id="modalEditar" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-md" role="document">
@@ -74,35 +73,24 @@
                 <div class="modal-body">
                     <form id="formulario-editar">
                         <input type="hidden" id="id-editar">
-
                         <div class="form-group">
                             <label>Fecha <span class="text-danger">*</span></label>
                             <input type="date" id="fecha-editar" class="form-control">
                         </div>
-
                         <div class="form-group">
                             <label>Factura</label>
-                            <input type="text"
-                                   id="factura-editar"
-                                   class="form-control"
-                                   placeholder="Número de factura (opcional)"
-                                   maxlength="100">
+                            <input type="text" id="factura-editar" class="form-control"
+                                   placeholder="Número de factura (opcional)" maxlength="100">
                         </div>
-
                         <div class="form-group">
                             <label>Descripción</label>
-                            <textarea id="descripcion-editar"
-                                      class="form-control"
-                                      rows="3"
-                                      maxlength="800"
-                                      placeholder="Descripción opcional"></textarea>
+                            <textarea id="descripcion-editar" class="form-control"
+                                      rows="3" maxlength="800" placeholder="Descripción opcional"></textarea>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        Cancelar
-                    </button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-warning" onclick="editar()">
                         <i class="fas fa-save mr-1"></i>Guardar cambios
                     </button>
@@ -110,7 +98,6 @@
             </div>
         </div>
     </div>
-
 
     {{-- Modal Detalle Entrada --}}
     <div class="modal fade" id="modalDetalle" tabindex="-1" role="dialog">
@@ -122,6 +109,9 @@
                         Detalle de Entrada —
                         <span id="detalle-proyecto"></span>
                         <small class="ml-2" id="detalle-fecha"></small>
+                        <span id="detalle-badge-cerrado" class="badge badge-danger ml-2" style="display:none;">
+                            Proyecto Cerrado
+                        </span>
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal">
                         <span>&times;</span>
@@ -140,7 +130,7 @@
                                 <th>Material</th>
                                 <th class="text-center">Cantidad</th>
                                 <th class="text-right">Precio unitario</th>
-                                <th class="text-center">Acción</th>
+                                <th id="detalle-col-accion" class="text-center">Acción</th>
                             </tr>
                             </thead>
                             <tbody id="detalle-tbody"></tbody>
@@ -173,29 +163,19 @@
                 <div class="modal-body">
                     <form id="formulario-editar-detalle">
                         <input type="hidden" id="detalle-id-editar">
-
                         <div class="form-group">
                             <label>Material</label>
                             <input type="text" id="detalle-material-editar" class="form-control" disabled>
                         </div>
-
                         <div class="form-group">
                             <label>Código</label>
-                            <input type="text"
-                                   id="detalle-codigo-editar"
-                                   class="form-control"
-                                   maxlength="100"
-                                   placeholder="Código (opcional)">
+                            <input type="text" id="detalle-codigo-editar" class="form-control"
+                                   maxlength="100" placeholder="Código (opcional)">
                         </div>
-
                         <div class="form-group">
                             <label>Precio unitario <span class="text-danger">*</span></label>
-                            <input type="number"
-                                   id="detalle-precio-editar"
-                                   class="form-control"
-                                   step="0.0001"
-                                   min="0"
-                                   placeholder="0.0000">
+                            <input type="number" id="detalle-precio-editar" class="form-control"
+                                   step="0.0001" min="0" placeholder="0.0000">
                         </div>
                     </form>
                 </div>
@@ -208,9 +188,6 @@
             </div>
         </div>
     </div>
-
-
-
 @stop
 
 @section('js')
@@ -226,7 +203,6 @@
                 if ($.fn.DataTable.isDataTable('#tabla')) {
                     $('#tabla').DataTable().destroy();
                 }
-
                 $('#tabla').DataTable({
                     paging: true,
                     lengthChange: true,
@@ -247,10 +223,8 @@
                         sInfoFiltered:   "(filtrado de _MAX_ registros)",
                         sSearch:         "Buscar:",
                         oPaginate: {
-                            sFirst:    "Primero",
-                            sLast:     "Último",
-                            sNext:     "Siguiente",
-                            sPrevious: "Anterior"
+                            sFirst: "Primero", sLast: "Último",
+                            sNext: "Siguiente", sPrevious: "Anterior"
                         }
                     },
                     dom:
@@ -258,7 +232,6 @@
                         "tr" +
                         "<'row align-items-center'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
                 });
-
                 $('#tabla_length select').addClass('form-control form-control-sm');
                 $('#tabla_filter input').addClass('form-control form-control-sm').css('display', 'inline-block');
             }
@@ -271,15 +244,13 @@
 
             cargarTabla();
 
-            window.recargar = function () {
-                cargarTabla();
-            };
+            window.recargar = function () { cargarTabla(); };
         });
     </script>
 
     <script>
 
-        // ── Editar ──────────────────────────────────────────────
+        // ── Editar cabecera ───────────────────────────────────────
         function modalEditar(id) {
             openLoading();
             document.getElementById('formulario-editar').reset();
@@ -290,7 +261,7 @@
                     if (response.data.success === 1) {
                         const e = response.data.entrada;
                         $('#id-editar').val(e.id);
-                        $('#fecha-editar').val(e.fecha);           // formato YYYY-MM-DD
+                        $('#fecha-editar').val(e.fecha);
                         $('#factura-editar').val(e.factura ?? '');
                         $('#descripcion-editar').val(e.descripcion ?? '');
                         $('#modalEditar').modal('show');
@@ -298,10 +269,7 @@
                         toastr.error('No se pudo cargar la información');
                     }
                 })
-                .catch(() => {
-                    closeLoading();
-                    toastr.error('Error al obtener información');
-                });
+                .catch(() => { closeLoading(); toastr.error('Error al obtener información'); });
         }
 
         function editar() {
@@ -310,24 +278,15 @@
             const factura     = $('#factura-editar').val().trim();
             const descripcion = $('#descripcion-editar').val().trim();
 
-            if (fecha === '') {
-                toastr.error('La fecha es requerida');
-                return;
-            }
-            if (factura.length > 100) {
-                toastr.error('Factura máximo 100 caracteres');
-                return;
-            }
-            if (descripcion.length > 800) {
-                toastr.error('Descripción máximo 800 caracteres');
-                return;
-            }
+            if (fecha === '')          { toastr.error('La fecha es requerida'); return; }
+            if (factura.length > 100)  { toastr.error('Factura máximo 100 caracteres'); return; }
+            if (descripcion.length > 800) { toastr.error('Descripción máximo 800 caracteres'); return; }
 
             openLoading();
             const formData = new FormData();
-            formData.append('id',          id);
-            formData.append('fecha',       fecha);
-            formData.append('factura',     factura);
+            formData.append('id', id);
+            formData.append('fecha', fecha);
+            formData.append('factura', factura);
             formData.append('descripcion', descripcion);
 
             axios.post(urlAdmin + '/admin/historial/entradas/editar', formData)
@@ -341,26 +300,22 @@
                         toastr.error('Error al actualizar');
                     }
                 })
-                .catch(() => {
-                    closeLoading();
-                    toastr.error('Error al actualizar');
-                });
+                .catch(() => { closeLoading(); toastr.error('Error al actualizar'); });
         }
 
-
-        // ── Eliminar ─────────────────────────────────────────────
+        // ── Eliminar ──────────────────────────────────────────────
         function eliminar(id) {
             Swal.fire({
                 title: '¿Eliminar entrada?',
                 text: 'Se eliminarán también todos los detalles relacionados. Esta acción no se puede deshacer.',
-                type: 'warning',                    // ← era 'type', debe ser 'icon'
+                type: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
-                if (result.value) {                 // ← era result.isConfirmed
+                if (result.value) {
                     openLoading();
                     axios.post(urlAdmin + '/admin/historial/entradas/eliminar', { id: id })
                         .then((response) => {
@@ -372,17 +327,14 @@
                                 toastr.error('Error al eliminar');
                             }
                         })
-                        .catch(() => {
-                            closeLoading();
-                            toastr.error('Error al eliminar');
-                        });
+                        .catch(() => { closeLoading(); toastr.error('Error al eliminar'); });
                 }
             });
         }
 
-
         // ── Detalle entrada ───────────────────────────────────────
-        function verDetalle(id, proyecto, fecha) {
+        // cerrado = 1 si proyecto transferido, 0 si activo
+        function verDetalle(id, proyecto, fecha, cerrado) {
             $('#detalle-id-editar').data('entrada-id', id);
             $('#detalle-proyecto').text(proyecto);
             $('#detalle-fecha').text(fecha);
@@ -390,6 +342,16 @@
             $('#detalle-contenido').hide();
             $('#detalle-vacio').hide();
             $('#detalle-loading').show();
+
+            // Mostrar badge y ocultar columna acción si está cerrado
+            if (cerrado) {
+                $('#detalle-badge-cerrado').show();
+                $('#detalle-col-accion').hide();
+            } else {
+                $('#detalle-badge-cerrado').hide();
+                $('#detalle-col-accion').show();
+            }
+
             $('#modalDetalle').modal('show');
 
             axios.post(urlAdmin + '/admin/historial/entradas/detalle', { id: id })
@@ -398,20 +360,23 @@
                     if (response.data.success === 1 && response.data.detalle.length > 0) {
                         let html = '';
                         response.data.detalle.forEach((fila, index) => {
+                            // Botón editar solo si proyecto activo
+                            const btnEditar = cerrado
+                                ? ''
+                                : `<button type="button" class="btn btn-warning btn-xs"
+                                       onclick="modalEditarDetalle(${fila.id}, '${fila.material}', '${fila.codigo}', '${fila.precio_raw}')">
+                                       <i class="fas fa-edit"></i>
+                                   </button>`;
+
                             html += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${fila.codigo}</td>
-                            <td>${fila.material}</td>
-                            <td class="text-center">${fila.cantidad_inicial}</td>
-                            <td class="text-right">$${fila.precio}</td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-warning btn-xs"
-                                        onclick="modalEditarDetalle(${fila.id}, '${fila.material}', '${fila.codigo}', '${fila.precio_raw}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                            </td>
-                        </tr>`;
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${fila.codigo}</td>
+                                    <td>${fila.material}</td>
+                                    <td class="text-center">${fila.cantidad_inicial}</td>
+                                    <td class="text-right">$${fila.precio}</td>
+                                    <td class="text-center">${btnEditar}</td>
+                                </tr>`;
                         });
                         $('#detalle-tbody').html(html);
                         $('#detalle-contenido').show();
@@ -442,12 +407,10 @@
             const precio = $('#detalle-precio-editar').val().trim();
 
             if (precio === '' || isNaN(precio) || parseFloat(precio) < 0) {
-                toastr.error('Precio inválido');
-                return;
+                toastr.error('Precio inválido'); return;
             }
             if (codigo.length > 100) {
-                toastr.error('Código máximo 100 caracteres');
-                return;
+                toastr.error('Código máximo 100 caracteres'); return;
             }
 
             openLoading();
@@ -463,20 +426,16 @@
                         toastr.success('Actualizado correctamente');
                         $('#modalEditarDetalle').modal('hide');
 
-                        // Recargar las filas del modal de detalle
-                        const id      = $('#detalle-id-editar').data('entrada-id');
-                        const proyecto = $('#detalle-proyecto').text();
-                        const fecha    = $('#detalle-fecha').text();
-                        verDetalle(id, proyecto, fecha);
+                        const entradaId = $('#detalle-id-editar').data('entrada-id');
+                        const proyecto  = $('#detalle-proyecto').text();
+                        const fecha     = $('#detalle-fecha').text();
+                        const cerrado   = $('#detalle-badge-cerrado').is(':visible') ? 1 : 0;
+                        verDetalle(entradaId, proyecto, fecha, cerrado);
                     } else {
                         toastr.error('Error al actualizar');
                     }
-                })
+                });
         }
 
-
-
     </script>
-
-
 @endsection

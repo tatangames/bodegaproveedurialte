@@ -21,7 +21,9 @@
                                     <td>{{ $dato->medida }}</td>
                                     <td>{{ $dato->total }}</td>
                                     <td>
-
+                                        <button type="button" style="margin: 5px" class="btn btn-info btn-xs" onclick="verProyectos({{ $dato->id }}, '{{ addslashes($dato->nombre) }}')">
+                                            <i class="fas fa-map-marker-alt"></i> Proyectos
+                                        </button>
                                         <button type="button" class="btn btn-primary btn-xs" onclick="informacion({{ $dato->id }})">
                                             <i class="fas fa-edit" title="Editar"></i>&nbsp; Editar
                                         </button>
