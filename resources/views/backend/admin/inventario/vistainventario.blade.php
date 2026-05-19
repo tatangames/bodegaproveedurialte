@@ -104,6 +104,13 @@
                                     <div id="res-caracter-nuevo" style="float: right">0/300</div>
                                 </div>
 
+                                <div class="form-group">
+                                    <label>Marca Material: (Opcional)</label>
+                                    <input type="text" class="form-control" autocomplete="off"
+                                           maxlength="100" id="codigo-nuevo" placeholder="Puede ser Modelo del Material">
+                                </div>
+
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -167,6 +174,12 @@
                                                    onpaste="contarcaracteresEditar();" onkeyup="contarcaracteresEditar();"
                                                    maxlength="300" id="nombre-editar" placeholder="Nombre del material">
                                             <div id="res-caracter-editar" style="float: right">0/300</div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label>Marca Material: (Opcional)</label>
+                                            <input type="text" class="form-control" autocomplete="off"
+                                                   maxlength="100" id="codigo-editar" placeholder="Puede ser Modelo del Material">
                                         </div>
 
                                         <div class="row">
@@ -379,6 +392,7 @@
         // ── Nuevo ─────────────────────────────────────────────────────
         function nuevo() {
             var nombre           = $('#nombre-nuevo').val().trim();
+            var codigo           = $('#codigo-nuevo').val().trim();
             var unidad           = $('#select-unidad-nuevo').val();
             var id_objespecifico = $('#select-objeto-nuevo').val();
 
@@ -389,6 +403,7 @@
             openLoading();
             var formData = new FormData();
             formData.append('nombre',           nombre);
+            formData.append('codigo',           codigo);
             formData.append('unidad',           unidad);
             formData.append('id_objespecifico', id_objespecifico);
 
@@ -419,6 +434,7 @@
 
                         $('#id-editar').val(id);
                         $('#nombre-editar').val(response.data.material.nombre);
+                        $('#codigo-editar').val(response.data.material.codigo);
                         contarcaracteresEditar();
 
                         // ── Unidad de medida ──
@@ -456,6 +472,7 @@
         function editar() {
             var id               = $('#id-editar').val();
             var nombre           = $('#nombre-editar').val().trim();
+            var codigo           = $('#codigo-editar').val().trim();
             var unidad           = $('#select-unidad-editar').val();
             var id_objespecifico = $('#select-objeto-editar').val();
 
@@ -467,6 +484,7 @@
             var formData = new FormData();
             formData.append('id',               id);
             formData.append('nombre',           nombre);
+            formData.append('codigo',           codigo);
             formData.append('unidad',           unidad);
             formData.append('id_objespecifico', id_objespecifico);
 

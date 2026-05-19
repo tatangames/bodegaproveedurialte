@@ -364,46 +364,7 @@
                 });
         }
 
-        function VerificarEliminar(id){
-            Swal.fire({
-                title: '¿Eliminar Proyecto?',
-                text: "",
-                type: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                cancelButtonColor: '#d33',
-                cancelButtonText: 'Cancelar',
-                confirmButtonText: 'Sí'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    eliminar(id);
-                }
-            });
-        }
 
-        function eliminar(id){
-            openLoading();
-            var formData = new FormData();
-            formData.append('id', id);
 
-            axios.post(urlAdmin + '/admin/proyecto/eliminar', formData)
-                .then((response) => {
-                    closeLoading();
-                    if(response.data.success === 1){
-                        toastr.success('Borrado correctamente');
-                        $('#modalAgregar').modal('hide');
-                        recargar();
-                    } else if(response.data.success === 2){
-                        toastr.error('Proyecto no se puede eliminar porque tiene registros de entradas o salidas');
-                        recargar();
-                    } else {
-                        toastr.error('Error al borrar');
-                    }
-                })
-                .catch(() => {
-                    toastr.error('Error al borrar');
-                    closeLoading();
-                });
-        }
     </script>
 @endsection

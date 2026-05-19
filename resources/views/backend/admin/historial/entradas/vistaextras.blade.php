@@ -126,16 +126,18 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label>Código</label>
+                                    <label>Marca</label>
                                     <div class="col-md-6">
                                         <input type="text" id="codigo" maxlength="100"
                                                class="form-control" autocomplete="off">
                                     </div>
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group">
                                     <label>Precio <span style="color:red">*</span></label>
+                                    <div class="col-md-3">
                                     <input type="number" min="0" max="1000000" autocomplete="off"
                                            class="form-control" id="precio-producto" placeholder="0.00">
+                                    </div>
                                 </div>
                             </div>
                         </form>
@@ -169,7 +171,7 @@
                             <th style="width:3%">#</th>
                             <th style="width:35%">Material</th>
                             <th style="width:10%">Cantidad</th>
-                            <th style="width:12%">Código</th>
+                            <th style="width:12%">Marca</th>
                             <th style="width:10%">Precio</th>
                             <th style="width:8%">Opciones</th>
                         </tr>

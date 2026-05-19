@@ -20,4 +20,6 @@ class Materiales extends Model
     {
         return $this->belongsTo(ObjetoEspecifico::class, 'id_objespecifico');
     }
+
+
 }

@@ -173,7 +173,7 @@
                             <thead class="thead-dark">
                             <tr>
                                 <th>#</th>
-                                <th>Código</th>
+                                <th>Marca</th>
                                 <th>Material</th>
                                 <th class="text-center">Cantidad</th>
                                 <th class="text-right">Precio unitario</th>
@@ -197,7 +197,7 @@
 
     {{-- Modal Editar Detalle --}}
     <div class="modal fade" id="modalEditarDetalle" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header bg-warning">
                     <h5 class="modal-title text-white">
@@ -215,7 +215,7 @@
                             <input type="text" id="detalle-material-editar" class="form-control" disabled>
                         </div>
                         <div class="form-group">
-                            <label>Código</label>
+                            <label>Detalle (Opcional)</label>
                             <input type="text" id="detalle-codigo-editar" class="form-control"
                                    maxlength="100" placeholder="Código (opcional)">
                         </div>
@@ -255,7 +255,7 @@
                 language: { noResults: function () { return 'No encontrado'; } },
                 templateResult: function (data) {
                     if (!data.id) return data.text;
-                    var cerrado = $(data.element).data('cerrado') == '1';  // 👈
+                    var cerrado = $(data.element).data('cerrado') == '1';
                     return $('<span class="d-flex align-items-center justify-content-between">')
                         .append($('<span>').text(data.text))
                         .append($('<span>')
@@ -265,7 +265,7 @@
                 },
                 templateSelection: function (data) {
                     if (!data.id) return data.text;
-                    var cerrado = $(data.element).data('cerrado') == '1';  // 👈
+                    var cerrado = $(data.element).data('cerrado') == '1';
                     return $('<span>')
                         .append($('<span>').text(data.text))
                         .append($('<span>')
@@ -341,6 +341,18 @@
             };
 
             cargarTabla();
+
+            // ── Delegación de evento para botón editar detalle ────
+            // ✅ FIX: Evita SyntaxError por comillas/caracteres especiales en material o codigo
+            $(document).on('click', '.btn-editar-detalle', function () {
+                const btn = $(this);
+                modalEditarDetalle(
+                    btn.data('id'),
+                    btn.data('material'),
+                    btn.data('codigo'),
+                    btn.data('precio')
+                );
+            });
         });
     </script>
 
@@ -454,17 +466,24 @@
                     if (response.data.success === 1 && response.data.detalle.length > 0) {
                         let html = '';
                         response.data.detalle.forEach((fila, index) => {
+                            // ✅ FIX: Usamos data-* en lugar de parámetros inline en onclick.
+                            // Esto evita SyntaxError cuando material o codigo contienen
+                            // comillas simples, dobles, barras u otros caracteres especiales.
                             const btnEditar = cerrado
                                 ? ''
-                                : `<button type="button" class="btn btn-warning btn-xs"
-                                       onclick="modalEditarDetalle(${fila.id}, '${fila.material}', '${fila.codigo}', '${fila.precio_raw}')">
+                                : `<button type="button"
+                                       class="btn btn-warning btn-xs btn-editar-detalle"
+                                       data-id="${fila.id}"
+                                       data-material="${fila.material}"
+                                       data-codigo="${fila.codigo ?? ''}"
+                                       data-precio="${fila.precio_raw}">
                                        <i class="fas fa-edit"></i>
                                    </button>`;
 
                             html += `
                                 <tr>
                                     <td>${index + 1}</td>
-                                    <td>${fila.codigo}</td>
+                                    <td>${fila.codigo ?? ''}</td>
                                     <td>${fila.material}</td>
                                     <td class="text-center">${fila.cantidad_inicial}</td>
                                     <td class="text-right">$${fila.precio}</td>
@@ -527,7 +546,8 @@
                     } else {
                         toastr.error('Error al actualizar');
                     }
-                });
+                })
+                .catch(() => { closeLoading(); toastr.error('Error al actualizar'); });
         }
 
     </script>

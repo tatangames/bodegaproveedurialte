@@ -135,6 +135,7 @@ class SalidasController extends Controller
                 'ed.cantidad_inicial',
                 'ed.precio',
                 'e.fecha',
+                'ed.codigo',
                 DB::raw('COALESCE(sd.total_salido, 0) as total_salido'),
                 DB::raw('(ed.cantidad_inicial - COALESCE(sd.total_salido, 0)) as cantidadActual')
             )

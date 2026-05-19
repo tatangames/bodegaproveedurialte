@@ -173,7 +173,7 @@
                                 <div class="form-group col-md-4" style="margin-top: 5px">
                                     <label class="control-label" style="color: #686868">Precio (4 decimales máximo): <span style="color: red">*</span></label>
                                     <div>
-                                        <input type="number" min="0" max="1000000" autocomplete="off" value="0" class="form-control" id="precio-producto" placeholder="0.00">
+                                        <input type="number" min="0" max="1000000" autocomplete="off" value="" class="form-control" id="precio-producto" placeholder="0.00">
                                     </div>
                                 </div>
 

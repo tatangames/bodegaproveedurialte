@@ -321,6 +321,7 @@
                                                 <thead>
                                                 <tr>
                                                     <th>Fecha Ingreso</th>
+                                                    <th>Detalle</th>
                                                     <th>Valor</th>
                                                     <th>Cant. Actual</th>
                                                     <th>Cant. Salida</th>
@@ -458,6 +459,7 @@
                         $.each(response.data.arrayIngreso, function (key, val) {
                             var markup = "<tr>" +
                                 "<td><input disabled value='" + val.fechaIngreso + "' class='form-control form-control-sm' type='text'></td>" +
+                                "<td><input disabled value='" + val.codigo + "' class='form-control form-control-sm' type='text'></td>" +
                                 "<td><input disabled value='" + val.precioFormat + "' class='form-control form-control-sm' type='text'></td>" +
                                 "<td>" +
                                 "<input name='arrayCantidadActual[]' disabled " +

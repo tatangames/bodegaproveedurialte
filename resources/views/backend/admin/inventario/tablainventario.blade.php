@@ -7,6 +7,7 @@
                         <table id="tabla" class="table table-bordered table-striped">
                             <thead>
                             <tr>
+                                <th style="width: 8%">Marca</th>
                                 <th style="width: 20%">Nombre</th>
                                 <th style="width: 10%">Medida</th>
                                 <th style="width: 10%">Cantidad</th>
@@ -17,6 +18,7 @@
                             <tbody>
                             @foreach($lista as $dato)
                                 <tr>
+                                    <td>{{ $dato->codigo }}</td>
                                     <td>{{ $dato->nombre }}</td>
                                     <td>{{ $dato->medida }}</td>
                                     <td>{{ $dato->total }}</td>

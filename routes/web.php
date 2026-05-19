@@ -96,7 +96,6 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/proyecto/nuevo', [TipoProyectoController::class, 'nuevoProyecto']);
     Route::post('/admin/proyecto/informacion', [TipoProyectoController::class, 'informacionProyecto']);
     Route::post('/admin/proyecto/editar', [TipoProyectoController::class, 'editarProyecto']);
-    Route::post('/admin/proyecto/eliminar', [TipoProyectoController::class, 'borrarProyecto']);
 
     // --- REGISTRAR ENTRADA ---
     Route::get('/admin/registro/entrada', [RepuestosController::class,'indexRegistroEntrada'])->name('admin.entrada.registro.index');
@@ -167,7 +166,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/admin/reporte/inventario/sobranteterminado/proyecto', [ReportesController::class,'vistaProyectoCompletado'])->name('admin.reporte.inventario.proyectocompletado.index');
     Route::get('/admin/reporte/inventario/sobranteterminado/proy/{idtrans}', [ReportesController::class,'reporteProyectoTerminado']);
 
-    // --- REPORTE
+    // --- REPORTE / ENTREGAS MENSUALES
     Route::get('/admin/reporte/proyectos/codigos', [ReportesController::class,'vistaReporteProyectoCodigos'])->name('admin.reporte.proyectos.codigos.index');
     Route::get('/admin/reporte/proyectos/codigos/pdf/{idproy}/{desde}/{hasta}', [ReportesController::class,'reportePDFProyectoCodigos']);
 
