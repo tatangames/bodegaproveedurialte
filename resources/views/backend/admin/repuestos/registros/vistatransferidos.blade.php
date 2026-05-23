@@ -95,7 +95,9 @@
                                 </div>
                             </div>
 
-                            <div style="margin-left: 15px; margin-right: 15px; margin-top: 25px;">
+
+                            <!-- SI LO PIDEN LO VOY HABILITAR 23/05/2026 -->
+                            <div style="margin-left: 15px; margin-right: 15px; margin-top: 25px; display: none">
                                 <label>Documento Acta de Cierre (opcional)</label>
                                 <input type="file" id="documento" class="form-control" accept="image/jpeg, image/jpg, image/png, .pdf"/>
                             </div>

@@ -14,4 +14,9 @@ class TipoProyecto extends Model
     protected $casts = [
         'transferido' => 'boolean',
     ];
+
+    public function transferencia()
+    {
+        return $this->hasMany(Transferencia::class, 'id_tipoproyecto');
+    }
 }

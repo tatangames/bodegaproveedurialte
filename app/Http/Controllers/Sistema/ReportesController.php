@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sistema;
 
 use App\Http\Controllers\Controller;
+use App\Models\Departamentos;
 use App\Models\Entradas;
 use App\Models\EntradasDetalle;
 use App\Models\InformacionGeneral;
@@ -1979,6 +1980,385 @@ class ReportesController extends Controller
         $mpdf->WriteHTML($stylesheet, 1);
         $mpdf->setFooter("Página: " . '{PAGENO}' . "/" . '{nb}');
         $mpdf->WriteHTML($tabla, 2);
+        $mpdf->Output();
+    }
+
+
+
+
+    public function vistaReporteSobranteProyectoCerrado()
+    {
+        $proyectosCerrados = Tipoproyecto::whereHas('transferencia')->orderBy('nombre')->get();
+        $departamentos     = Departamentos::orderBy('nombre')->get();
+
+        return view('backend.reportes.vistareporteproyectocerrado', compact('proyectosCerrados', 'departamentos'));
+    }
+
+
+    public function vistaPDFReporteSobranteProyectoCerrado(
+        $idproy, $noproyecto, $acuerdo, $iddepto, $jefe, $justificacion, $observaciones
+    ) {
+        $noproyecto    = urldecode($noproyecto);
+        $acuerdo       = urldecode($acuerdo);
+        $jefe          = urldecode($jefe);
+        $justificacion = urldecode($justificacion);
+        $observaciones = urldecode($observaciones);
+
+        $proyecto    = Tipoproyecto::find($idproy);
+        $departamento = Departamentos::find($iddepto);
+        $logoalcaldia = 'images/logo.png';
+        $fechaHoy     = date('d/m/Y');
+
+        $informacionGeneral = InformacionGeneral::where('id', 1)->first();
+
+        // ── Obtener transferencia (cierre del proyecto) ───────────────────
+        $transferencia = Transferencia::where('id_tipoproyecto', $idproy)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$transferencia) {
+            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+            $mpdf->WriteHTML("<p style='font-family:Arial; font-size:14px; color:red; padding:20px;'>
+            Este proyecto no tiene registro de cierre generado.</p>", 2);
+            $mpdf->Output();
+            return;
+        }
+
+        // ── Obtener detalles del snapshot de cierre ───────────────────────
+        $detalles = TransferenciaDetalle::where('id_transferencia', $transferencia->id)
+            ->with('entradaDetalle.material.unidadMedida', 'entradaDetalle.material.objetoEspecifico')
+            ->get();
+
+        if ($detalles->isEmpty()) {
+            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+            $mpdf->WriteHTML("<p style='font-family:Arial; font-size:14px; color:#888; padding:20px;'>
+            No hay materiales sobrantes registrados para este proyecto.</p>", 2);
+            $mpdf->Output();
+            return;
+        }
+
+        // ── Agrupar por código objeto específico ─────────────────────────
+        $porCodigo   = [];
+        $granTotal   = 0;
+
+        foreach ($detalles as $det) {
+            $codigo   = $det->entradaDetalle?->material?->objetoEspecifico?->codigo ?? 'SIN-CODIGO';
+            $nombre   = $det->entradaDetalle?->material?->nombre ?? $det->nombre_material ?? '—';
+            $medida   = $det->entradaDetalle?->material?->unidadMedida?->nombre ?? '—';
+            $cantidad = $det->cantidad_sobrante;
+            $precio   = $det->precio;
+            $subtotal = $cantidad * $precio;
+            $granTotal += $subtotal;
+
+            if (!isset($porCodigo[$codigo])) {
+                $porCodigo[$codigo] = [
+                    'codigo'    => $codigo,
+                    'materiales'=> [],
+                    'subtotal'  => 0,
+                ];
+            }
+
+            $porCodigo[$codigo]['materiales'][] = [
+                'nombre'   => $nombre,
+                'medida'   => $medida,
+                'cantidad' => $cantidad,
+                'precio'   => $precio,
+                'subtotal' => $subtotal,
+            ];
+            $porCodigo[$codigo]['subtotal'] += $subtotal;
+        }
+
+        $mpdf = new \Mpdf\Mpdf([
+            'tempDir'     => sys_get_temp_dir(),
+            'format'      => 'LETTER',
+            'orientation' => 'L',
+        ]);
+        $mpdf->SetTitle('GEAD-001-INFO');
+        $mpdf->showImageErrors = false;
+
+        // ── Estilos ───────────────────────────────────────────────────────
+        $thStyle = "font-weight:bold; font-size:11px; border:0.8px solid #000;
+                padding:5px 4px; background:#d9e1f2; text-align:center;";
+        $tdStyle = "font-size:11px; border:0.8px solid #000; padding:4px;";
+        $tdC     = $tdStyle . " text-align:center;";
+        $tdR     = $tdStyle . " text-align:right;";
+        $tdL     = $tdStyle . " text-align:left;";
+
+        // ── Encabezado ────────────────────────────────────────────────────
+        $html = "
+<table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif;'>
+    <tr>
+        <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
+            <table width='100%'>
+                <tr>
+                    <td style='width:30%; text-align:left;'>
+                        <img src='{$logoalcaldia}' style='height:38px'>
+                    </td>
+                    <td style='width:70%; text-align:left; color:#104e8c;
+                                font-size:13px; font-weight:bold; line-height:1.3;'>
+                        SANTA ANA NORTE<br>EL SALVADOR
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000;
+                   padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
+            INFORME DE INVENTARIO FÍSICO<br>DE MATERIALES SOBRANTES
+        </td>
+        <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
+            <table width='100%' style='font-size:10px;'>
+                <tr>
+                    <td width='40%' style='border-right:0.8px solid #000;
+                                           border-bottom:0.8px solid #000; padding:4px 6px;'>
+                        <strong>Código:</strong>
+                    </td>
+                    <td width='60%' style='border-bottom:0.8px solid #000;
+                                           padding:4px 6px; text-align:center;'>
+                        GEAD-001-INFO
+                    </td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000;
+                               border-bottom:0.8px solid #000; padding:4px 6px;'>
+                        <strong>Versión:</strong>
+                    </td>
+                    <td style='border-bottom:0.8px solid #000;
+                               padding:4px 6px; text-align:center;'>000</td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; padding:4px 6px;'>
+                        <strong>Fecha de vigencia:</strong>
+                    </td>
+                    <td style='padding:4px 6px; text-align:center;'></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table><br>";
+
+        // ── Fecha ─────────────────────────────────────────────────────────
+        $html .= "
+<table width='100%' style='border-collapse:collapse; margin-bottom:6px;'>
+    <tr>
+        <td style='width:70%;'></td>
+        <td style='width:15%; border:0.8px solid #000; padding:5px 8px;
+                   font-weight:bold; font-size:11px; text-align:center;'>FECHA</td>
+        <td style='width:15%; border:0.8px solid #000; padding:5px 8px;
+                   font-size:11px; text-align:center;'>{$fechaHoy}</td>
+    </tr>
+</table>";
+
+        // ── Datos del proyecto ────────────────────────────────────────────
+        $campos = [
+            'No. DE PROYECTO'                    => $noproyecto,
+            'NOMBRE DEL PROYECTO'                => $proyecto->nombre ?? '—',
+            'ACUERDO DE APROBACIÓN DEL PROYECTO' => $acuerdo,
+            'UNIDAD SOLICITANTE'                 => $departamento->nombre ?? '—',
+            'JEFE O ENCARGADO DE UNIDAD SOLICITANTE' => $jefe,
+            'JUSTIFICACIÓN DEL SOBRANTE'         => $justificacion,
+        ];
+
+        $html .= "<table width='100%' style='border-collapse:collapse; margin-bottom:6px;'>";
+        foreach ($campos as $label => $valor) {
+            $html .= "
+    <tr>
+        <td style='width:25%; border:0.8px solid #ccc; padding:5px 8px;
+                   font-size:11px; font-weight:bold; background:#f5f5f5;'>
+            {$label}:
+        </td>
+        <td style='border:0.8px solid #ccc; padding:5px 8px; font-size:11px;'>
+            {$valor}
+        </td>
+    </tr>";
+        }
+        $html .= "</table><br>";
+
+        // ── Texto declaración ─────────────────────────────────────────────
+        $html .= "
+<table width='100%' style='border-collapse:collapse; margin-bottom:10px;'>
+    <tr>
+        <td style='border:0.8px solid #000; padding:8px 10px; font-size:10px;
+                   text-align:justify; line-height:1.6;'>
+            POR MEDIO DEL PRESENTE LOS SUSCRITOS RESPONSABLES DE LA EJECUCIÓN Y SUPERVISIÓN DEL PROYECTO,
+            DECLARAMOS BAJO FE DE JURAMENTO QUE EL INVENTARIO FÍSICO DETALLADO HA SIDO VERIFICADO Y
+            CONFRONTADO CON LOS REGISTROS Y LA LIQUIDACIÓN FINAL DEL PROYECTO. CERTIFICAMOS QUE LAS
+            CANTIDADES AQUÍ EXPRESADAS SON LAS SOBRANTES REALES DEL PROYECTO Y QUE LA VALORACIÓN MONETARIA
+            SE HA DETERMINADO CON BASE EN LAS ORDENES DE COMPRA Y/O CONTRATOS. AUTORIZAMOS EL USO DE ESTE
+            DOCUMENTO COMO SOPORTE PARA EL INGRESO DE ESTOS MATERIALES SOBRANTES A LA BODEGA DE PROYECTOS
+            O A LA QUE DESIGNE EL CONCEJO MUNICIPAL Y SU CORRESPONDIENTES REGISTROS CONTABLES.
+        </td>
+    </tr>
+</table>";
+
+        // ── Tabla de materiales agrupados por código ──────────────────────
+        $html .= "
+<table width='100%' style='border-collapse:collapse;'>
+    <thead>
+        <tr>
+            <th style='{$thStyle} width:5%;'>No.</th>
+            <th style='{$thStyle} width:10%;'>COD PRESUP.</th>
+            <th style='{$thStyle} width:38%;'>DESCRIPCIÓN</th>
+            <th style='{$thStyle} width:12%;'>U. DE MEDIDA</th>
+            <th style='{$thStyle} width:10%;'>CANTIDAD</th>
+            <th style='{$thStyle} width:12%;'>PRECIO UNITARIO</th>
+            <th style='{$thStyle} width:13%;'>SUBTOTAL</th>
+        </tr>
+    </thead>
+    <tbody>";
+
+        $i = 1;
+        foreach ($porCodigo as $grupo) {
+            foreach ($grupo['materiales'] as $mat) {
+                $html .= "
+        <tr>
+            <td style='{$tdC}'>{$i}</td>
+            <td style='{$tdC}'>" . e($grupo['codigo']) . "</td>
+            <td style='{$tdL}'>" . e($mat['nombre']) . "</td>
+            <td style='{$tdC}'>" . e($mat['medida']) . "</td>
+            <td style='{$tdC} font-weight:bold;'>" . number_format($mat['cantidad']) . "</td>
+            <td style='{$tdR}'>$ " . number_format($mat['precio'], 4) . "</td>
+            <td style='{$tdR}'>$ " . number_format($mat['subtotal'], 4) . "</td>
+        </tr>";
+                $i++;
+            }
+
+            // Subtotal por código
+            $html .= "
+        <tr>
+            <td colspan='6' style='font-weight:bold; font-size:11px; text-align:center;
+                                    border:0.8px solid #000; padding:5px 4px;
+                                    background:#f2f4f8;'>
+                SUBTOTAL [" . e($grupo['codigo']) . "]
+            </td>
+            <td style='font-weight:bold; font-size:11px; text-align:right;
+                        border:0.8px solid #000; padding:5px 4px; background:#f2f4f8;'>
+                $ " . number_format($grupo['subtotal'], 4) . "
+            </td>
+        </tr>";
+        }
+
+        // Total general
+        $html .= "
+        <tr>
+            <td colspan='6' style='font-weight:bold; font-size:12px; text-align:center;
+                                    border:0.8px solid #000; padding:6px 4px;
+                                    background:#d9e1f2;'>
+                TOTAL GENERAL
+            </td>
+            <td style='font-weight:bold; font-size:12px; text-align:right;
+                        border:0.8px solid #000; padding:6px 4px; background:#d9e1f2;'>
+                $ " . number_format($granTotal, 4) . "
+            </td>
+        </tr>
+    </tbody>
+</table>";
+
+        // ── Observaciones ─────────────────────────────────────────────────
+        $html .= "
+<br>
+<table width='100%' border='1' cellspacing='0' cellpadding='6'
+       style='border-collapse:collapse; font-size:11px; margin-top: {$informacionGeneral->px_observaciones}'>
+    <tr style='background:#f2f4f8;'>
+        <td style='font-weight:bold; font-size:12px;'>Observaciones:</td>
+    </tr>
+    <tr>
+        <td style='height:50px; font-size:11px; vertical-align:top;'>
+            " . e($observaciones) . "
+        </td>
+    </tr>
+</table>";
+
+        // ── Firmas ────────────────────────────────────────────────────────
+
+
+        $html .= "
+<table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif;
+                            margin-top:{$informacionGeneral->px_firmas}px; font-size:11px;'>
+    <tr>
+        {{-- ELABORADO POR --}}
+        <td style='width:50%; padding-right:40px; vertical-align:top;'>
+            <strong>ELABORADO POR:</strong><br><br>
+            <table width='100%' style='border-collapse:collapse;'>
+                <tr>
+                    <td style='width:15%;'>FIRMA:</td>
+                    <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td>NOMBRE:</td>
+                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td>CARGO:</td>
+                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td colspan='2' style='text-align:center;'>RESPONSABLE DEL PROYECTO</td>
+                </tr>
+            </table>
+        </td>
+        {{-- REVISADO POR --}}
+        <td style='width:50%; padding-left:40px; vertical-align:top;'>
+            <strong>REVISADO POR:</strong><br><br>
+            <table width='100%' style='border-collapse:collapse;'>
+                <tr>
+                    <td style='width:15%;'>FIRMA:</td>
+                    <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td>NOMBRE:</td>
+                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td>CARGO:</td>
+                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td colspan='2' style='text-align:center;'>[SUPERVISOR DEL PROYECTO O JEFE INMEDIATO]</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr><td colspan='2' style='height:40px;'></td></tr>
+
+    {{-- ES CONFORME centrado --}}
+    <tr>
+        <td colspan='2' style='vertical-align:top;'>
+            <strong>ES CONFORME:</strong><br><br>
+            <table width='50%' style='border-collapse:collapse; margin:0 auto;'>
+                <tr>
+                    <td style='width:15%;'>FIRMA:</td>
+                    <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td>NOMBRE:</td>
+                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td>CARGO:</td>
+                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                </tr>
+                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr>
+                    <td colspan='2' style='text-align:center;'>
+                        [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>";
+
+        $mpdf->setFooter("Página {PAGENO} de {nb}");
+        $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
         $mpdf->Output();
     }
 

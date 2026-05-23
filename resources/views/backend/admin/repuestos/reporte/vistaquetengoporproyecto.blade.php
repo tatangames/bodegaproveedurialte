@@ -194,8 +194,11 @@
                             </div>
                             <div class="reporte-body">
                                 <p style="font-size:13px; color:#666; margin-bottom:14px;">
-                                    Muestra qué pasó con los materiales sobrantes de un proyecto cerrado
-                                    según el tipo de destino seleccionado.
+                                    REPORTE DE MATERIALES SOBRANTES
+                                    TRANSFERIDOS A PROYECTO DE INVERSIÓN PÚBLICA
+                                </p>
+                                <p style="font-size:13px; color:#666; margin-bottom:14px;">
+                                    REPORTE DE SALIDAS DE MATERIALES SOBRANTES PARA MANTENIMIENTO DE INSTALACIONES MUNICIPALES
                                 </p>
                                 <hr class="divider">
                                 <label class="field-label">

@@ -455,11 +455,14 @@ return [
                     'icon' => 'far fa-circle',
                     'route' => 'admin.reporte.inventario.tengoporproyecto.index',
                 ],
+
+
                 [
-                    'text' => 'Proyecto Códigos',
+                    'text' => 'Proyecto Cerrado',
                     'icon' => 'far fa-circle',
-                    'route' => 'admin.reporte.proyectos.codigos.index',
+                    'route' => 'reporte.proyecto.cerrado.index',
                 ],
+
 
 
 

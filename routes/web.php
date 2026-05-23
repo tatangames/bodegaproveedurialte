@@ -177,7 +177,7 @@ Route::middleware('auth:admin')->group(function () {
 
 
 
-    // Destino de sobrantes — a proyecto o salida general
+    // Destino de sobrantes — a proyecto o salida general - GEAD-002-FORM
     Route::get('/admin/reporte/inventario/destino/sobrantes/{idtrans}/{tipo}',
         [ReportesController::class, 'reporteDestinoSobrantes']);
 
@@ -185,10 +185,19 @@ Route::middleware('auth:admin')->group(function () {
 
 
 
-    // --- REPORTE / ENTREGAS MENSUALES
+    // --- REPORTE / ENTREGAS MENSUALES - GEAD-002-REPO
     Route::get('/admin/reporte/proyectos/codigos', [ReportesController::class,'vistaReporteProyectoCodigos'])->name('admin.reporte.proyectos.codigos.index');
     Route::get('/admin/reporte/proyectos/codigos/pdf/{idproy}/{desde}/{hasta}/{descripcion?}',
         [ReportesController::class, 'reportePDFProyectoCodigos']);
+
+
+
+
+    // --- REPORTE / PROYECTO CERRADO - INVENTARIO QUE SOBRO
+    Route::get('/admin/reporte/proyectos/codigos', [ReportesController::class,'vistaReporteSobranteProyectoCerrado'])->name('reporte.proyecto.cerrado.index');
+    Route::get('/admin/reporte/proyectos/cerrado/pdf/{idproy}/{noproyecto}/{acuerdo}/{iddepto}/{jefe}/{justificacion}/{observaciones}',
+        [ReportesController::class, 'vistaPDFReporteSobranteProyectoCerrado'])
+        ->name('reporte.proyecto.cerrado.pdf');
 
 
 
