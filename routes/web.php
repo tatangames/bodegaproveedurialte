@@ -216,16 +216,13 @@ Route::middleware('auth:admin')->group(function () {
 
 
 
+
+
+
+
     // --- REPORTE / PROYECTO CERRADO - INVENTARIO QUE SOBRO
     Route::get('/admin/reporte/proyectos/codigos', [ReportesController::class,'vistaReporteSobranteProyectoCerrado'])->name('reporte.proyecto.cerrado.index');
-    Route::get('/admin/reporte/proyectos/cerrado/pdf/{idproy}/{noproyecto}/{acuerdo}/{iddepto}/{jefe}/{justificacion}/{observaciones}',
-        [ReportesController::class, 'vistaPDFReporteSobranteProyectoCerrado'])
-        ->name('reporte.proyecto.cerrado.pdf');
-
-
-
-
-
+    Route::post('/admin/reporte/proyectos/cerrado/pdf', [ReportesController::class, 'vistaPDFReporteSobranteProyectoCerrado']);
 
 
 }); // end auth

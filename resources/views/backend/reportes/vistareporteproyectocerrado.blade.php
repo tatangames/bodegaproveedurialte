@@ -85,6 +85,21 @@
         .divider { border: none; border-top: 2px dashed #e8eef8; margin: 10px 0 20px 0; }
     </style>
 
+    {{-- Formulario oculto para POST --}}
+    <form id="form-pdf"
+          action="{{ URL::to('admin/reporte/proyectos/cerrado/pdf') }}"
+          method="POST"
+          target="_blank">
+        @csrf
+        <input type="hidden" name="idproy"        id="h-idproy">
+        <input type="hidden" name="noproyecto"    id="h-noproyecto">
+        <input type="hidden" name="acuerdo"       id="h-acuerdo">
+        <input type="hidden" name="iddepto"       id="h-iddepto">
+        <input type="hidden" name="jefe"          id="h-jefe">
+        <input type="hidden" name="justificacion" id="h-justificacion">
+        <input type="hidden" name="observaciones" id="h-observaciones">
+    </form>
+
     <div id="divcontenedor" style="display:none">
         <section class="content">
             <div class="container-fluid">
@@ -99,7 +114,6 @@
 
                                 <hr class="divider">
 
-                                {{-- No. de Proyecto --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-hashtag mr-1"></i>No. de Proyecto
@@ -108,7 +122,6 @@
                                            placeholder="Ej: 001-2025">
                                 </div>
 
-                                {{-- Proyecto cerrado --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-lock mr-1"></i>Nombre del Proyecto
@@ -120,7 +133,6 @@
                                     </select>
                                 </div>
 
-                                {{-- Acuerdo de aprobación --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-file-alt mr-1"></i>Acuerdo de Aprobación del Proyecto
@@ -129,7 +141,6 @@
                                            placeholder="Ej: Acuerdo No. 123-2025">
                                 </div>
 
-                                {{-- Unidad solicitante (Departamento) --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-building mr-1"></i>Unidad Solicitante
@@ -141,7 +152,6 @@
                                     </select>
                                 </div>
 
-                                {{-- Jefe o encargado --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-user-tie mr-1"></i>Jefe o Encargado de Unidad Solicitante
@@ -150,7 +160,6 @@
                                            placeholder="Nombre completo">
                                 </div>
 
-                                {{-- Justificación --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-comment-alt mr-1"></i>Justificación del Sobrante
@@ -160,7 +169,6 @@
                                               placeholder="Describa el motivo por el que quedaron materiales sobrantes..."></textarea>
                                 </div>
 
-                                {{-- Observaciones --}}
                                 <div class="form-group">
                                     <label class="field-label">
                                         <i class="fas fa-sticky-note mr-1"></i>Observaciones
@@ -202,26 +210,18 @@
         });
 
         function generarPDF() {
-            var idproy        = $('#sel-proyecto').val();
-            var noproyecto    = $('#inp-noproyecto').val().trim();
-            var acuerdo       = $('#inp-acuerdo').val().trim();
-            var idDepto       = $('#sel-departamento').val();
-            var jefe          = $('#inp-jefe').val().trim();
-            var justificacion = $('#inp-justificacion').val().trim();
-            var observaciones = $('#inp-observaciones').val().trim();
-
+            var idproy = $('#sel-proyecto').val();
             if (!idproy) { toastr.error('Seleccione un proyecto'); return; }
 
-            var url = "{{ URL::to('admin/reporte/proyectos/cerrado/pdf') }}"
-                + '/' + idproy
-                + '/' + encodeURIComponent(noproyecto    || ' ')
-                + '/' + encodeURIComponent(acuerdo       || ' ')
-                + '/' + (idDepto || '0')
-                + '/' + encodeURIComponent(jefe          || ' ')
-                + '/' + encodeURIComponent(justificacion || ' ')
-                + '/' + encodeURIComponent(observaciones || ' ');
+            $('#h-idproy').val(idproy);
+            $('#h-noproyecto').val($('#inp-noproyecto').val().trim());
+            $('#h-acuerdo').val($('#inp-acuerdo').val().trim());
+            $('#h-iddepto').val($('#sel-departamento').val());
+            $('#h-jefe').val($('#inp-jefe').val().trim());
+            $('#h-justificacion').val($('#inp-justificacion').val().trim());
+            $('#h-observaciones').val($('#inp-observaciones').val().trim());
 
-            window.open(url);
+            $('#form-pdf').submit();
         }
     </script>
 @endsection
