@@ -580,6 +580,22 @@
                             <textarea class="form-control" id="form003-observaciones" rows="2"
                                       placeholder="Observaciones adicionales (opcional)"></textarea>
                         </div>
+
+                        <hr>
+
+                        <div class="form-group">
+                            <label class="field-label"><i class="fas fa-user mr-1"></i>SOLICITANTE</label>
+                            <input type="text" class="form-control" id="form003-nombre-z1" value="SOLICITANTE" placeholder="Nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label class="field-label"><i class="fas fa-user mr-1"></i>JEFE INMEDIATO</label>
+                            <input type="text" class="form-control" id="form003-nombre-z2" value="JEFE INMEDIATO" placeholder="Nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label class="field-label"><i class="fas fa-user mr-1"></i>ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO</label>
+                            <input type="text" class="form-control" id="form003-nombre-z3" value="ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO" placeholder="Nombre completo">
+                        </div>
+
                     </div>
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -669,6 +685,20 @@
                             <textarea class="form-control" id="acta-observaciones" rows="2"
                                       placeholder="Observaciones adicionales (opcional)"></textarea>
                         </div>
+
+                        <hr>
+
+                        <div class="form-group">
+                            <label class="field-label"><i class="fas fa-user mr-1"></i>ENTREGADO POR</label>
+                            <input type="text" class="form-control" id="nombrefirma-d1" value="ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO" placeholder="Nombre completo">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="field-label"><i class="fas fa-user mr-1"></i>RECIBIDO POR:</label>
+                            <input type="text" class="form-control" id="nombrefirma-d2" value="RESPONSABLE DEL PROYECTO O SOLICITANTE" placeholder="Nombre completo">
+                        </div>
+
+
                     </div>
                     <div class="modal-footer justify-content-between">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">
@@ -1006,6 +1036,11 @@
             form.append($('<input>', { type: 'hidden', name: 'justificacion', value: $('#form003-justificacion').val().trim() }));
             form.append($('<input>', { type: 'hidden', name: 'observaciones', value: $('#form003-observaciones').val().trim() }));
             form.append($('<input>', { type: 'hidden', name: 'materiales',    value: JSON.stringify(materiales) }));
+
+            form.append($('<input>', { type: 'hidden', name: 'firma1', value: $('#form003-nombre-z1').val().trim() }));
+            form.append($('<input>', { type: 'hidden', name: 'firma2', value: $('#form003-nombre-z2').val().trim() }));
+            form.append($('<input>', { type: 'hidden', name: 'firma3', value: $('#form003-nombre-z3').val().trim() }));
+
             $('body').append(form); form.submit(); form.remove();
         }
 
@@ -1074,6 +1109,10 @@
             form.append($('<input>', { type: 'hidden', name: 'cargo',         value: $('#acta-cargo-solicitante').val().trim() }));
             form.append($('<input>', { type: 'hidden', name: 'observaciones', value: $('#acta-observaciones').val().trim() }));
             form.append($('<input>', { type: 'hidden', name: 'tipodestino',   value: $('#acta-tipo-destino').val().trim() }));
+
+            form.append($('<input>', { type: 'hidden', name: 'nombrefirma1',   value: $('#nombrefirma-d1').val().trim() }));
+            form.append($('<input>', { type: 'hidden', name: 'nombrefirma2',   value: $('#nombrefirma-d2').val().trim() }));
+
             form.append($('<input>', { type: 'hidden', name: 'materiales',    value: JSON.stringify(materiales) }));
             $('body').append(form); form.submit(); form.remove();
         }

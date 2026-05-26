@@ -146,6 +146,52 @@
                                     Generar PDF
                                 </button>
 
+
+                                <div class="card mt-4">
+                                    <div class="card-header bg-primary">
+                                        <h5 class="mb-0">Firmas del Reporte</h5>
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <div class="row">
+
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>1 - Encargado de bodega de proyecto:</label>
+                                                    <input type="text"
+                                                           id="p_nombre1"
+                                                           class="form-control"
+                                                           maxlength="200"
+                                                           value="{{ $infoGeneral->p_nombre1 ?? '' }}"
+                                                           placeholder="Ingrese nombre">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label>2 - Jefe Inmediato:</label>
+                                                    <input type="text"
+                                                           id="p_nombre2"
+                                                           class="form-control"
+                                                           maxlength="200"
+                                                           value="{{ $infoGeneral->p_nombre2 ?? '' }}"
+                                                           placeholder="Ingrese nombre">
+                                                </div>
+                                            </div>
+
+                                        </div>
+
+                                        <div class="text-right">
+                                            <button class="btn btn-primary"
+                                                    onclick="actualizarFirmasReporte()">
+                                                Guardar
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
@@ -188,6 +234,42 @@
             $('#h-hasta').val(hasta);
 
             $('#form-pdf').submit();
+        }
+
+        function actualizarFirmasReporte() {
+
+            openLoading();
+
+            axios.post(urlAdmin + '/admin/firmas/proyectos/periodos/actualizar', {
+                p_nombre1: document.getElementById('p_nombre1').value.trim(),
+                p_nombre2: document.getElementById('p_nombre2').value.trim(),
+            })
+                .then((response) => {
+
+                    closeLoading();
+
+                    switch (response.data.success) {
+
+                        case 1:
+                            toastr.success('Firmas actualizadas correctamente');
+                            break;
+
+                        case 0:
+                            toastr.error('No se encontró la información');
+                            break;
+
+                        case 99:
+                            toastr.error('Ocurrió un error al actualizar');
+                            break;
+
+                        default:
+                            toastr.error('Error al actualizar');
+                    }
+                })
+                .catch(() => {
+                    closeLoading();
+                    toastr.error('Error al actualizar');
+                });
         }
     </script>
 @endsection

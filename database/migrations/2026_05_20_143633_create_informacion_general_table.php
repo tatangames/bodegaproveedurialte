@@ -33,8 +33,10 @@ return new class extends Migration
             $table->string('d_nombre1', 200)->nullable(); // [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
             $table->string('d_nombre2', 200)->nullable(); // JEFE INMEDIATO
 
+            // NOMBRES PARA REPORTE POR PERIODOS
 
-
+            $table->string('p_nombre1', 200)->nullable(); // [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+            $table->string('p_nombre2', 200)->nullable(); // JEFE INMEDIATO
 
         });
     }

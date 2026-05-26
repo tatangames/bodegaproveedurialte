@@ -383,19 +383,13 @@ class ReportesController extends Controller
     {
         try {
 
-            $actualizado = InformacionGeneral::where('id', 1)->update([
+            InformacionGeneral::where('id', 1)->update([
                 's_nombre1' => $request->s_nombre1,
                 's_nombre2' => $request->s_nombre2,
             ]);
 
-            if ($actualizado) {
-                return response()->json([
-                    'success' => 1
-                ]);
-            }
-
             return response()->json([
-                'success' => 0
+                'success' => 1
             ]);
 
         } catch (\Exception $e) {
@@ -410,19 +404,13 @@ class ReportesController extends Controller
     {
         try {
 
-            $actualizado = InformacionGeneral::where('id', 1)->update([
+            InformacionGeneral::where('id', 1)->update([
                 'd_nombre1' => $request->d_nombre1,
                 'd_nombre2' => $request->d_nombre2,
             ]);
 
-            if ($actualizado) {
-                return response()->json([
-                    'success' => 1
-                ]);
-            }
-
             return response()->json([
-                'success' => 0
+                'success' => 1
             ]);
 
         } catch (\Exception $e) {
@@ -2028,8 +2016,8 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 </td>
             </tr>
             <tr>
-                <td style='font-size:10px; color:#333;'>
-                    $informacionGeneral->d_nombre1
+                <td style='font-size:10px; color:#333; text-align:center;'>
+                    " . e($informacionGeneral->d_nombre1 ?? '') . "
                 </td>
             </tr>
         </table>
@@ -2063,8 +2051,8 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 </td>
             </tr>
             <tr>
-                <td style='font-size:10px; color:#333;'>
-                    $informacionGeneral->d_nombre2
+                <td style='font-size:10px; color:#333; text-align:center;'>
+                    " . e($informacionGeneral->d_nombre2 ?? '') . "
                 </td>
             </tr>
         </table>
@@ -2095,20 +2083,14 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
     {
         try {
 
-            $actualizado = InformacionGeneral::where('id', 1)->update([
+            InformacionGeneral::where('id', 1)->update([
                 'c_nombre1' => $request->c_nombre1,
                 'c_nombre2' => $request->c_nombre2,
                 'c_nombre3' => $request->c_nombre3,
             ]);
 
-            if ($actualizado) {
-                return response()->json([
-                    'success' => 1
-                ]);
-            }
-
             return response()->json([
-                'success' => 0
+                'success' => 1
             ]);
 
         } catch (\Exception $e) {
@@ -2912,6 +2894,11 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         $observaciones = $request->observaciones ?? '';
         $materiales    = json_decode($request->materiales, true) ?? [];
 
+        $firma1        = $request->firma1        ?? '';
+        $firma2        = $request->firma2        ?? '';
+        $firma3        = $request->firma3        ?? '';
+
+
         $rows      = [];
         $porCodigo = [];
 
@@ -3006,7 +2993,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                     <td style='border-right:0.8px solid #000; padding:4px 6px;'>
                         <strong>Fecha de vigencia:</strong>
                     </td>
-                    <td style='padding:4px 6px; text-align:center;'></td>
+                    <td style='padding:4px 6px; text-align:center;'>22/05/2026</td>
                 </tr>
             </table>
         </td>
@@ -3155,7 +3142,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
 
         $html .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif;
-                            margin-top:{$px}px; font-size:12px; line-height:1.6;'>
+                            margin-top:{$px}px; font-size:20px; line-height:1.6;'>
     <tr>
         {{-- Fila 1: ELABORADO POR / AUTORIZADO POR --}}
         <td style='width:50%; padding-right:40px; vertical-align:top;'>
@@ -3177,7 +3164,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 </tr>
                 <tr><td colspan='2' style='height:28px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:11px;'>SOLICITANTE</td>
+                    <td colspan='2' style='text-align:center; font-size:19px;'>$firma1</td>
                 </tr>
             </table>
         </td>
@@ -3200,7 +3187,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 </tr>
                 <tr><td colspan='2' style='height:28px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:11px;'>JEFE INMEDIATO</td>
+                    <td colspan='2' style='text-align:center; font-size:19px;'>$firma2</td>
                 </tr>
             </table>
         </td>
@@ -3229,8 +3216,8 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 </tr>
                 <tr><td colspan='2' style='height:28px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:11px;'>
-                        [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                    <td colspan='2' style='text-align:center; font-size:19px;'>
+                        $firma3
                     </td>
                 </tr>
             </table>
@@ -3266,6 +3253,10 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         $cargo         = $request->cargo         ?? '';
         $observaciones = $request->observaciones ?? '';
         $tipodestino   = $request->tipodestino   ?? '';
+
+        $nombreFirma1   = $request->nombrefirma1   ?? '';
+        $nombreFirma2   = $request->nombrefirma2   ?? '';
+
         $materiales    = json_decode($request->materiales, true) ?? [];
 
         $rows = [];
@@ -3315,7 +3306,9 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             $cargo,
             $observaciones,
             $rows,
-            $informacionGeneral
+            $informacionGeneral,
+            $nombreFirma1,
+            $nombreFirma2
         );
 
         $mpdf = new \Mpdf\Mpdf([
@@ -3334,7 +3327,8 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         $logo, $nombreProyecto, $fecha,
         $numero, $referencia, $tipodestino,
         $depto, $nombreSolic, $cargoSolic,
-        $observaciones, $rows, $informacionGeneral
+        $observaciones, $rows, $informacionGeneral,
+        $nombreFirma1, $nombreFirma2
     ) {
         $thStyle = "font-weight:bold; font-size:10px; border:0.8px solid #000;
                 padding:4px; background:#d9e1f2; text-align:center;";
@@ -3385,7 +3379,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                     <td style='border-right:0.8px solid #000; padding:4px 6px;'>
                         <strong>Fecha de vigencia:</strong>
                     </td>
-                    <td style='padding:4px 6px; text-align:center;'></td>
+                    <td style='padding:4px 6px; text-align:center;'>22/05/2026</td>
                 </tr>
             </table>
         </td>
@@ -3570,7 +3564,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
 
                 <tr>
                     <td colspan='2' style='text-align:center; font-size:19px; line-height:1.5;'>
-                        [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                        $nombreFirma1
                     </td>
                 </tr>
             </table>
@@ -3599,7 +3593,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
 
                 <tr>
                     <td colspan='2' style='text-align:center; font-size:19px; line-height:1.5;'>
-                        [RESPONSABLE DEL PROYECTO O SOLICITANTE]
+                        $nombreFirma2
                     </td>
                 </tr>
             </table>
@@ -4031,6 +4025,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
     }
 
 
+
     public function vistaPDFReportePorPeriodos(Request $request)
     {
         $idproy = $request->input('idproy');
@@ -4100,6 +4095,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 en.id_material,
                 obj.codigo AS codigo,
                 COALESCE(m.nombre, en.nombre_copia) AS descripcion,
+                um.nombre AS unidad_medida,
                 en.precio,
 
                 COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0) AS saldo_inicial_cant,
@@ -4117,6 +4113,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             FROM entradas en
             LEFT JOIN materiales m        ON m.id  = en.id_material
             LEFT JOIN objeto_especifico obj ON obj.id = m.id_objespecifico
+            LEFT JOIN unidadmedida um     ON um.id = m.id_medida
             LEFT JOIN in_before  ib ON ib.id_entradadetalle  = en.id_entradadetalle
             LEFT JOIN out_before ob ON ob.id_entrada_detalle = en.id_entradadetalle
             LEFT JOIN in_period  ip ON ip.id_entradadetalle  = en.id_entradadetalle
@@ -4126,6 +4123,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             b.id_material,
             b.codigo,
             b.descripcion,
+            b.unidad_medida,
             b.precio,
             SUM(b.saldo_inicial_cant)  AS saldo_inicial_cant,
             SUM(b.entradas_mes_cant)   AS entradas_mes_cant,
@@ -4136,7 +4134,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             SUM(b.salidas_mes_money)   AS salidas_mes_money,
             SUM(b.saldo_final_money)   AS saldo_final_money
         FROM base b
-        GROUP BY b.id_material, b.codigo, b.descripcion, b.precio
+        GROUP BY b.id_material, b.codigo, b.descripcion, b.unidad_medida, b.precio
         ORDER BY b.codigo, b.descripcion
     ", [
             $idproy,                 // entradas WHERE id_tipoproyecto
@@ -4192,6 +4190,8 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             $sumPorCodigo[$codigo]['final_money']    += (float) ($r->saldo_final_money   ?? 0);
         }
 
+        $fechaHoy = \Carbon\Carbon::now('America/El_Salvador')->format('d-m-Y');
+
         // ── Render PDF ─────────────────────────────────────────────────────
         $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER', 'orientation' => 'L']);
         $mpdf->SetTitle('Reporte de Movimientos por Proyecto');
@@ -4217,7 +4217,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 </table>
             </td>
             <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
-                MOVIMIENTOS POR PROYECTO
+                REPORTE DE SALDOS DE MATERIALES SOBRANTES
             </td>
             <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
                 <table width='100%' style='font-size:10px;'>
@@ -4237,26 +4237,57 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             </td>
         </tr>
     </table><br>
-    <span style='font-weight:bold; font-size:11px;'>PROYECTO DE ORIGEN DE LOS MATERIALES: " . e($proyecto->nombre ?? '—') . "</span><br>
-    <span style='font-weight:bold;'>PERIODO:  {$desdeFormat} AL {$hastaFormat}</span><br>
+
+    <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:4px;'>
+        <tr>
+            <td style='width:22%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
+                       font-weight:bold; background:#f5f5f5; vertical-align:top;'>
+                PROYECTO DE ORIGEN DE LOS MATERIALES
+            </td>
+            <td style='border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>
+                " . e($proyecto->nombre ?? '') . "
+            </td>
+        </tr>
+    </table>
+
+    <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:8px;'>
+        <tr>
+            <td style='width:22%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
+                       font-weight:bold; background:#f5f5f5;'>
+                PERIODO
+            </td>
+            <td style='width:43%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>
+                {$desdeFormat} AL {$hastaFormat}
+            </td>
+            <td style='width:20%;'></td>
+            <td style='width:7%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
+                       font-weight:bold; background:#f5f5f5; text-align:center;'>
+                FECHA
+            </td>
+            <td style='width:8%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; text-align:center;'>
+                {$fechaHoy}
+            </td>
+        </tr>
+    </table>
     ";
 
         $html .= "
     <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px; margin-top:8px'>
         <thead style='background:#f2f4f8'>
             <tr>
-                <th>No.</th>
-                <th>COD PRESUP.</th>
-                <th>DESCRIPCIÓN</th>
-                <th style='text-align:right; width:8%'>PRECIO UNITARIO</th>
-                <th style='text-align:right; width:6%'>EXISTENCIA INICIAL</th>
-                <th style='text-align:right; width:8%'>SALDO INICIAL</th>
-                <th style='text-align:right; width:8%'>ENTRADAS</th>
-                <th style='text-align:right; width:9%'>SALDO ENTRADAS</th>
-                <th style='text-align:right; width:7%'>SALIDAS</th>
-                <th style='text-align:right; width:9%'>SALDO SALIDAS</th>
-                <th style='text-align:right; width:6%'>EXISTENCIA ACTUAL</th>
-                <th style='text-align:right; width:8%'>SALDO EXISTENCIA ACTUAL</th>
+                <th style='text-align:center; width:5%'>No.</th>
+                <th style='text-align:center; width:8%'>COD PRESUP.</th>
+                <th style='text-align:center; width:8%'>UNIDAD DE MEDIDA</th>
+                <th style='text-align:center; width:14%'>DESCRIPCIÓN</th>
+                <th style='text-align:center; width:8%'>PRECIO UNITARIO</th>
+                <th style='text-align:center; width:9%'>EXISTENCIA INICIAL</th>
+                <th style='text-align:center; width:8%'>SALDO INICIAL</th>
+                <th style='text-align:center; width:7%'>ENTRADAS</th>
+                <th style='text-align:center; width:8%'>SALDO ENTRADAS</th>
+                <th style='text-align:center; width:6%'>SALIDAS</th>
+                <th style='text-align:center; width:8%'>SALDO SALIDAS</th>
+                <th style='text-align:center; width:9%'>EXISTENCIA ACTUAL</th>
+                <th style='text-align:center; width:10%'>SALDO EXISTENCIA ACTUAL</th>
             </tr>
         </thead>
         <tbody>
@@ -4266,8 +4297,9 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         foreach ($rows as $r) {
             $html .= "
         <tr>
-            <td>{$i}</td>
-            <td>".e($r->codigo ?? '')."</td>
+            <td style='text-align:center'>{$i}</td>
+            <td style='text-align:center'>".e($r->codigo ?? '')."</td>
+            <td style='text-align:center'>".e($r->unidad_medida ?? '')."</td>
             <td>".e($r->descripcion)."</td>
             <td style='text-align:right'>$".number_format($r->precio ?? 0, 4)."</td>
             <td style='text-align:right'>".number_format($r->saldo_inicial_cant ?? 0)."</td>
@@ -4284,14 +4316,14 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         }
 
         if (!$rows) {
-            $html .= "<tr><td colspan='12' style='text-align:center; color:#888;'>Sin movimientos en el rango seleccionado.</td></tr>";
+            $html .= "<tr><td colspan='13' style='text-align:center; color:#888;'>Sin movimientos en el rango seleccionado.</td></tr>";
         }
 
         $html .= "
         </tbody>
         <tfoot>
             <tr style='font-weight:bold; background:#f9fafb'>
-                <td colspan='4' style='text-align:right'>Totales:</td>
+                <td colspan='5' style='text-align:right'>Totales:</td>
                 <td style='text-align:right'>".number_format($totales['inicial_cant'])."</td>
                 <td style='text-align:right'>$".number_format($totales['inicial_money'], 2)."</td>
                 <td style='text-align:right'>".number_format($totales['entradas_cant'])."</td>
@@ -4398,9 +4430,94 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         ";
         }
 
+        $infoGeneral = InformacionGeneral::where('id', 1)->first();
+
+        // ── Firmas ─────────────────────────────────────────────────────────
+        $html .= "
+    <table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif; font-size:12px;
+                                margin-top:" . ($infoGeneral->px_firmas ?? 0) . "px;'>
+        <tr>
+            <td style='width:50%; padding-right:30px; vertical-align:top;'>
+                <strong>ELABORADO POR:</strong><br><br><br>
+                <table width='100%' style='border-collapse:collapse;'>
+                    <tr>
+                        <td style='width:18%; padding-bottom:6px;'>FIRMA:</td>
+                        <td style='border-bottom:0.8px solid #000; width:82%;'>&nbsp;</td>
+                    </tr>
+                    <tr><td colspan='2' style='height:22px;'></td></tr>
+                    <tr>
+                        <td style='padding-bottom:6px;'>NOMBRE:</td>
+                        <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    </tr>
+                    <tr><td colspan='2' style='height:22px;'></td></tr>
+                    <tr>
+                        <td style='padding-bottom:6px;'>CARGO:</td>
+                        <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    </tr>
+                    <tr><td colspan='2' style='height:15px;'></td></tr>
+                    <tr>
+                        <td></td>
+                        <td style='text-align:center; font-size:11px;'>
+                            " . e($infoGeneral->p_nombre1 ?? '') . "
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td style='width:50%; padding-left:30px; vertical-align:top;'>
+                <strong>REVISADO POR:</strong><br><br><br>
+                <table width='100%' style='border-collapse:collapse;'>
+                    <tr>
+                        <td style='width:18%; padding-bottom:6px;'>FIRMA:</td>
+                        <td style='border-bottom:0.8px solid #000; width:82%;'>&nbsp;</td>
+                    </tr>
+                    <tr><td colspan='2' style='height:22px;'></td></tr>
+                    <tr>
+                        <td style='padding-bottom:6px;'>NOMBRE:</td>
+                        <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    </tr>
+                    <tr><td colspan='2' style='height:22px;'></td></tr>
+                    <tr>
+                        <td style='padding-bottom:6px;'>CARGO:</td>
+                        <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    </tr>
+                    <tr><td colspan='2' style='height:15px;'></td></tr>
+                    <tr>
+                        <td></td>
+                        <td style='text-align:center; font-size:11px;'>
+                            " . e($infoGeneral->p_nombre2 ?? '') . "
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    ";
+
         $mpdf->setFooter("Página {PAGENO} de {nb}");
         $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
         $mpdf->Output();
+    }
+
+
+    public function actualizarFirmasReportePeriodos(Request $request)
+    {
+        try {
+
+            InformacionGeneral::where('id', 1)->update([
+                'p_nombre1' => $request->p_nombre1,
+                'p_nombre2' => $request->p_nombre2,
+            ]);
+
+            return response()->json([
+                'success' => 1
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => 99
+            ]);
+        }
     }
 
 

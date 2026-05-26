@@ -252,6 +252,7 @@ Route::middleware('auth:admin')->group(function () {
     // --- REPORTE /POR PERIODOS
     Route::get('/admin/reporte/proyectos/periodos', [ReportesController::class,'vistaReportePorPeriodos'])->name('reporte.proyecto.porperiodos.index');
     Route::post('/admin/reporte/proyectos/periodos/pdf', [ReportesController::class, 'vistaPDFReportePorPeriodos']);
+    Route::post('/admin/firmas/proyectos/periodos/actualizar', [ReportesController::class, 'actualizarFirmasReportePeriodos']);
 
 
 
