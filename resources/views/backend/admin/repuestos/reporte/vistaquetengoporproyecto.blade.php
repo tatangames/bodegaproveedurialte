@@ -140,7 +140,9 @@
                                 <label class="field-label">
                                     <i class="fas fa-project-diagram mr-1"></i>Proyecto
                                 </label>
-                                <select class="form-control" id="select-proyecto-activo">
+                                <select class="form-control"
+                                        id="select-proyecto-activo"
+                                        style="width:100%;">
                                     @foreach($proyectos as $dd)
                                         <option value="{{ $dd->id }}">{{ $dd->nombre }}</option>
                                     @endforeach
@@ -181,6 +183,49 @@
                                     <img src="{{ asset('images/logopdf.png') }}" width="22px" height="22px">
                                     Generar PDF
                                 </button>
+
+                                <br>
+
+                                <div class="row mt-3">
+
+                                    <div class="col-md-12 mb-2">
+                                        <label class="field-label">
+                                            <i class="fas fa-user mr-1"></i>Nombre 1
+                                        </label>
+
+                                        <input type="text"
+                                               id="s_nombre1"
+                                               class="form-control"
+                                               maxlength="200"
+                                               value="{{ $infoGeneral->s_nombre1 ?? '' }}"
+                                               placeholder="Ingrese nombre">
+                                    </div>
+
+                                    <div class="col-md-12 mb-2">
+                                        <label class="field-label">
+                                            <i class="fas fa-user-check mr-1"></i>Nombre 2
+                                        </label>
+
+                                        <input type="text"
+                                               id="s_nombre2"
+                                               class="form-control"
+                                               maxlength="200"
+                                               value="{{ $infoGeneral->s_nombre2 ?? '' }}"
+                                               placeholder="Ingrese nombre">
+                                    </div>
+
+                                    <div class="col-md-12 text-right mt-2">
+                                        <button type="button"
+                                                onclick="actualizarFirmasSobrantes()"
+                                                class="btn btn-primary">
+
+                                            Guardar
+                                        </button>
+                                    </div>
+
+                                </div>
+
+
                             </div>
                         </div>
                     </div>
@@ -237,6 +282,50 @@
                                         Salida General
                                     </button>
                                 </div>
+
+
+                                <br>
+
+                                <div class="row mt-3">
+
+                                    <div class="col-md-12 mb-2">
+                                        <label class="field-label">
+                                            <i class="fas fa-user mr-1"></i>Nombre 1
+                                        </label>
+
+                                        <input type="text"
+                                               id="d_nombre1"
+                                               class="form-control"
+                                               maxlength="200"
+                                               value="{{ $infoGeneral->d_nombre1 ?? '' }}"
+                                               placeholder="Ingrese nombre">
+                                    </div>
+
+                                    <div class="col-md-12 mb-2">
+                                        <label class="field-label">
+                                            <i class="fas fa-user-check mr-1"></i>Nombre 2
+                                        </label>
+
+                                        <input type="text"
+                                               id="d_nombre2"
+                                               class="form-control"
+                                               maxlength="200"
+                                               value="{{ $infoGeneral->d_nombre2 ?? '' }}"
+                                               placeholder="Ingrese nombre">
+                                    </div>
+
+                                    <div class="col-md-12 text-right mt-2">
+                                        <button type="button"
+                                                onclick="actualizarFirmasDestinoTraspaso()"
+                                                class="btn btn-primary">
+
+                                            Guardar
+                                        </button>
+                                    </div>
+
+                                </div>
+
+
                             </div>
                         </div>
                     </div>
@@ -297,6 +386,7 @@
     <script src="{{ asset('js/axios.min.js') }}"></script>
     <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('js/select2.min.js') }}"></script>
+    <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
 
     <script>
         $(document).ready(function () {
@@ -385,6 +475,80 @@
         }
 
 
+
+        function actualizarFirmasSobrantes() {
+
+            openLoading();
+
+            axios.post(urlAdmin + '/admin/firmas/proyectos/completado/actualizar', {
+                s_nombre1: document.getElementById('s_nombre1').value.trim(),
+                s_nombre2: document.getElementById('s_nombre2').value.trim()
+            })
+                .then((response) => {
+
+                    closeLoading();
+
+                    switch (response.data.success) {
+
+                        case 1:
+                            toastr.success('Información actualizada correctamente');
+                            break;
+
+                        case 0:
+                            toastr.error('No se encontró la información');
+                            break;
+
+                        case 99:
+                            toastr.error('Ocurrió un error al actualizar');
+                            break;
+
+                        default:
+                            toastr.error('Error al actualizar');
+                    }
+                })
+                .catch(() => {
+                    closeLoading();
+                    toastr.error('Error al actualizar');
+                });
+        }
+
+
+
+        function actualizarFirmasDestinoTraspaso() {
+
+            openLoading();
+
+            axios.post(urlAdmin + '/admin/firmas/proyectos/traspaso/actualizar', {
+                d_nombre1: document.getElementById('d_nombre1').value.trim(),
+                d_nombre2: document.getElementById('d_nombre2').value.trim()
+            })
+                .then((response) => {
+
+                    closeLoading();
+
+                    switch (response.data.success) {
+
+                        case 1:
+                            toastr.success('Información actualizada correctamente');
+                            break;
+
+                        case 0:
+                            toastr.error('No se encontró la información');
+                            break;
+
+                        case 99:
+                            toastr.error('Ocurrió un error al actualizar');
+                            break;
+
+                        default:
+                            toastr.error('Error al actualizar');
+                    }
+                })
+                .catch(() => {
+                    closeLoading();
+                    toastr.error('Error al actualizar');
+                });
+        }
 
 
 

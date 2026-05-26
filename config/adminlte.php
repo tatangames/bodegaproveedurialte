@@ -469,6 +469,11 @@ return [
                 ],
 
 
+                [
+                    'text' => 'Por Periodos',
+                    'icon' => 'far fa-circle',
+                    'route' => 'reporte.proyecto.porperiodos.index',
+                ],
 
 
 

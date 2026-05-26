@@ -100,7 +100,7 @@
         <input type="hidden" name="observaciones" id="h-observaciones">
     </form>
 
-    <div id="divcontenedor" style="display:none">
+    <div id="divcontenedor">
         <section class="content">
             <div class="container-fluid">
                 <div class="row justify-content-center">
@@ -189,15 +189,80 @@
                 </div>
             </div>
         </section>
+
+
+        <div class="card mt-4">
+            <div class="card-header bg-primary">
+                <h5 class="mb-0">Firmas del Reporte</h5>
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>1 - Elaborado por:</label>
+                            <input type="text"
+                                   id="c_nombre1"
+                                   class="form-control"
+                                   maxlength="200"
+                                   value="{{ $infoGeneral->c_nombre1 ?? '' }}"
+                                   placeholder="Ingrese nombre">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>2 - Revisado por:</label>
+                            <input type="text"
+                                   id="c_nombre2"
+                                   class="form-control"
+                                   maxlength="200"
+                                   value="{{ $infoGeneral->c_nombre2 ?? '' }}"
+                                   placeholder="Ingrese nombre">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>3 - Es conforme:</label>
+                            <input type="text"
+                                   id="c_nombre3"
+                                   class="form-control"
+                                   maxlength="200"
+                                   value="{{ $infoGeneral->c_nombre3 ?? '' }}"
+                                   placeholder="Ingrese nombre">
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="text-right">
+                    <button class="btn btn-primary"
+                            onclick="actualizarFirmasReporte()">
+                        Guardar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+
     </div>
 @stop
 
 @section('js')
     <script src="{{ asset('js/toastr.min.js') }}"></script>
     <script src="{{ asset('js/select2.min.js') }}"></script>
+    <script src="{{ asset('js/axios.min.js') }}"></script>
+    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ asset('js/select2.min.js') }}"></script>
+    <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
+
+
     <script>
         $(document).ready(function () {
-            document.getElementById("divcontenedor").style.display = "block";
 
             $('#sel-proyecto').select2({
                 theme: "bootstrap-5",
@@ -223,5 +288,44 @@
 
             $('#form-pdf').submit();
         }
+
+
+        function actualizarFirmasReporte() {
+
+            openLoading();
+
+            axios.post(urlAdmin + '/admin/firmas/proyectos/cerrado/actualizar', {
+                c_nombre1: document.getElementById('c_nombre1').value.trim(),
+                c_nombre2: document.getElementById('c_nombre2').value.trim(),
+                c_nombre3: document.getElementById('c_nombre3').value.trim()
+            })
+                .then((response) => {
+
+                    closeLoading();
+
+                    switch (response.data.success) {
+
+                        case 1:
+                            toastr.success('Firmas actualizadas correctamente');
+                            break;
+
+                        case 0:
+                            toastr.error('No se encontró la información');
+                            break;
+
+                        case 99:
+                            toastr.error('Ocurrió un error al actualizar');
+                            break;
+
+                        default:
+                            toastr.error('Error al actualizar');
+                    }
+                })
+                .catch(() => {
+                    closeLoading();
+                    toastr.error('Error al actualizar');
+                });
+        }
+
     </script>
 @endsection

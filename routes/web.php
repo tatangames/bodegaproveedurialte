@@ -214,6 +214,11 @@ Route::middleware('auth:admin')->group(function () {
     // --- REPORTE / INVENTARIO PROYECTO
     Route::get('/admin/reporte/inventario/quetengopor/proyecto', [ReportesController::class,'vistaQueTengoPorProyecto'])->name('admin.reporte.inventario.tengoporproyecto.index');
     Route::get('/admin/reporte/quetengopor/proyectos/pdf/{idproy}', [ReportesController::class,'reporteQueTengoPorProyecto']);
+    Route::post('/admin/firmas/proyectos/completado/actualizar', [ReportesController::class, 'actualizarFirmasSobrantes']);
+    Route::post('/admin/firmas/proyectos/traspaso/actualizar', [ReportesController::class, 'actualizarFirmasTraspaso']);
+
+
+
 
     // --- REPORTE / VER LOS MATERIALES QUE SOBRARON DE UN PROYECTO COMPLETADO
     Route::get('/admin/reporte/inventario/sobranteterminado/proy/{idtrans}', [ReportesController::class,'reporteProyectoTerminado']);
@@ -229,8 +234,7 @@ Route::middleware('auth:admin')->group(function () {
 
     // --- REPORTE / ENTREGAS MENSUALES - GEAD-002-REPO
     Route::get('/admin/reporte/proyectos/codigos', [ReportesController::class,'vistaReporteProyectoCodigos'])->name('admin.reporte.proyectos.codigos.index');
-    Route::get('/admin/reporte/proyectos/codigos/pdf/{idproy}/{desde}/{hasta}/{descripcion?}',
-        [ReportesController::class, 'reportePDFProyectoCodigos']);
+    Route::get('/admin/reporte/proyectos/codigos/pdf/{idproy}/{desde}/{hasta}/{descripcion?}', [ReportesController::class, 'reportePDFProyectoCodigos']);
 
 
 
@@ -242,6 +246,13 @@ Route::middleware('auth:admin')->group(function () {
     // --- REPORTE / PROYECTO CERRADO - INVENTARIO QUE SOBRO
     Route::get('/admin/reporte/proyectos/codigos', [ReportesController::class,'vistaReporteSobranteProyectoCerrado'])->name('reporte.proyecto.cerrado.index');
     Route::post('/admin/reporte/proyectos/cerrado/pdf', [ReportesController::class, 'vistaPDFReporteSobranteProyectoCerrado']);
+    Route::post('/admin/firmas/proyectos/cerrado/actualizar', [ReportesController::class, 'actualizarFirmasReporteCerrado']);
+
+
+    // --- REPORTE /POR PERIODOS
+    Route::get('/admin/reporte/proyectos/periodos', [ReportesController::class,'vistaReportePorPeriodos'])->name('reporte.proyecto.porperiodos.index');
+    Route::post('/admin/reporte/proyectos/periodos/pdf', [ReportesController::class, 'vistaPDFReportePorPeriodos']);
+
 
 
     Route::post('/admin/informacion/actualizar/px', [ReportesController::class, 'actualizarPxInformacionGeneral'])

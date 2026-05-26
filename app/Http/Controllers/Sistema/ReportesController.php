@@ -379,6 +379,61 @@ class ReportesController extends Controller
         return view('backend.admin.repuestos.reporte.vistaquetengoporproyecto', compact('proyectos', 'transferido', 'infoGeneral'));
     }
 
+    public function actualizarFirmasSobrantes(Request $request)
+    {
+        try {
+
+            $actualizado = InformacionGeneral::where('id', 1)->update([
+                's_nombre1' => $request->s_nombre1,
+                's_nombre2' => $request->s_nombre2,
+            ]);
+
+            if ($actualizado) {
+                return response()->json([
+                    'success' => 1
+                ]);
+            }
+
+            return response()->json([
+                'success' => 0
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => 99
+            ]);
+        }
+    }
+
+    public function actualizarFirmasTraspaso(Request $request)
+    {
+        try {
+
+            $actualizado = InformacionGeneral::where('id', 1)->update([
+                'd_nombre1' => $request->d_nombre1,
+                'd_nombre2' => $request->d_nombre2,
+            ]);
+
+            if ($actualizado) {
+                return response()->json([
+                    'success' => 1
+                ]);
+            }
+
+            return response()->json([
+                'success' => 0
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => 99
+            ]);
+        }
+    }
+
+
     public function reporteQueTengoPorProyecto($idproy)
     {
         $infoProyecto = Tipoproyecto::find($idproy);
@@ -423,7 +478,7 @@ class ReportesController extends Controller
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => sys_get_temp_dir(),
             'format' => 'LETTER',
-            'orientation' => 'L',
+            'orientation' => 'P',
         ]);
         $mpdf->SetTitle('Inventario Actual');
         $mpdf->showImageErrors = false;
@@ -564,7 +619,7 @@ class ReportesController extends Controller
             ->first();
 
         if (!$transferencia) {
-            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-P']);
             $mpdf->WriteHTML("<p style='font-family:Arial; font-size:14px; color:red;'>
         Este proyecto no tiene registro de cierre generado.</p>", 2);
             $mpdf->Output();
@@ -580,36 +635,34 @@ class ReportesController extends Controller
 
         foreach ($detallesSnapshot as $det) {
 
-            // ── Clave por id_entrada_detalle, no por nombre ────────────────
             $key = $det->id_entrada_detalle;
 
             $entradaDet = EntradasDetalle::with('material.unidadMedida', 'material.objetoEspecifico')
                 ->find($det->id_entrada_detalle);
 
-            $cantAdquirida = $entradaDet?->cantidad_inicial ?? 0;
-
-            $cantUtilizada = \App\Models\SalidasDetalle::where('id_entrada_detalle', $det->id_entrada_detalle)
-                ->whereHas('salida', function ($q) use ($idtrans) {
-                    $q->where('id_tipoproyecto', $idtrans)
-                        ->where('es_transferencia', false);
-                })
-                ->sum('cantidad_salida');
-
             if (!isset($porMaterial[$key])) {
                 $porMaterial[$key] = [
-                    'nombre' => $entradaDet?->material?->nombre ?? $det->nombre_material ?? '—',
-                    'medida' => $entradaDet?->material?->unidadMedida?->nombre ?? '—',
-                    'codigo' => $entradaDet?->material?->objetoEspecifico?->codigo ?? '—',
-                    'cant_adquirida' => 0,
-                    'cant_utilizada' => 0,
+                    'nombre'          => $entradaDet?->material?->nombre ?? $det->nombre_material ?? '—',
+                    'medida'          => $entradaDet?->material?->unidadMedida?->nombre ?? '—',
+                    'codigo'          => $entradaDet?->material?->objetoEspecifico?->codigo ?? '—',
+                    // cantidad_inicial es FIJA del lote: se asigna, NO se acumula
+                    'cant_adquirida'  => $entradaDet?->cantidad_inicial ?? 0,
+                    'cant_utilizada'  => 0,
                     'cantidad_cierre' => 0,
-                    'precio' => $det->precio,
+                    'precio'          => $det->precio,
                 ];
             }
 
-            $porMaterial[$key]['cant_adquirida'] += $cantAdquirida;
-            $porMaterial[$key]['cant_utilizada'] += $cantUtilizada;
+            // El sobrante del snapshot SÍ se acumula, por si hubiera
+            // varios renglones del mismo lote en el mismo cierre.
             $porMaterial[$key]['cantidad_cierre'] += $det->cantidad_sobrante;
+        }
+
+        // Utilizada coherente con el snapshot: adquirido menos lo que sobró.
+        // Así las tres columnas SIEMPRE cuadran entre sí.
+        foreach ($porMaterial as $key => $mat) {
+            $porMaterial[$key]['cant_utilizada'] =
+                $mat['cant_adquirida'] - $mat['cantidad_cierre'];
         }
 
         $porMaterial = array_filter($porMaterial, fn($m) => $m['cantidad_cierre'] > 0);
@@ -617,7 +670,7 @@ class ReportesController extends Controller
 
         $granTotal = 0;
 
-        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-P']);
         $mpdf->SetTitle('Reporte GEAD-001-INFO');
         $mpdf->showImageErrors = false;
 
@@ -654,7 +707,7 @@ class ReportesController extends Controller
                 </tr>
                 <tr>
                     <td style='border-right:0.8px solid #000; padding:4px 6px;'><strong>Fecha de vigencia:</strong></td>
-                    <td style='padding:4px 6px; text-align:center;'></td>
+                    <td style='padding:4px 6px; text-align:center;'>22/05/2026</td>
                 </tr>
             </table>
         </td>
@@ -748,7 +801,7 @@ class ReportesController extends Controller
 <table width='100%' style='margin-top:30px; border-collapse:collapse; font-family:Arial, sans-serif;'>
     <tr>
         <td style='width:50%; padding-right:40px; vertical-align:top;'>
-            <div style='font-weight:bold; font-size:13px; margin-bottom:8px;'>ELABORADO POR:</div>
+            <div style='font-weight:bold; font-size:12px; margin-bottom:8px;'>ELABORADO POR:</div>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr><td style='height:{$informacionGeneral->px_firmas}px;'></td></tr>
                 <tr>
@@ -776,14 +829,14 @@ class ReportesController extends Controller
                     </td>
                 </tr>
                 <tr>
-                    <td style='font-size:10px; color:#333;'>
-                        [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                    <td style='font-size:13px; color:#333; text-align: center'>
+                        $informacionGeneral->s_nombre1
                     </td>
                 </tr>
             </table>
         </td>
         <td style='width:50%; padding-left:40px; vertical-align:top;'>
-            <div style='font-weight:bold; font-size:13px; margin-bottom:8px;'>REVISADO POR:</div>
+            <div style='font-weight:bold; font-size:12px; margin-bottom:8px;'>REVISADO POR:</div>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr><td style='height:{$informacionGeneral->px_firmas}px;'></td></tr>
                 <tr>
@@ -811,8 +864,8 @@ class ReportesController extends Controller
                     </td>
                 </tr>
                 <tr>
-                    <td style='font-size:10px; color:#333;'>
-                        JEFE INMEDIATO
+                    <td style='font-size:13px; color:#333; text-align: center'>
+                        $informacionGeneral->s_nombre2
                     </td>
                 </tr>
             </table>
@@ -1617,7 +1670,7 @@ class ReportesController extends Controller
             ->first();
 
         if (!$transferencia) {
-            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-P']);
             $mpdf->WriteHTML("<p style='font-family:Arial; font-size:14px; color:red;'>
 Este proyecto no tiene registro de cierre generado.</p>", 2);
             $mpdf->Output();
@@ -1655,7 +1708,7 @@ Este proyecto no tiene registro de cierre generado.</p>", 2);
             ->toArray();
 
         if (empty($idsSalidaValidos)) {
-            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-P']);
             $mpdf->WriteHTML("<p style='font-family:Arial; font-size:14px; color:#888; padding:20px;'>
 No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2);
             $mpdf->Output();
@@ -1740,7 +1793,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         }
 
         if (empty($porSalida)) {
-            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+            $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-P']);
             $mpdf->WriteHTML("<p style='font-family:Arial; font-size:14px; color:#888; padding:20px;'>
 No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2);
             $mpdf->Output();
@@ -1749,7 +1802,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
 
         $granTotal = 0;
 
-        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-L']);
+        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER-P']);
         $mpdf->SetTitle('Destino de Sobrantes');
         $mpdf->showImageErrors = false;
 
@@ -1798,7 +1851,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                 <td style='border-right:0.8px solid #000; padding:4px 6px;'>
                     <strong>Fecha de vigencia:</strong>
                 </td>
-                <td style='padding:4px 6px; text-align:center;'></td>
+                <td style='padding:4px 6px; text-align:center;'>22/05/2026</td>
             </tr>
         </table>
     </td>
@@ -1976,7 +2029,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             </tr>
             <tr>
                 <td style='font-size:10px; color:#333;'>
-                    [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                    $informacionGeneral->d_nombre1
                 </td>
             </tr>
         </table>
@@ -2011,7 +2064,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
             </tr>
             <tr>
                 <td style='font-size:10px; color:#333;'>
-                    JEFE INMEDIATO
+                    $informacionGeneral->d_nombre2
                 </td>
             </tr>
         </table>
@@ -2032,8 +2085,38 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
     {
         $proyectosCerrados = Tipoproyecto::whereHas('transferencia')->orderBy('nombre')->get();
         $departamentos = Departamentos::orderBy('nombre')->get();
+        $infoGeneral = InformacionGeneral::where('id', 1)->first();
 
-        return view('backend.reportes.vistareporteproyectocerrado', compact('proyectosCerrados', 'departamentos'));
+        return view('backend.reportes.vistareporteproyectocerrado', compact('proyectosCerrados', 'departamentos',
+        'infoGeneral'));
+    }
+
+    public function actualizarFirmasReporteCerrado(Request $request)
+    {
+        try {
+
+            $actualizado = InformacionGeneral::where('id', 1)->update([
+                'c_nombre1' => $request->c_nombre1,
+                'c_nombre2' => $request->c_nombre2,
+                'c_nombre3' => $request->c_nombre3,
+            ]);
+
+            if ($actualizado) {
+                return response()->json([
+                    'success' => 1
+                ]);
+            }
+
+            return response()->json([
+                'success' => 0
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => 99
+            ]);
+        }
     }
 
 
@@ -2126,7 +2209,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         $mpdf = new \Mpdf\Mpdf([
             'tempDir'     => sys_get_temp_dir(),
             'format'      => 'LETTER',
-            'orientation' => 'L',
+            'orientation' => 'P',
         ]);
         $mpdf->SetTitle('GEAD-001-INFO');
         $mpdf->showImageErrors = false;
@@ -2189,7 +2272,7 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                     <td style='border-right:0.8px solid #000; padding:4px 6px;'>
                         <strong>Fecha de vigencia:</strong>
                     </td>
-                    <td style='padding:4px 6px; text-align:center;'></td>
+                    <td style='padding:4px 6px; text-align:center;'>22/05/2026</td>
                 </tr>
             </table>
         </td>
@@ -2331,82 +2414,84 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         $html .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif;
                             margin-top:" . ($informacionGeneral->px_firmas ?? 0) . "px;
-                            font-size:11px;'>
+                            font-size:23px; line-height:1.6;'>
     <tr>
         <td style='width:50%; padding-right:40px; vertical-align:top;'>
-            <strong>ELABORADO POR:</strong><br><br>
+            <strong style='font-size:24px;'>ELABORADO POR:</strong><br><br>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr>
-                    <td style='width:15%;'>FIRMA:</td>
+                    <td style='width:15%; padding-bottom:12px;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td>NOMBRE:</td>
+                    <td style='padding-bottom:12px;'>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td>CARGO:</td>
+                    <td style='padding-bottom:12px;'>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center;'>RESPONSABLE DEL PROYECTO</td>
+                    <td colspan='2' style='text-align:center; font-size:20px; line-height:1.5;'>
+                        $informacionGeneral->c_nombre1
+                    </td>
                 </tr>
             </table>
         </td>
         <td style='width:50%; padding-left:40px; vertical-align:top;'>
-            <strong>REVISADO POR:</strong><br><br>
+            <strong style='font-size:24px;'>REVISADO POR:</strong><br><br>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr>
-                    <td style='width:15%;'>FIRMA:</td>
+                    <td style='width:15%; padding-bottom:12px;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td>NOMBRE:</td>
+                    <td style='padding-bottom:12px;'>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td>CARGO:</td>
+                    <td style='padding-bottom:12px;'>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center;'>
-                        [SUPERVISOR DEL PROYECTO O JEFE INMEDIATO]
+                    <td colspan='2' style='text-align:center; font-size:20px; line-height:1.5;'>
+                        $informacionGeneral->c_nombre2
                     </td>
                 </tr>
             </table>
         </td>
     </tr>
 
-    <tr><td colspan='2' style='height:40px;'></td></tr>
+    <tr><td colspan='2' style='height:70px;'></td></tr>
 
     <tr>
         <td colspan='2' style='vertical-align:top;'>
-            <strong>ES CONFORME:</strong><br><br>
+            <strong style='font-size:24px;'>ES CONFORME:</strong><br><br>
             <table width='50%' style='border-collapse:collapse; margin:0 auto;'>
                 <tr>
-                    <td style='width:15%;'>FIRMA:</td>
+                    <td style='width:15%; padding-bottom:12px;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td>NOMBRE:</td>
+                    <td style='padding-bottom:12px;'>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td>CARGO:</td>
+                    <td style='padding-bottom:12px;'>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:40px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center;'>
-                        [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                    <td colspan='2' style='text-align:center; font-size:20px; line-height:1.5;'>
+                        $informacionGeneral->c_nombre3
                     </td>
                 </tr>
             </table>
@@ -2681,10 +2766,17 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
     </tr>
 </table>";
 
-        // ── Firmas 2x2 ────────────────────────────────────────────────
+        // ── Espaciador antes de las firmas ────────────────────────────
+// mPDF respeta mejor la altura si el div tiene contenido (&nbsp;)
+// y line-height igual a la altura deseada.
+        $html .= "<div style='height:{$informacionGeneral->px_firmas}px;
+                       line-height:{$informacionGeneral->px_firmas}px;
+                       font-size:1px;'>&nbsp;</div>";
+
+// ── Firmas 2x2 ────────────────────────────────────────────────
         $html .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif;
-                            margin-top:{$informacionGeneral->px_firmas}px; font-size:11px;'>
+                            font-size:20px;'>
 
     <tr>
         <td style='width:50%; padding-right:40px; vertical-align:top;'>
@@ -2694,19 +2786,19 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                     <td style='width:15%;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:10px;'>
+                    <td colspan='2' style='text-align:center; font-size:18px;'>
                         RESPONSABLE DEL PROYECTO
                     </td>
                 </tr>
@@ -2719,19 +2811,19 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
                     <td style='width:15%;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:10px;'>
+                    <td colspan='2' style='text-align:center; font-size:18px;'>
                         [SUPERVISOR DEL PROYECTO O JEFE O ENCARGADO SOLICITANTE]
                     </td>
                 </tr>
@@ -2739,49 +2831,49 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         </td>
     </tr>
 
-    <tr><td colspan='2' style='height:40px;'></td></tr>
+    <tr><td colspan='2' style='height:180px;'></td></tr>
 
     <tr>
-        <td style='width:50%; padding-right:40px; vertical-align:top;'>
+        <td style='width:50%; padding-right:40px; padding-top:50px; vertical-align:top;'>
             <strong>AUTORIZADO POR:</strong><br><br>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr>
                     <td style='width:15%;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:10px;'>
+                    <td colspan='2' style='text-align:center; font-size:18px;'>
                         ALCALDE MUNICIPAL
                     </td>
                 </tr>
             </table>
         </td>
-        <td style='width:50%; padding-left:40px; vertical-align:top;'>
+        <td style='width:50%; padding-right:40px; padding-top:50px; vertical-align:top;'>
             <strong>ES CONFORME:</strong><br><br>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr>
                     <td style='width:15%;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:85%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
                     <td>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:20px;'></td></tr>
+                <tr><td colspan='2' style='height:34px;'></td></tr>
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:10px;'>
+                    <td colspan='2' style='text-align:center; font-size:18px;'>
                         [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
                     </td>
                 </tr>
@@ -3448,33 +3540,36 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         // ── Firmas ────────────────────────────────────────────────────
         $px = $informacionGeneral->px_firmas ?? 40;
 
+// UN SOLO espaciador. La tabla NO lleva margin-top.
+        $html .= "<div style='height:{$px}px; line-height:{$px}px; font-size:1px;'>&nbsp;</div>";
+
         $html .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif;
-                            margin-top:{$px}px; font-size:15px; line-height:1.5;'>
+                            font-size:19px; line-height:1.6;'>
     <tr>
         <td style='width:50%; padding-right:40px; vertical-align:top;'>
-            <strong style='font-size:16px;'>ENTREGADO POR:</strong><br><br>
+            <strong style='font-size:21px;'>ENTREGADO POR:</strong><br><br>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr>
-                    <td style='width:18%; padding-bottom:8px;'>FIRMA:</td>
+                    <td style='width:18%; padding-bottom:12px;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:82%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+                <tr><td colspan='2' style='height:42px;'></td></tr>
 
                 <tr>
-                    <td style='padding-bottom:8px;'>NOMBRE:</td>
+                    <td style='padding-bottom:12px;'>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+                <tr><td colspan='2' style='height:42px;'></td></tr>
 
                 <tr>
-                    <td style='padding-bottom:8px;'>CARGO:</td>
+                    <td style='padding-bottom:12px;'>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+                <tr><td colspan='2' style='height:42px;'></td></tr>
 
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:13px; line-height:1.4;'>
+                    <td colspan='2' style='text-align:center; font-size:19px; line-height:1.5;'>
                         [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
                     </td>
                 </tr>
@@ -3482,28 +3577,28 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
         </td>
 
         <td style='width:50%; padding-left:40px; vertical-align:top;'>
-            <strong style='font-size:16px;'>RECIBIDO POR:</strong><br><br>
+            <strong style='font-size:21px;'>RECIBIDO POR:</strong><br><br>
             <table width='100%' style='border-collapse:collapse;'>
                 <tr>
-                    <td style='width:18%; padding-bottom:8px;'>FIRMA:</td>
+                    <td style='width:18%; padding-bottom:12px;'>FIRMA:</td>
                     <td style='border-bottom:0.8px solid #000; width:82%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+                <tr><td colspan='2' style='height:42px;'></td></tr>
 
                 <tr>
-                    <td style='padding-bottom:8px;'>NOMBRE:</td>
+                    <td style='padding-bottom:12px;'>NOMBRE:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+                <tr><td colspan='2' style='height:42px;'></td></tr>
 
                 <tr>
-                    <td style='padding-bottom:8px;'>CARGO:</td>
+                    <td style='padding-bottom:12px;'>CARGO:</td>
                     <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+                <tr><td colspan='2' style='height:42px;'></td></tr>
 
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:13px; line-height:1.4;'>
+                    <td colspan='2' style='text-align:center; font-size:19px; line-height:1.5;'>
                         [RESPONSABLE DEL PROYECTO O SOLICITANTE]
                     </td>
                 </tr>
@@ -3924,6 +4019,389 @@ No hay registros para este proyecto en el rango de fechas seleccionado.</p>", 2)
 
 
 
+
+
+    public function vistaReportePorPeriodos()
+    {
+        $proyectos = Tipoproyecto::orderBy('nombre')->get();
+        $infoGeneral = InformacionGeneral::where('id', 1)->first();
+
+        return view('backend.reportes.vistareporteporperiodos', compact('proyectos',
+            'infoGeneral'));
+    }
+
+
+    public function vistaPDFReportePorPeriodos(Request $request)
+    {
+        $idproy = $request->input('idproy');
+        $desde  = $request->input('desde');
+        $hasta  = $request->input('hasta');
+
+        $start = \Carbon\Carbon::parse($desde)->startOfDay();
+        $end   = \Carbon\Carbon::parse($hasta)->endOfDay();
+
+        $desdeFormat = \Carbon\Carbon::parse($desde)->format('d/m/Y');
+        $hastaFormat = \Carbon\Carbon::parse($hasta)->format('d/m/Y');
+
+        $proyecto     = \App\Models\TipoProyecto::find($idproy);
+        $logoalcaldia = 'images/logo.png';
+
+        // ── Consulta: movimientos agrupados por producto ──────────────────
+        $rows = DB::select("
+        WITH entradas AS (
+            SELECT
+                ed.id           AS id_entradadetalle,
+                ed.id_material,
+                ed.precio,
+                ed.codigo       AS codigo_copia,
+                ed.nombre       AS nombre_copia,
+                ed.cantidad_inicial AS cantidad_entrada,
+                e.fecha         AS fecha_entrada
+            FROM entradas_detalle ed
+            JOIN entradas e ON e.id = ed.id_entradas
+            WHERE e.id_tipoproyecto = ?
+        ),
+        salidas AS (
+            SELECT
+                sd.id_entrada_detalle,
+                sd.cantidad_salida,
+                s.fecha AS fecha_salida
+            FROM salidas_detalle sd
+            JOIN salidas s ON s.id = sd.id_salida
+            WHERE s.id_tipoproyecto = ?
+        ),
+        in_before AS (
+            SELECT id_entradadetalle, SUM(cantidad_entrada) AS qty_in_before
+            FROM entradas
+            WHERE fecha_entrada < ?
+            GROUP BY id_entradadetalle
+        ),
+        out_before AS (
+            SELECT id_entrada_detalle, SUM(cantidad_salida) AS qty_out_before
+            FROM salidas
+            WHERE fecha_salida < ?
+            GROUP BY id_entrada_detalle
+        ),
+        in_period AS (
+            SELECT id_entradadetalle, SUM(cantidad_entrada) AS qty_in_period
+            FROM entradas
+            WHERE fecha_entrada >= ? AND fecha_entrada <= ?
+            GROUP BY id_entradadetalle
+        ),
+        out_period AS (
+            SELECT id_entrada_detalle, SUM(cantidad_salida) AS qty_out_period
+            FROM salidas
+            WHERE fecha_salida >= ? AND fecha_salida <= ?
+            GROUP BY id_entrada_detalle
+        ),
+        base AS (
+            SELECT
+                en.id_entradadetalle,
+                en.id_material,
+                obj.codigo AS codigo,
+                COALESCE(m.nombre, en.nombre_copia) AS descripcion,
+                en.precio,
+
+                COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0) AS saldo_inicial_cant,
+                COALESCE(ip.qty_in_period,  0) AS entradas_mes_cant,
+                COALESCE(op.qty_out_period, 0) AS salidas_mes_cant,
+                (COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0)
+                 + COALESCE(ip.qty_in_period, 0)
+                 - COALESCE(op.qty_out_period, 0)) AS saldo_final_cant,
+
+                ((COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0)) * en.precio) AS saldo_inicial_money,
+                (COALESCE(ip.qty_in_period,  0) * en.precio) AS entradas_mes_money,
+                (COALESCE(op.qty_out_period, 0) * en.precio) AS salidas_mes_money,
+                ((COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0)
+                  + COALESCE(ip.qty_in_period, 0) - COALESCE(op.qty_out_period, 0)) * en.precio) AS saldo_final_money
+            FROM entradas en
+            LEFT JOIN materiales m        ON m.id  = en.id_material
+            LEFT JOIN objeto_especifico obj ON obj.id = m.id_objespecifico
+            LEFT JOIN in_before  ib ON ib.id_entradadetalle  = en.id_entradadetalle
+            LEFT JOIN out_before ob ON ob.id_entrada_detalle = en.id_entradadetalle
+            LEFT JOIN in_period  ip ON ip.id_entradadetalle  = en.id_entradadetalle
+            LEFT JOIN out_period op ON op.id_entrada_detalle = en.id_entradadetalle
+        )
+        SELECT
+            b.id_material,
+            b.codigo,
+            b.descripcion,
+            b.precio,
+            SUM(b.saldo_inicial_cant)  AS saldo_inicial_cant,
+            SUM(b.entradas_mes_cant)   AS entradas_mes_cant,
+            SUM(b.salidas_mes_cant)    AS salidas_mes_cant,
+            SUM(b.saldo_final_cant)    AS saldo_final_cant,
+            SUM(b.saldo_inicial_money) AS saldo_inicial_money,
+            SUM(b.entradas_mes_money)  AS entradas_mes_money,
+            SUM(b.salidas_mes_money)   AS salidas_mes_money,
+            SUM(b.saldo_final_money)   AS saldo_final_money
+        FROM base b
+        GROUP BY b.id_material, b.codigo, b.descripcion, b.precio
+        ORDER BY b.codigo, b.descripcion
+    ", [
+            $idproy,                 // entradas WHERE id_tipoproyecto
+            $idproy,                 // salidas  WHERE id_tipoproyecto
+            $start->toDateString(),  // in_before
+            $start->toDateString(),  // out_before
+            $start->toDateString(),  // in_period >=
+            $end->toDateString(),    // in_period <=
+            $start->toDateString(),  // out_period >=
+            $end->toDateString(),    // out_period <=
+        ]);
+
+        // ── Totales ───────────────────────────────────────────────────────
+        $totales = [
+            'inicial_cant'  => 0, 'entradas_cant' => 0, 'salidas_cant'  => 0, 'final_cant' => 0,
+            'inicial_money' => 0.0,'entradas_money'=> 0.0,'salidas_money' => 0.0,'final_money'=> 0.0,
+        ];
+
+        // Sumatorias por código presupuestario
+        $sumPorCodigo = [];
+
+        foreach ($rows as $r) {
+            // 1) Totales generales
+            $totales['inicial_cant']   += (int) ($r->saldo_inicial_cant ?? 0);
+            $totales['entradas_cant']  += (int) ($r->entradas_mes_cant  ?? 0);
+            $totales['salidas_cant']   += (int) ($r->salidas_mes_cant   ?? 0);
+            $totales['final_cant']     += (int) ($r->saldo_final_cant   ?? 0);
+            $totales['inicial_money']  += (float) ($r->saldo_inicial_money ?? 0);
+            $totales['entradas_money'] += (float) ($r->entradas_mes_money  ?? 0);
+            $totales['salidas_money']  += (float) ($r->salidas_mes_money   ?? 0);
+            $totales['final_money']    += (float) ($r->saldo_final_money   ?? 0);
+
+            // 2) Sumas por código
+            $codigo = $r->codigo ?? 'SIN-CODIGO';
+
+            if (!isset($sumPorCodigo[$codigo])) {
+                $sumPorCodigo[$codigo] = [
+                    'codigo'         => $codigo,
+                    'inicial_cant'   => 0,  'entradas_cant'  => 0,
+                    'salidas_cant'   => 0,  'final_cant'     => 0,
+                    'inicial_money'  => 0.0,'entradas_money' => 0.0,
+                    'salidas_money'  => 0.0,'final_money'    => 0.0,
+                ];
+            }
+
+            $sumPorCodigo[$codigo]['inicial_cant']   += (int) ($r->saldo_inicial_cant ?? 0);
+            $sumPorCodigo[$codigo]['entradas_cant']  += (int) ($r->entradas_mes_cant  ?? 0);
+            $sumPorCodigo[$codigo]['salidas_cant']   += (int) ($r->salidas_mes_cant   ?? 0);
+            $sumPorCodigo[$codigo]['final_cant']     += (int) ($r->saldo_final_cant   ?? 0);
+            $sumPorCodigo[$codigo]['inicial_money']  += (float) ($r->saldo_inicial_money ?? 0);
+            $sumPorCodigo[$codigo]['entradas_money'] += (float) ($r->entradas_mes_money  ?? 0);
+            $sumPorCodigo[$codigo]['salidas_money']  += (float) ($r->salidas_mes_money   ?? 0);
+            $sumPorCodigo[$codigo]['final_money']    += (float) ($r->saldo_final_money   ?? 0);
+        }
+
+        // ── Render PDF ─────────────────────────────────────────────────────
+        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER', 'orientation' => 'L']);
+        $mpdf->SetTitle('Reporte de Movimientos por Proyecto');
+        $mpdf->showImageErrors = false;
+
+        if (file_exists(public_path('css/cssbodega.css'))) {
+            $mpdf->WriteHTML(file_get_contents(public_path('css/cssbodega.css')), \Mpdf\HTMLParserMode::HEADER_CSS);
+        }
+
+        $html = "
+    <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif;'>
+        <tr>
+            <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
+                <table width='100%'>
+                    <tr>
+                        <td style='width:30%; text-align:left;'>
+                            <img src='{$logoalcaldia}' style='height:38px'>
+                        </td>
+                        <td style='width:70%; text-align:left; color:#104e8c; font-size:13px; font-weight:bold; line-height:1.3;'>
+                            SANTA ANA NORTE<br>EL SALVADOR
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
+                MOVIMIENTOS POR PROYECTO
+            </td>
+            <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
+                <table width='100%' style='font-size:10px;'>
+                    <tr>
+                        <td width='40%' style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Código:</strong></td>
+                        <td width='60%' style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>GEAD-002-REPO</td>
+                    </tr>
+                    <tr>
+                        <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Versión:</strong></td>
+                        <td style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>000</td>
+                    </tr>
+                    <tr>
+                        <td style='border-right:0.8px solid #000; padding:4px 6px;'><strong>Fecha de vigencia:</strong></td>
+                        <td style='padding:4px 6px; text-align:center;'>22/05/2026</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table><br>
+    <span style='font-weight:bold; font-size:11px;'>PROYECTO DE ORIGEN DE LOS MATERIALES: " . e($proyecto->nombre ?? '—') . "</span><br>
+    <span style='font-weight:bold;'>PERIODO:  {$desdeFormat} AL {$hastaFormat}</span><br>
+    ";
+
+        $html .= "
+    <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px; margin-top:8px'>
+        <thead style='background:#f2f4f8'>
+            <tr>
+                <th>No.</th>
+                <th>COD PRESUP.</th>
+                <th>DESCRIPCIÓN</th>
+                <th style='text-align:right; width:8%'>PRECIO UNITARIO</th>
+                <th style='text-align:right; width:6%'>EXISTENCIA INICIAL</th>
+                <th style='text-align:right; width:8%'>SALDO INICIAL</th>
+                <th style='text-align:right; width:8%'>ENTRADAS</th>
+                <th style='text-align:right; width:9%'>SALDO ENTRADAS</th>
+                <th style='text-align:right; width:7%'>SALIDAS</th>
+                <th style='text-align:right; width:9%'>SALDO SALIDAS</th>
+                <th style='text-align:right; width:6%'>EXISTENCIA ACTUAL</th>
+                <th style='text-align:right; width:8%'>SALDO EXISTENCIA ACTUAL</th>
+            </tr>
+        </thead>
+        <tbody>
+    ";
+
+        $i = 1;
+        foreach ($rows as $r) {
+            $html .= "
+        <tr>
+            <td>{$i}</td>
+            <td>".e($r->codigo ?? '')."</td>
+            <td>".e($r->descripcion)."</td>
+            <td style='text-align:right'>$".number_format($r->precio ?? 0, 4)."</td>
+            <td style='text-align:right'>".number_format($r->saldo_inicial_cant ?? 0)."</td>
+            <td style='text-align:right'>$".number_format($r->saldo_inicial_money ?? 0, 2)."</td>
+            <td style='text-align:right'>".number_format($r->entradas_mes_cant ?? 0)."</td>
+            <td style='text-align:right'>$".number_format($r->entradas_mes_money ?? 0, 2)."</td>
+            <td style='text-align:right'>".number_format($r->salidas_mes_cant ?? 0)."</td>
+            <td style='text-align:right'>$".number_format($r->salidas_mes_money ?? 0, 2)."</td>
+            <td style='text-align:right'>".number_format($r->saldo_final_cant ?? 0)."</td>
+            <td style='text-align:right'>$".number_format($r->saldo_final_money ?? 0, 2)."</td>
+        </tr>
+        ";
+            $i++;
+        }
+
+        if (!$rows) {
+            $html .= "<tr><td colspan='12' style='text-align:center; color:#888;'>Sin movimientos en el rango seleccionado.</td></tr>";
+        }
+
+        $html .= "
+        </tbody>
+        <tfoot>
+            <tr style='font-weight:bold; background:#f9fafb'>
+                <td colspan='4' style='text-align:right'>Totales:</td>
+                <td style='text-align:right'>".number_format($totales['inicial_cant'])."</td>
+                <td style='text-align:right'>$".number_format($totales['inicial_money'], 2)."</td>
+                <td style='text-align:right'>".number_format($totales['entradas_cant'])."</td>
+                <td style='text-align:right'>$".number_format($totales['entradas_money'], 2)."</td>
+                <td style='text-align:right'>".number_format($totales['salidas_cant'])."</td>
+                <td style='text-align:right'>$".number_format($totales['salidas_money'], 2)."</td>
+                <td style='text-align:right'>".number_format($totales['final_cant'])."</td>
+                <td style='text-align:right'>$".number_format($totales['final_money'], 2)."</td>
+            </tr>
+        </tfoot>
+    </table>
+    ";
+
+        // ── Resumen ────────────────────────────────────────────────────────
+        $html .= "
+    <br>
+    <table width='55%' border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; font-size:12px'>
+        <tr style='background:#eef3ff; font-weight:bold; text-align:center'>
+            <td colspan='3'>Resumen del período {$desdeFormat} - {$hastaFormat}</td>
+        </tr>
+        <tr style='font-weight:bold; background:#f9fafb'>
+            <td></td>
+            <td style='text-align:right'>Cantidad</td>
+            <td style='text-align:right'>Dinero (\$)</td>
+        </tr>
+        <tr>
+            <td>Saldo Inicial</td>
+            <td style='text-align:right'>".number_format($totales['inicial_cant'])."</td>
+            <td style='text-align:right'>$".number_format($totales['inicial_money'], 2)."</td>
+        </tr>
+        <tr>
+            <td>Entradas del período</td>
+            <td style='text-align:right'>".number_format($totales['entradas_cant'])."</td>
+            <td style='text-align:right'>$".number_format($totales['entradas_money'], 2)."</td>
+        </tr>
+        <tr>
+            <td>Salidas del período</td>
+            <td style='text-align:right'>".number_format($totales['salidas_cant'])."</td>
+            <td style='text-align:right'>$".number_format($totales['salidas_money'], 2)."</td>
+        </tr>
+        <tr style='font-weight:bold'>
+            <td>Saldo Final</td>
+            <td style='text-align:right'>".number_format($totales['final_cant'])."</td>
+            <td style='text-align:right'>$".number_format($totales['final_money'], 2)."</td>
+        </tr>
+    </table>
+    ";
+
+        // ── Cuadro adicional: sumatorias por código presupuestario ─────────
+        if (!empty($sumPorCodigo)) {
+
+            $totalSaldoFinalCodigos = 0;
+
+            $html .= "
+        <br><br>
+        <span style='font-weight:bold; font-size:12px;'>Resumen por Código Presupuestario</span>
+        <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px; margin-top:4px'>
+            <thead style='background:#f2f4f8'>
+                <tr>
+                    <th style='width:4%'>#</th>
+                    <th style='width:10%'>Código</th>
+                    <th style='text-align:right; width:6%'>INICIAL</th>
+                    <th style='text-align:right; width:10%'>\$ INICIAL</th>
+                    <th style='text-align:right; width:6%'>ENTRADAS</th>
+                    <th style='text-align:right; width:10%'>\$ ENTRADAS</th>
+                    <th style='text-align:right; width:6%'>SALIDAS</th>
+                    <th style='text-align:right; width:10%'>\$ SALIDAS</th>
+                    <th style='text-align:right; width:6%'>SALDO</th>
+                    <th style='text-align:right; width:10%'>\$ SALDO</th>
+                </tr>
+            </thead>
+            <tbody>
+        ";
+
+            $j = 1;
+            foreach ($sumPorCodigo as $s) {
+
+                $totalSaldoFinalCodigos += (float) $s['final_money'];
+
+                $html .= "
+            <tr>
+                <td>{$j}</td>
+                <td>".e($s['codigo'])."</td>
+                <td style='text-align:right'>".number_format($s['inicial_cant'])."</td>
+                <td style='text-align:right'>$".number_format($s['inicial_money'], 2)."</td>
+                <td style='text-align:right'>".number_format($s['entradas_cant'])."</td>
+                <td style='text-align:right'>$".number_format($s['entradas_money'], 2)."</td>
+                <td style='text-align:right'>".number_format($s['salidas_cant'])."</td>
+                <td style='text-align:right'>$".number_format($s['salidas_money'], 2)."</td>
+                <td style='text-align:right'>".number_format($s['final_cant'])."</td>
+                <td style='text-align:right'>$".number_format($s['final_money'], 2)."</td>
+            </tr>
+            ";
+                $j++;
+            }
+
+            $html .= "
+            <tr style='font-weight:bold; background:#f9fafb'>
+                <td colspan='9' style='text-align:right'>TOTAL \$ SALDO</td>
+                <td style='text-align:right'>$".number_format($totalSaldoFinalCodigos, 2)."</td>
+            </tr>
+            </tbody>
+        </table>
+        ";
+        }
+
+        $mpdf->setFooter("Página {PAGENO} de {nb}");
+        $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
+        $mpdf->Output();
+    }
 
 
 }
