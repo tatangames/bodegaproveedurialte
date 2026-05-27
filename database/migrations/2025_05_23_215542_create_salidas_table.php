@@ -29,6 +29,12 @@ return new class extends Migration
             $table->text('acta_observaciones')->nullable()->after('acta_cargo_solic');
             $table->string('acta_tipo_destino', 300)->nullable()->after('acta_observaciones');
 
+            // TRANSFERENCIA DE PROYECTO, NOMBRES PARA LAS FIRMAS
+            $table->string('firma_1', 200)->nullable();
+            $table->string('firma_2', 200)->nullable();
+
+
+
             $table->foreign('id_tipoproyecto')->references('id')->on('tipoproyecto');
             $table->foreign('id_tipoproyecto_transferencia')->references('id')->on('tipoproyecto');
         });

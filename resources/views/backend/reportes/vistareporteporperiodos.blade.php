@@ -144,7 +144,7 @@
         <section class="content">
             <div class="container-fluid">
                 <div class="row justify-content-center">
-                    <div class="col-md-8">
+                    <div class="col-md-10">
                         <div class="reporte-card">
                             <div class="reporte-header">
                                 <i class="fas fa-exchange-alt"></i>
@@ -182,10 +182,12 @@
                                     </label>
                                     <select class="form-control" id="sel-proyecto">
                                         @foreach($proyectos as $p)
-                                            <option value="{{ $p->id }}">{{ $p->nombre }}</option>
+                                            <option value="{{ $p->id }}"
+                                                    data-cerrado="{{ $p->transferido ? '1' : '0' }}">{{ $p->nombre }}</option>
                                         @endforeach
                                     </select>
                                 </div>
+
 
                                 <div class="row">
                                     <div class="col-md-6">
@@ -221,7 +223,7 @@
 
                                         <div class="row">
 
-                                            <div class="col-md-4">
+                                            <div class="col-md-5">
                                                 <div class="form-group">
                                                     <label>1 - Encargado de bodega de proyecto:</label>
                                                     <input type="text"
@@ -274,18 +276,62 @@
     <script src="{{ asset('js/alertaPersonalizada.js') }}"></script>
 
     <script>
+
+
         var estadoActual = 'activo';
 
+        // ── Formato con badge rojo si está cerrado ────────────────────────
+        function formatProyecto(option) {
+
+            if (!option.id) return option.text;
+
+            var esCerrado = $(option.element).data('cerrado');
+
+            if (parseInt(esCerrado) === 1) {
+                return $(`
+            <span>
+                ${option.text}
+                <span style="
+                    background:#dc3545;
+                    color:#fff;
+                    font-size:10px;
+                    font-weight:700;
+                    padding:2px 7px;
+                    border-radius:4px;
+                    margin-left:6px;">
+                    CERRADO
+                </span>
+            </span>
+        `);
+            }
+
+            return $('<span>' + option.text + '</span>');
+        }
+
         $(document).ready(function () {
+
+            document.getElementById("divcontenedor").style.display = "block";
+
             $('#sel-proyecto').select2({
                 theme: "bootstrap-5",
-                language: { noResults: function () { return "No encontrado"; } }
+                templateResult: formatProyecto,
+                templateSelection: formatProyecto,
+                escapeMarkup: function(markup) {
+                    return markup;
+                },
+                language: {
+                    noResults: function () {
+                        return "Búsqueda no encontrada";
+                    }
+                }
             });
 
             $('.estado-tab').on('click', function () {
                 cambiarEstado($(this).data('estado'));
             });
         });
+
+
 
         function cambiarEstado(estado) {
             estadoActual = estado;

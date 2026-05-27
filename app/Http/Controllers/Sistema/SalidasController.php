@@ -483,6 +483,8 @@ class SalidasController extends Controller
                 $salida->acta_cargo_solic              = $actaCargoSolic;
                 $salida->acta_observaciones            = $actaObservaciones;
                 $salida->acta_tipo_destino             = $actaTipoDestino;
+                $salida->firma_1 = $request->firma_1;
+                $salida->firma_2 = $request->firma_2;
                 $salida->save();
 
                 // ENTRADA
@@ -600,6 +602,8 @@ class SalidasController extends Controller
                 $salida->acta_cargo_solic     = $actaCargoSolic;
                 $salida->acta_observaciones   = $actaObservaciones;
                 $salida->acta_tipo_destino    = $actaTipoDestino;
+                $salida->firma_1 = $request->firma_1;
+                $salida->firma_2 = $request->firma_2;
                 $salida->save();
 
                 // HISTORIAL

@@ -61,7 +61,7 @@
         <div class="container-fluid">
             <div class="row">
 
-                <div class="col-md-8">
+                <div class="col-md-10">
 
                     <div class="card card-primary">
                         <div class="card-header">
@@ -72,14 +72,14 @@
 
                             <div class="card-body">
                                 <div class="row">
-                                    <label>Fecha de Transferencia: <span style="color: red">*</span></label>
+                                    <label>Fecha de Cierre: <span style="color: red">*</span></label>
                                     <input style="width: 25%; margin-left: 25px;" type="date" class="form-control" id="fecha">
                                 </div>
                             </div>
 
                             <div style="margin-left: 15px; margin-right: 15px; margin-top: 15px;">
                                 <div class="form-group">
-                                    <label>Asignar Proyecto: <span style="color: red">*</span></label>
+                                    <label>Seleccionar Proyecto: <span style="color: red">*</span></label>
                                     <select id="select-tipoproyecto" class="form-control">
                                         @foreach($tipoproyecto as $item)
                                             <option value="{{$item->id}}">{{ $item->nombre }}</option>

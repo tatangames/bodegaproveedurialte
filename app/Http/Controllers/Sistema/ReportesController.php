@@ -114,6 +114,7 @@ class ReportesController extends Controller
             <td style='border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>
                 " . e($infoProyecto->nombre ?? '') . "
             </td>
+
         </tr>
     </table>
 
@@ -4499,6 +4500,34 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
             $nombreCodigo = "";
         }
 
+
+
+
+
+
+        // ── Validar fecha de cierre solo si proyecto cerrado ─────────────
+        if ($estado === 'cerrado') {
+
+            $cierre = Transferencia::where('id_tipoproyecto', $idproy)
+                ->where('tipo_salida', 'snapshot')
+                ->latest('id')
+                ->first();
+
+            if ($cierre) {
+
+                $fechaCierre = \Carbon\Carbon::parse($cierre->fecha)
+                    ->startOfDay();
+
+                // No permitir fechas menores al cierre
+                if ($start->lt($fechaCierre) || $end->lt($fechaCierre)) {
+
+                    return 'El rango solicitado no puede ser menor a la fecha de cierre del proyecto: '. $fechaCierre->format('d/m/Y');
+                }
+            }
+        }
+
+
+
         // ===================================================================
         //  CONSULTA
         // ===================================================================
@@ -4518,10 +4547,11 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
             // En CERRADO:
             //  - entradas: SIN filtro de es_transferencia (material original).
             //  - salidas:  se separan en dos grupos:
-            //       * operativas (es_transferencia = 0 / NULL) -> consumen saldo
-            //         inicial SIEMPRE, sin importar fecha.
-            //       * transferencias (es_transferencia = 1)    -> son las
-            //         "salidas del período".
+            //       * operativas (es_transferencia = 0 / NULL) -> consumo normal.
+            //       * transferencias (es_transferencia = 1).
+            //    Ambos grupos se reparten por fecha: lo anterior al período
+            //    alimenta el saldo inicial; lo que cae dentro del período se
+            //    cuenta como SALIDAS del período.
             $rows = DB::select("
             WITH entradas AS (
                 SELECT
@@ -4534,17 +4564,18 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
                 WHERE e.id_tipoproyecto = ?
             ),
             salidas_oper AS (
-                -- salidas operativas (consumo normal cuando estaba activo)
+                -- salidas operativas / generales (es_transferencia 0 o NULL)
                 SELECT
                     sd.id_entrada_detalle,
-                    sd.cantidad_salida
+                    sd.cantidad_salida,
+                    s.fecha AS fecha_salida
                 FROM salidas_detalle sd
                 JOIN salidas s ON s.id = sd.id_salida
                 WHERE s.id_tipoproyecto = ?
                   AND (s.es_transferencia = 0 OR s.es_transferencia IS NULL)
             ),
             salidas_transf AS (
-                -- transferencias / salidas generales tras el cierre
+                -- transferencias (es_transferencia = 1)
                 SELECT
                     sd.id_entrada_detalle,
                     sd.cantidad_salida,
@@ -4559,9 +4590,16 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
                 FROM entradas
                 GROUP BY id_entradadetalle
             ),
-            out_oper AS (
+            oper_before AS (
                 SELECT id_entrada_detalle, SUM(cantidad_salida) AS qty
                 FROM salidas_oper
+                WHERE fecha_salida < ?
+                GROUP BY id_entrada_detalle
+            ),
+            oper_period AS (
+                SELECT id_entrada_detalle, SUM(cantidad_salida) AS qty
+                FROM salidas_oper
+                WHERE fecha_salida >= ? AND fecha_salida <= ?
                 GROUP BY id_entrada_detalle
             ),
             transf_before AS (
@@ -4586,42 +4624,48 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
                     en.precio,
 
                     -- SALDO INICIAL = todo lo original
-                    --                 - consumo operativo total
+                    --                 - operativas anteriores al período
                     --                 - transferencias anteriores al período
                     (COALESCE(it.qty, 0)
-                     - COALESCE(oo.qty, 0)
+                     - COALESCE(ob.qty, 0)
                      - COALESCE(tb.qty, 0))                       AS saldo_inicial_cant,
 
                     -- ENTRADAS del período: SIEMPRE 0 en proyecto cerrado
                     0                                             AS entradas_mes_cant,
 
-                    -- SALIDAS del período: solo transferencias dentro del rango
-                    COALESCE(tp.qty, 0)                           AS salidas_mes_cant,
+                    -- SALIDAS del período = operativas del período
+                    --                       + transferencias del período
+                    (COALESCE(op.qty, 0)
+                     + COALESCE(tp.qty, 0))                       AS salidas_mes_cant,
 
                     -- SALDO FINAL = inicial - salidas del período
                     (COALESCE(it.qty, 0)
-                     - COALESCE(oo.qty, 0)
+                     - COALESCE(ob.qty, 0)
                      - COALESCE(tb.qty, 0)
+                     - COALESCE(op.qty, 0)
                      - COALESCE(tp.qty, 0))                       AS saldo_final_cant,
 
                     ((COALESCE(it.qty, 0)
-                      - COALESCE(oo.qty, 0)
+                      - COALESCE(ob.qty, 0)
                       - COALESCE(tb.qty, 0)) * en.precio)         AS saldo_inicial_money,
 
                     0                                             AS entradas_mes_money,
 
-                    (COALESCE(tp.qty, 0) * en.precio)             AS salidas_mes_money,
+                    ((COALESCE(op.qty, 0)
+                      + COALESCE(tp.qty, 0)) * en.precio)         AS salidas_mes_money,
 
                     ((COALESCE(it.qty, 0)
-                      - COALESCE(oo.qty, 0)
+                      - COALESCE(ob.qty, 0)
                       - COALESCE(tb.qty, 0)
+                      - COALESCE(op.qty, 0)
                       - COALESCE(tp.qty, 0)) * en.precio)         AS saldo_final_money
                 FROM entradas en
                 LEFT JOIN materiales m          ON m.id  = en.id_material
                 LEFT JOIN objeto_especifico obj ON obj.id = m.id_objespecifico
                 LEFT JOIN unidadmedida um       ON um.id = m.id_medida
                 LEFT JOIN in_total       it ON it.id_entradadetalle  = en.id_entradadetalle
-                LEFT JOIN out_oper       oo ON oo.id_entrada_detalle = en.id_entradadetalle
+                LEFT JOIN oper_before    ob ON ob.id_entrada_detalle = en.id_entradadetalle
+                LEFT JOIN oper_period    op ON op.id_entrada_detalle = en.id_entradadetalle
                 LEFT JOIN transf_before  tb ON tb.id_entrada_detalle = en.id_entradadetalle
                 LEFT JOIN transf_period  tp ON tp.id_entrada_detalle = en.id_entradadetalle
             )
@@ -4650,7 +4694,10 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
                 $idproy,                 // entradas
                 $idproy,                 // salidas_oper
                 $idproy,                 // salidas_transf
-                $start->toDateString(),  // transf_before  <
+                $start->toDateString(),  // oper_before
+                $start->toDateString(),  // oper_period    >=
+                $end->toDateString(),    // oper_period    <=
+                $start->toDateString(),  // transf_before
                 $start->toDateString(),  // transf_period  >=
                 $end->toDateString(),    // transf_period  <=
             ]);
@@ -4867,28 +4914,89 @@ padding:5px 4px; background:#d9e1f2; text-align:center;";
                 " . e($proyecto->nombre ?? '') . "
             </td>
         </tr>
-    </table>
+    </table>";
 
-    <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:8px;'>
-        <tr>
-            <td style='width:22%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
-                       font-weight:bold; background:#f5f5f5;'>
-                PERIODO
-            </td>
-            <td style='width:43%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>
-                {$desdeFormat} AL {$hastaFormat}
-            </td>
-            <td style='width:20%;'></td>
-            <td style='width:7%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
-                       font-weight:bold; background:#f5f5f5; text-align:center;'>
-                FECHA
-            </td>
-            <td style='width:8%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; text-align:center;'>
-                {$fechaHoy}
-            </td>
-        </tr>
-    </table>
-    ";
+
+        // Estado del proyecto
+        $estaCerrado = $proyecto->transferido == 1;
+        $textoEstado = $estaCerrado ? 'SI' : 'NO';
+
+        // Fecha de cierre
+        $fechaCierre = 'No aplica';
+
+        if ($estaCerrado) {
+
+            $cierre = Transferencia::where('id_tipoproyecto', $idproy)
+                ->where('tipo_salida', 'snapshot')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($cierre) {
+                $fechaCierre = Carbon::parse($cierre->fecha)
+                    ->format('d-m-Y');
+            }
+        }
+
+
+        $html .= "
+<table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:8px;'>
+
+    <tr>
+        <td style='width:22%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
+                   font-weight:bold; background:#f5f5f5;'>
+            PERIODO
+        </td>
+
+        <td style='width:43%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>
+            {$desdeFormat} AL {$hastaFormat}
+        </td>
+
+        <td style='width:20%;'></td>
+
+        <td style='width:7%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
+                   font-weight:bold; background:#f5f5f5; text-align:center;'>
+            FECHA
+        </td>
+
+        <td style='width:8%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; text-align:center;'>
+            {$fechaHoy}
+        </td>
+    </tr>";
+
+        if ($estaCerrado) {
+
+            $html .= "
+    <tr>
+        <td style='border:0.8px solid #ccc; padding:6px 8px; font-size:11px;
+                   font-weight:bold; background:#f5f5f5;'>
+            FECHA DE CIERRE
+        </td>
+
+        <td style='border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>
+            {$fechaCierre}
+        </td>
+
+        <td colspan='3'></td>
+    </tr>";
+        }
+
+        $html .= "
+</table>
+";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         $html .= "
     <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px; margin-top:8px'>

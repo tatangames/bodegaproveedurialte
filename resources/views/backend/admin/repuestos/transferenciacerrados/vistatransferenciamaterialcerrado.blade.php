@@ -1190,6 +1190,9 @@
             formData.append('acta_observaciones',   $('#acta-observaciones').val().trim());
             formData.append('acta_tipo_destino',    $('#acta-tipo-destino').val().trim());
 
+            formData.append('firma_1',    $('#nombrefirma-d1').val().trim());
+            formData.append('firma_2',    $('#nombrefirma-d2').val().trim());
+
             axios.post(urlAdmin + '/admin/transferencia/material/xproyecto', formData)
                 .then((response) => {
                     closeLoading();

@@ -742,6 +742,7 @@ class HistorialController extends Controller
     }
 
 
+
     public function actaDesdeHistorial($id)
     {
         $transferencia = Transferencia::find($id);
@@ -768,7 +769,12 @@ class HistorialController extends Controller
         $depto         = '';
         $nombreSolic   = '';
         $cargoSolic    = '';
-        $observaciones = '';
+
+        $firma_1 = '';
+        $firma_2 = '';
+
+
+
         $tipodestino   = $transferencia->tipo_salida === 'general'
             ? 'Salida General — Mantenimiento de Instalaciones Municipales'
             : ('Transferencia a Proyecto: ' . (Tipoproyecto::find($transferencia->id_tipoproyecto)?->nombre ?? '—'));
@@ -783,6 +789,8 @@ class HistorialController extends Controller
                 $cargoSolic    = $salida->acta_cargo_solic  ?? '';
                 $observaciones = $salida->acta_observaciones ?? '';
                 $tipodestino   = $salida->acta_tipo_destino ?? $tipodestino;
+                $firma_1       = $salida->firma_1 ?? '';
+                $firma_2       = $salida->firma_2 ?? '';
 
                 if ($salida->acta_id_departamento) {
                     $deptoDB = DB::table('departamentos')
@@ -961,14 +969,14 @@ class HistorialController extends Controller
 </table>";
 
         // ── Tabla de materiales ───────────────────────────────────────
-        $granTotal = 0;
-        $porCodigo = [];
+        // Ordenar las filas por código presupuestario para poder agrupar
+        usort($rows, function ($a, $b) {
+            return strcmp($a['codigo'], $b['codigo']);
+        });
 
+        $granTotal = 0;
         foreach ($rows as $r) {
             $granTotal += $r['subtotal'];
-            $cod = $r['codigo'];
-            if (!isset($porCodigo[$cod])) $porCodigo[$cod] = 0;
-            $porCodigo[$cod] += $r['subtotal'];
         }
 
         $html .= "
@@ -986,8 +994,36 @@ class HistorialController extends Controller
     </thead>
     <tbody>";
 
-        $i = 1;
+        $i             = 1;
+        $codigoActual  = null;
+        $subtotalGrupo = 0;
+
+        // Función auxiliar para imprimir la fila de subtotal de un código
+        $filaSubtotal = function ($codigo, $monto) {
+            return "
+        <tr>
+            <td colspan='6' style='font-weight:bold; font-size:10px; text-align:center;
+                                    border:0.8px solid #000; padding:4px; background:#f2f4f8;'>
+                SUBTOTAL [" . htmlspecialchars($codigo) . "]
+            </td>
+            <td style='font-weight:bold; font-size:10px; text-align:right;
+                        border:0.8px solid #000; padding:4px; background:#f2f4f8;'>
+                $ " . number_format($monto, 4) . "
+            </td>
+        </tr>";
+        };
+
         foreach ($rows as $r) {
+
+            // Si cambió el código (y no es la primera fila), cerrar el grupo anterior
+            if ($codigoActual !== null && $r['codigo'] !== $codigoActual) {
+                $html .= $filaSubtotal($codigoActual, $subtotalGrupo);
+                $subtotalGrupo = 0;
+            }
+
+            $codigoActual   = $r['codigo'];
+            $subtotalGrupo += $r['subtotal'];
+
             $html .= "
         <tr>
             <td style='{$tdC}'>{$i}</td>
@@ -1001,19 +1037,9 @@ class HistorialController extends Controller
             $i++;
         }
 
-        // Subtotales por código presupuestario
-        foreach ($porCodigo as $cod => $subtotal) {
-            $html .= "
-        <tr>
-            <td colspan='6' style='font-weight:bold; font-size:10px; text-align:center;
-                                    border:0.8px solid #000; padding:4px; background:#f2f4f8;'>
-                SUBTOTAL [" . htmlspecialchars($cod) . "]
-            </td>
-            <td style='font-weight:bold; font-size:10px; text-align:right;
-                        border:0.8px solid #000; padding:4px; background:#f2f4f8;'>
-                $ " . number_format($subtotal, 4) . "
-            </td>
-        </tr>";
+        // Cerrar el subtotal del último grupo (si hubo filas)
+        if ($codigoActual !== null) {
+            $html .= $filaSubtotal($codigoActual, $subtotalGrupo);
         }
 
         $html .= "
@@ -1048,54 +1074,71 @@ class HistorialController extends Controller
 
         $html .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial,sans-serif;
-                            margin-top:{$px}px; font-size:15px; line-height:1.5;'>
+                            margin-top:{$px}px; font-size:22px; line-height:1.8;'>
     <tr>
-        <td style='width:50%; padding-right:40px; vertical-align:top;'>
-            <strong style='font-size:16px;'>ENTREGADO POR:</strong><br><br>
-            <table width='100%' style='border-collapse:collapse;'>
+        <td style='width:50%; padding-right:50px; vertical-align:top;'>
+            <strong style='font-size:28px;'>ENTREGADO POR:</strong><br><br>
+
+            <table width='100%' style='border-collapse:collapse; font-size:28px;'>
                 <tr>
-                    <td style='width:18%; padding-bottom:8px;'>FIRMA:</td>
-                    <td style='border-bottom:0.8px solid #000; width:82%;'>&nbsp;</td>
+                    <td style='width:22%; padding-bottom:14px; font-weight:bold;'>FIRMA:</td>
+                    <td style='border-bottom:1.5px solid #000; width:78%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+
+                <tr><td colspan='2' style='height:45px;'></td></tr>
+
                 <tr>
-                    <td style='padding-bottom:8px;'>NOMBRE:</td>
-                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    <td style='padding-bottom:14px; font-weight:bold;'>NOMBRE:</td>
+                    <td style='border-bottom:1.5px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+
+                <tr><td colspan='2' style='height:45px;'></td></tr>
+
                 <tr>
-                    <td style='padding-bottom:8px;'>CARGO:</td>
-                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    <td style='padding-bottom:14px; font-weight:bold;'>CARGO:</td>
+                    <td style='border-bottom:1.5px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+
+                <tr><td colspan='2' style='height:45px;'></td></tr>
+
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:13px; line-height:1.4;'>
-                        [ENCARGADO DE BODEGA DE PROYECTO O RESPONSABLE ASIGNADO]
+                    <td colspan='2'
+                        style='text-align:center; font-size:26px; font-weight:normal; line-height:1.5;'>
+                        $firma_1
                     </td>
                 </tr>
             </table>
         </td>
-        <td style='width:50%; padding-left:40px; vertical-align:top;'>
-            <strong style='font-size:16px;'>RECIBIDO POR:</strong><br><br>
-            <table width='100%' style='border-collapse:collapse;'>
+
+        <td style='width:50%; padding-left:50px; vertical-align:top;'>
+            <strong style='font-size:28px;'>RECIBIDO POR:</strong><br><br>
+
+            <table width='100%' style='border-collapse:collapse; font-size:28px;'>
                 <tr>
-                    <td style='width:18%; padding-bottom:8px;'>FIRMA:</td>
-                    <td style='border-bottom:0.8px solid #000; width:82%;'>&nbsp;</td>
+                    <td style='width:22%; padding-bottom:14px; font-weight:bold;'>FIRMA:</td>
+                    <td style='border-bottom:1.5px solid #000; width:78%;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+
+                <tr><td colspan='2' style='height:45px;'></td></tr>
+
                 <tr>
-                    <td style='padding-bottom:8px;'>NOMBRE:</td>
-                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    <td style='padding-bottom:14px; font-weight:bold;'>NOMBRE:</td>
+                    <td style='border-bottom:1.5px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+
+                <tr><td colspan='2' style='height:45px;'></td></tr>
+
                 <tr>
-                    <td style='padding-bottom:8px;'>CARGO:</td>
-                    <td style='border-bottom:0.8px solid #000;'>&nbsp;</td>
+                    <td style='padding-bottom:14px; font-weight:bold;'>CARGO:</td>
+                    <td style='border-bottom:1.5px solid #000;'>&nbsp;</td>
                 </tr>
-                <tr><td colspan='2' style='height:28px;'></td></tr>
+
+                <tr><td colspan='2' style='height:45px;'></td></tr>
+
                 <tr>
-                    <td colspan='2' style='text-align:center; font-size:13px; line-height:1.4;'>
-                        [RESPONSABLE DEL PROYECTO O SOLICITANTE]
+                    <td colspan='2'
+                        style='text-align:center; font-size:26px; font-weight:normal; line-height:1.5;'>
+                        $firma_2
                     </td>
                 </tr>
             </table>
@@ -1115,7 +1158,6 @@ class HistorialController extends Controller
         $mpdf->WriteHTML($html, \Mpdf\HTMLParserMode::HTML_BODY);
         $mpdf->Output();
     }
-
 
 
 
