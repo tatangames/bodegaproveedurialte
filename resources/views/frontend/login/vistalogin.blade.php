@@ -117,7 +117,7 @@
 
 
                         <!-- TÍTULO  -->
-                        <h4 class="login-title">Taller Estructuras Metálicas</h4>
+                        <h4 class="login-title">OBRA DE BANCO</h4>
                         <form class="login-form">
                             <div>
                                 <label class="font-500">Usuario</label>
