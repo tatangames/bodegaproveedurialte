@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'Obra de Banco',
+    'title' => 'Plantel Municipal',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,7 +63,7 @@ return [
     |
     */
 
-    'logo' => '<b>Obra de Banco</b>',
+    'logo' => '<b>Plantel Municipal</b>',
     'logo_img' => 'images/logosistema.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
