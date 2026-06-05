@@ -20,7 +20,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('admin.logout')
 
 Route::middleware('auth:admin')->group(function () {
 
-    // --- ROLES ---
+    // --- ROLES ----.
     Route::get('/admin/roles/index', [RolesController::class,'index'])->name('admin.roles.index');
     Route::get('/admin/roles/tabla', [RolesController::class,'tablaRoles']);
     Route::get('/admin/roles/lista/permisos/{id}', [RolesController::class,'vistaPermisos']);

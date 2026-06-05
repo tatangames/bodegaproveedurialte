@@ -8,8 +8,8 @@ return new class extends Migration
 {
     /**
      * TIPO DE COMPRA
-     * * - PROCESO DE COMPRA
-     * * - CAJA CHICA
+     * * - AUMENTO 2025
+     * * - X COSA
  */
     public function up(): void
     {

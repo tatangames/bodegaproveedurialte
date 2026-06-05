@@ -7,11 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * LISTADO DE EQUIPOS
+     * TIPOS DE SALIDA
+     * 1- SALIDA CON SOLICITUD
+     * 2- SALIDA POR DESPERFECTO
      */
     public function up(): void
     {
-        Schema::create('equipos', function (Blueprint $table) {
+        Schema::create('tipo_salida', function (Blueprint $table) {
             $table->id();
             $table->string('nombre', 100);
         });
@@ -22,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('equipos');
+        Schema::dropIfExists('tipo_salida');
     }
 };

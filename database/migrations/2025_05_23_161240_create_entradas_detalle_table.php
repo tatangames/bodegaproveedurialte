@@ -28,6 +28,9 @@ return new class extends Migration
             // copia nombre material
             $table->string('nombre', 300)->nullable();
 
+            // Numero de ITEM de la orden de compra
+            $table->string('numero_item', 100)->nullable();
+
             $table->foreign('id_entradas')->references('id')->on('entradas');
             $table->foreign('id_material')->references('id')->on('materiales');
         });

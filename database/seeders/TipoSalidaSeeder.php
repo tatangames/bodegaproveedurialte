@@ -2,23 +2,23 @@
 
 namespace Database\Seeders;
 
-use App\Models\TipoEntrada;
+use App\Models\TipoSalida;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class TipoEntradaSeeder extends Seeder
+class TipoSalidaSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        TipoEntrada::create([
-            'nombre' => 'REPUESTOS',
+        TipoSalida::create([
+            'nombre' => 'SALIDA CON SOLICITUD',
         ]);
 
-        TipoEntrada::create([
-            'nombre' => 'LLANTAS',
+        TipoSalida::create([
+            'nombre' => 'SALIDA POR DESPERFECTO',
         ]);
     }
 }

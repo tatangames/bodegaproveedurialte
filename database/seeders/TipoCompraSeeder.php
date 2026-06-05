@@ -14,11 +14,8 @@ class TipoCompraSeeder extends Seeder
     public function run(): void
     {
         TipoCompra::create([
-            'nombre' => 'PROCESO DE COMPRA',
+            'nombre' => 'AUMENTO PROCESO 2025',
         ]);
 
-        TipoCompra::create([
-            'nombre' => 'CAJA CHICA',
-        ]);
     }
 }

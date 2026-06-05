@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('salidas', function (Blueprint $table) {
             $table->id();
-            $table->bigInteger('id_equipo')->unsigned();
+            $table->bigInteger('id_departamento')->unsigned()->nullable();
+            $table->bigInteger('id_tiposalida')->unsigned()->nullable();
+
             $table->date('fecha');
-            $table->string('descripcion', 800)->nullable();
+            $table->text('descripcion')->nullable();
+            $table->string('numero_solicitud', 100)->nullable();
 
-            // FICHA DE SALIDA
-            $table->string('ficha_nombre', 100)->nullable();
-            $table->string('ficha_talonario', 100)->nullable();
-
-            $table->foreign('id_equipo')->references('id')->on('equipos');
+            $table->foreign('id_tiposalida')->references('id')->on('tipo_salida');
+            $table->foreign('id_departamento')->references('id')->on('departamentos');
         });
     }
 
