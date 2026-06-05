@@ -6,8 +6,6 @@
     <h1>Registro de Entradas</h1>
 @stop
 
-@section('plugins.Datatables', true)
-@section('plugins.DatatablesPlugins', true)
 @section('plugins.Sweetalert2', true)
 
 @include('backend.urlglobal')
@@ -69,24 +67,15 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Factura (Opcional):</label>
-                                            <input type="text" class="form-control" autocomplete="off" maxlength="100" id="factura">
+                                            <label>Lote / Factura (Opcional):</label>
+                                            <input type="text" class="form-control" autocomplete="off"
+                                                   maxlength="100" id="factura"
+                                                   placeholder="Ej: FAC-001">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-5">
-                                        <div class="form-group">
-                                            <label>Tipo de Entrada: <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="select-tipoentrada" style="width:100%">
-                                                <option value="">Seleccione...</option>
-                                                @foreach($arrayTipoEntrada as $te)
-                                                    <option value="{{ $te->id }}">{{ $te->nombre }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
                                     <div class="col-md-5">
                                         <div class="form-group">
                                             <label>Tipo de Compra: <span class="text-danger">*</span></label>
@@ -98,13 +87,26 @@
                                             </select>
                                         </div>
                                     </div>
+
+                                    <div class="col-md-5">
+                                        <div class="form-group">
+                                            <label>Proveedor: <span class="text-danger">*</span></label>
+                                            <select class="form-control" id="select-proveedor" style="width:100%">
+                                                <option value="">Seleccione...</option>
+                                                @foreach($arrayProveedor as $tc)
+                                                    <option value="{{ $tc->id }}">{{ $tc->nombre }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="col-md-8">
                                         <div class="form-group">
                                             <label>Descripción (Opcional):</label>
-                                            <input type="text" class="form-control" autocomplete="off" maxlength="800" id="descripcion">
+                                            <input type="text" class="form-control" autocomplete="off"
+                                                   maxlength="800" id="descripcion">
                                         </div>
                                     </div>
                                     <div class="col-md-4 d-flex align-items-end justify-content-end">
@@ -166,12 +168,12 @@
                                         <div class="form-group">
                                             <label>Precio (4 decimales) <span class="text-danger">*</span></label>
                                             <input type="number" id="precio-producto" min="0" max="9000000"
-                                                   step="0.0001" class="form-control" autocomplete="off" placeholder="0.00">
+                                                   step="0.0001" class="form-control" autocomplete="off" placeholder="0.0000">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Detalle (Opcional)</label>
+                                            <label>Detalle / Código (Opcional)</label>
                                             <input type="text" id="codigo" maxlength="100"
                                                    class="form-control" autocomplete="off">
                                         </div>
@@ -207,12 +209,12 @@
                             <table class="table table-bordered table-hover mb-0" id="matriz">
                                 <thead>
                                 <tr>
-                                    <th style="width:6%">#</th>
+                                    <th style="width:5%">#</th>
                                     <th style="width:38%">Material</th>
                                     <th style="width:12%">Cantidad</th>
-                                    <th style="width:16%">Detalle</th>
-                                    <th style="width:14%">Precio</th>
-                                    <th style="width:14%">Opciones</th>
+                                    <th style="width:15%">Código/Detalle</th>
+                                    <th style="width:15%">Precio</th>
+                                    <th style="width:15%">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -251,12 +253,13 @@
             document.getElementById('fecha').value = hoy.toJSON().slice(0, 10);
 
             // Select2
-            $('#select-tipoentrada').select2({
+            $('#select-tipocompra').select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('body'),
                 language: { noResults: function () { return 'No encontrado'; } }
             });
-            $('#select-tipocompra').select2({
+
+            $('#select-proveedor').select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('body'),
                 language: { noResults: function () { return 'No encontrado'; } }
@@ -277,18 +280,17 @@
 
         // ── Agregar fila a tabla ──────────────────────────────────────
         function agregarFila() {
-            var repuesto     = document.getElementById('repuesto');
-            var nomRepuesto  = repuesto.value.trim();
-            var idMaterial   = repuesto.dataset.info;
-            var nombreMat    = repuesto.dataset.nombre || nomRepuesto;
-            var cantidad     = document.getElementById('cantidad').value;
-            var codigo       = document.getElementById('codigo').value;
-            var precio       = document.getElementById('precio-producto').value;
+            var repuesto    = document.getElementById('repuesto');
+            var idMaterial  = repuesto.dataset.info;
+            var nombreMat   = repuesto.dataset.nombre || repuesto.value.trim();
+            var cantidad    = document.getElementById('cantidad').value;
+            var codigo      = document.getElementById('codigo').value;
+            var precio      = document.getElementById('precio-producto').value;
 
-            var reglaEntero   = /^[0-9]\d*$/;
-            var reglaDecimal  = /^([0-9]+\.?[0-9]{0,4})$/;
+            var reglaEntero  = /^[0-9]\d*$/;
+            var reglaDecimal = /^([0-9]+\.?[0-9]{0,4})$/;
 
-            if (idMaterial == 0 || idMaterial === '') {
+            if (!idMaterial || idMaterial == 0 || idMaterial === '') {
                 toastr.error('Seleccione un material de la lista'); return;
             }
             if (cantidad === '' || !cantidad.match(reglaEntero) || parseInt(cantidad) <= 0) {
@@ -302,6 +304,17 @@
             }
             if (parseFloat(precio) > 9000000) {
                 toastr.error('Precio máximo 9 millones'); return;
+            }
+
+            // Verificar duplicado
+            var duplicado = false;
+            $('#matriz tbody tr').each(function () {
+                if ($(this).find('input[name="descripcionArray[]"]').attr('data-info') == idMaterial) {
+                    duplicado = true;
+                }
+            });
+            if (duplicado) {
+                toastr.warning('Este material ya fue agregado'); return;
             }
 
             var nFilas = $('#matriz tbody tr').length + 1;
@@ -336,6 +349,7 @@
 
             $('#matriz tbody').append(fila);
             toastr.success('Material agregado');
+            $('#modalRepuesto').modal('hide');
 
             document.getElementById('formulario-repuesto').reset();
             $('#repuesto').attr('data-info', '0').attr('data-nombre', '');
@@ -360,19 +374,24 @@
             txtContenedorGlobal = e;
 
             var texto = e.value;
-            if (texto === '') { $(e).attr('data-info', 0); }
+            if (texto === '') {
+                $(e).attr('data-info', 0);
+                $('.droplista').hide();
+                seguroBuscador = true;
+                return;
+            }
 
             axios.post(urlAdmin + '/admin/buscar/material', { query: texto })
-                .then((response) => {
+                .then(function (response) {
                     seguroBuscador = true;
                     var row = $(e).closest('tr');
                     row.find('.droplista').fadeIn().html(response.data);
                 })
-                .catch(() => { seguroBuscador = true; });
+                .catch(function () { seguroBuscador = true; });
         }
 
         function modificarValor(edrop) {
-            var texto = $(edrop).text();
+            var texto = $(edrop).text().trim();
             var id    = edrop.id;
             $(txtContenedorGlobal).val(texto)
                 .attr('data-info', id)
@@ -391,7 +410,7 @@
                 cancelButtonColor: '#d33',
                 cancelButtonText: 'Cancelar',
                 confirmButtonText: 'Sí'
-            }).then((result) => {
+            }).then(function (result) {
                 if (result.isConfirmed) guardarEntrada();
             });
         }
@@ -400,12 +419,12 @@
             var fecha       = document.getElementById('fecha').value;
             var factura     = document.getElementById('factura').value;
             var descripcion = document.getElementById('descripcion').value;
-            var tipoentrada = document.getElementById('select-tipoentrada').value;
             var tipocompra  = document.getElementById('select-tipocompra').value;
+            var proveedor  = document.getElementById('select-proveedor').value;
 
-            if (!fecha)       { toastr.error('Fecha es requerida'); return; }
-            if (!tipoentrada) { toastr.error('Tipo de Entrada es requerido'); return; }
-            if (!tipocompra)  { toastr.error('Tipo de Compra es requerido'); return; }
+            if (!fecha)      { toastr.error('Fecha es requerida'); return; }
+            if (!tipocompra) { toastr.error('Tipo de Compra es requerido'); return; }
+            if (!proveedor) { toastr.error('Proveedor es requerido'); return; }
 
             var nFilas = $('#matriz tbody tr').length;
             if (nFilas === 0) { toastr.error('Agregue al menos un material'); return; }
@@ -441,7 +460,13 @@
                     valido = false; return;
                 }
 
-                contenedorArray.push({ idMaterial, infoNombre: nombre, infoCantidad, infoCodigo, infoPrecio });
+                contenedorArray.push({
+                    idMaterial:   idMaterial,
+                    infoNombre:   nombre,
+                    infoCantidad: infoCantidad,
+                    infoCodigo:   infoCodigo,
+                    infoPrecio:   infoPrecio
+                });
             });
 
             if (!valido) return;
@@ -450,13 +475,13 @@
             formData.append('fecha',           fecha);
             formData.append('factura',         factura);
             formData.append('descripcion',     descripcion);
-            formData.append('tipoentrada',     tipoentrada);
             formData.append('tipocompra',      tipocompra);
+            formData.append('proveedor',      proveedor);
             formData.append('contenedorArray', JSON.stringify(contenedorArray));
 
             openLoading();
             axios.post(urlAdmin + '/admin/entradas/guardar', formData)
-                .then((response) => {
+                .then(function (response) {
                     closeLoading();
                     if (response.data.success === 1) {
                         toastr.success('Registrado correctamente');
@@ -465,7 +490,7 @@
                         toastr.error('Error al guardar');
                     }
                 })
-                .catch(() => { closeLoading(); toastr.error('Error al guardar'); });
+                .catch(function () { closeLoading(); toastr.error('Error al guardar'); });
         }
 
         function colorRojoTabla(index) {
@@ -479,9 +504,8 @@
         function limpiar() {
             document.getElementById('descripcion').value = '';
             document.getElementById('factura').value = '';
-            $('#select-tipoentrada').val('').trigger('change');
             $('#select-tipocompra').val('').trigger('change');
-            $('#matriz tbody tr').remove();
+            $('#matriz tbody').empty();
         }
     </script>
 @endsection

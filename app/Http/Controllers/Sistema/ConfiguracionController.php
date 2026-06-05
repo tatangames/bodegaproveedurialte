@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Sistema;
 use App\Http\Controllers\Controller;
 use App\Models\Cuenta;
 use App\Models\Departamentos;
-use App\Models\Equipos;
 use App\Models\ObjetoEspecifico;
+use App\Models\Proveedor;
 use App\Models\Rubro;
+use App\Models\TipoCompra;
 use App\Models\UnidadMedida;
-use Database\Seeders\EquiposSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -86,20 +86,20 @@ class ConfiguracionController extends Controller
     }
 
 
-    //********* DEPARTAMENTOS **************************************************************
+    //********* TIPO DE COMPRA **************************************************************
 
 
-    public function indexEquipos(){
-        return view('backend.admin.configuracion.equipos.vistaequipos');
+    public function indexTipoDeCompra(){
+        return view('backend.admin.configuracion.tipodecompra.vistatipodecompra');
     }
 
-    public function tablaEquipos(){
+    public function tablaTipoDeCompra(){
 
-        $lista = Equipos::orderBy('nombre', 'ASC')->get();
-        return view('backend.admin.configuracion.equipos.tablaequipos', compact('lista'));
+        $lista = TipoCompra::orderBy('nombre', 'ASC')->get();
+        return view('backend.admin.configuracion.tipodecompra.tablatipodecompra', compact('lista'));
     }
 
-    public function nuevaEquipos(Request $request){
+    public function nuevaTipoDeCompra(Request $request){
         $regla = array(
             'nombre' => 'required',
         );
@@ -108,7 +108,7 @@ class ConfiguracionController extends Controller
 
         if ($validar->fails()){ return ['success' => 0];}
 
-        $dato = new Equipos();
+        $dato = new TipoCompra();
         $dato->nombre = $request->nombre;
 
         if($dato->save()){
@@ -118,7 +118,7 @@ class ConfiguracionController extends Controller
         }
     }
 
-    public function informacionEquipos(Request $request){
+    public function informacionTipoDeCompra(Request $request){
         $regla = array(
             'id' => 'required',
         );
@@ -127,7 +127,7 @@ class ConfiguracionController extends Controller
 
         if ($validar->fails()){ return ['success' => 0];}
 
-        if($lista = Equipos::where('id', $request->id)->first()){
+        if($lista = TipoCompra::where('id', $request->id)->first()){
 
             return ['success' => 1, 'info' => $lista];
         }else{
@@ -135,7 +135,7 @@ class ConfiguracionController extends Controller
         }
     }
 
-    public function editarEquipos(Request $request){
+    public function editarTipoDeCompra(Request $request){
 
         $regla = array(
             'id' => 'required',
@@ -146,9 +146,9 @@ class ConfiguracionController extends Controller
 
         if ($validar->fails()){ return ['success' => 0];}
 
-        if(Equipos::where('id', $request->id)->first()){
+        if(TipoCompra::where('id', $request->id)->first()){
 
-            Equipos::where('id', $request->id)->update([
+            TipoCompra::where('id', $request->id)->update([
                 'nombre' => $request->nombre
             ]);
 
@@ -160,6 +160,79 @@ class ConfiguracionController extends Controller
 
 
 
+
+
+//********* PROVEEDOR  **************************************************************
+
+
+    public function indexProveedor(){
+        return view('backend.admin.configuracion.proveedor.vistaproveedor');
+    }
+
+    public function tablaProveedor(){
+
+        $lista = Proveedor::orderBy('nombre', 'ASC')->get();
+        return view('backend.admin.configuracion.proveedor.tablaproveedor', compact('lista'));
+    }
+
+    public function nuevaProveedor(Request $request){
+        $regla = array(
+            'nombre' => 'required',
+        );
+
+        $validar = Validator::make($request->all(), $regla);
+
+        if ($validar->fails()){ return ['success' => 0];}
+
+        $dato = new Proveedor();
+        $dato->nombre = $request->nombre;
+
+        if($dato->save()){
+            return ['success' => 1];
+        }else{
+            return ['success' => 2];
+        }
+    }
+
+    public function informacionProveedor(Request $request){
+        $regla = array(
+            'id' => 'required',
+        );
+
+        $validar = Validator::make($request->all(), $regla);
+
+        if ($validar->fails()){ return ['success' => 0];}
+
+        if($lista = Proveedor::where('id', $request->id)->first()){
+
+            return ['success' => 1, 'info' => $lista];
+        }else{
+            return ['success' => 2];
+        }
+    }
+
+    public function editarProveedor(Request $request){
+
+        $regla = array(
+            'id' => 'required',
+            'nombre' => 'required'
+        );
+
+        $validar = Validator::make($request->all(), $regla);
+
+        if ($validar->fails()){ return ['success' => 0];}
+
+        if(Proveedor::where('id', $request->id)->first()){
+
+            Proveedor::where('id', $request->id)->update([
+                'nombre' => $request->nombre
+            ]);
+
+            return ['success' => 1];
+        }else{
+            return ['success' => 2];
+        }
+    }
 
 
 

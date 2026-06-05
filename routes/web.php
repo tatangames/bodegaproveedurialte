@@ -58,12 +58,19 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/unidadmedida/informacion', [ConfiguracionController::class, 'informacionUnidadMedida']);
     Route::post('/admin/unidadmedida/editar', [ConfiguracionController::class, 'editarUnidadMedida']);
 
-    // --- EQUIPOS ---
-    Route::get('/admin/equipos/index', [ConfiguracionController::class,'indexEquipos'])->name('admin.equipos.index');
-    Route::get('/admin/equipos/tabla/index', [ConfiguracionController::class,'tablaEquipos']);
-    Route::post('/admin/equipos/nuevo', [ConfiguracionController::class, 'nuevaEquipos']);
-    Route::post('/admin/equipos/informacion', [ConfiguracionController::class, 'informacionEquipos']);
-    Route::post('/admin/equipos/editar', [ConfiguracionController::class, 'editarEquipos']);
+    // --- TIPO DE COMPRA ---
+    Route::get('/admin/tipodecompra/index', [ConfiguracionController::class,'indexTipoDeCompra'])->name('admin.tipodecompra.index');
+    Route::get('/admin/tipodecompra/tabla/index', [ConfiguracionController::class,'tablaTipoDeCompra']);
+    Route::post('/admin/tipodecompra/nuevo', [ConfiguracionController::class, 'nuevaTipoDeCompra']);
+    Route::post('/admin/tipodecompra/informacion', [ConfiguracionController::class, 'informacionTipoDeCompra']);
+    Route::post('/admin/tipodecompra/editar', [ConfiguracionController::class, 'editarTipoDeCompra']);
+
+    // --- PROVEEDOR ---
+    Route::get('/admin/proveedor/index', [ConfiguracionController::class,'indexProveedor'])->name('admin.proveedor.index');
+    Route::get('/admin/proveedor/tabla/index', [ConfiguracionController::class,'tablaProveedor']);
+    Route::post('/admin/proveedor/nuevo', [ConfiguracionController::class, 'nuevaProveedor']);
+    Route::post('/admin/proveedor/informacion', [ConfiguracionController::class, 'informacionProveedor']);
+    Route::post('/admin/proveedor/editar', [ConfiguracionController::class, 'editarProveedor']);
 
     // --- RUBRO ---
     Route::get('/admin/rubro/index', [ConfiguracionController::class,'indexRubro'])->name('admin.rubro.index');

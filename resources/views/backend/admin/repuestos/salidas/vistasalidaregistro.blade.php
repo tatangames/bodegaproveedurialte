@@ -6,8 +6,6 @@
     <h1>Registro de Salidas</h1>
 @stop
 
-@section('plugins.Datatables', true)
-@section('plugins.DatatablesPlugins', true)
 @section('plugins.Sweetalert2', true)
 
 @include('backend.urlglobal')
@@ -42,36 +40,11 @@
 @section('content')
 
     <style>
-        #matriz { table-layout: fixed; word-break: break-word; width: 100%; }
+        #matriz { table-layout: auto; word-break: break-word; width: 100%; }
         #matriz-busqueda { table-layout: fixed; }
-        .cursor-pointer:hover { cursor: pointer; color: #401fd2; font-weight: bold; }
+        .cursor-pointer { cursor: pointer; }
+        .cursor-pointer:hover { color: #401fd2; font-weight: bold; }
         *:focus { outline: none; }
-        #matriz thead tr th {
-            background: #2156af; color: #fff;
-            font-size: 11px; font-weight: 700;
-            text-transform: uppercase; border: none !important;
-            padding: 10px 12px;
-        }
-        #matriz tbody tr:hover { background: #eef3ff !important; }
-        #matriz tbody td { vertical-align: middle; font-size: 13px; }
-
-        .btn-guardar-salida {
-            background: linear-gradient(135deg, #28a745, #1e7e34);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 28px;
-            font-weight: 400;
-            font-size: 14px;
-            letter-spacing: .03em;
-            box-shadow: 0 4px 14px rgba(40,167,69,.35);
-            transition: all .2s;
-        }
-        .btn-guardar-salida:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(40,167,69,.45);
-            color: #fff;
-        }
     </style>
 
     <div id="divcontenedor">
@@ -94,30 +67,34 @@
                                             <input type="date" class="form-control" id="fecha">
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>N. Talonario: <small class="text-muted">(Opcional)</small></label>
+                                            <label>N° Solicitud: <small class="text-muted">(Opcional)</small></label>
                                             <input type="text" class="form-control" autocomplete="off"
-                                                   maxlength="100" id="ficha_talonario" placeholder="Ej: 001">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Desripción: <small class="text-muted">(Opcional)</small></label>
-                                            <input type="text" class="form-control" autocomplete="off"
-                                                   maxlength="100" id="ficha_nombre" placeholder="Nombre...">
+                                                   maxlength="100" id="numero_solicitud" placeholder="Ej: SOL-001">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-5">
                                         <div class="form-group">
-                                            <label>Equipo: <span class="text-danger">*</span></label>
-                                            <select class="form-control" id="select-equipo" style="width:100%">
-                                                <option value="">Seleccione un equipo...</option>
-                                                @foreach($arrayEquipos as $eq)
-                                                    <option value="{{ $eq->id }}">{{ $eq->nombre }}</option>
+                                            <label>Tipo de Salida: <span class="text-danger">*</span></label>
+                                            <select class="form-control" id="select-tiposalida" style="width:100%">
+                                                <option value="">Seleccione...</option>
+                                                @foreach($arrayTipoSalida as $ts)
+                                                    <option value="{{ $ts->id }}">{{ $ts->nombre }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="form-group">
+                                            <label>Departamento: <small class="text-muted">(Opcional)</small></label>
+                                            <select class="form-control" id="select-departamento" style="width:100%">
+                                                <option value="">Sin departamento</option>
+                                                @foreach($arrayDepartamentos as $dep)
+                                                    <option value="{{ $dep->id }}">{{ $dep->nombre }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -183,11 +160,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div id="tablaRepuesto"></div>
-                                    </div>
-                                </div>
                             </div>
                         </form>
                     </div>
@@ -232,10 +204,10 @@
                                         <thead class="thead-dark">
                                         <tr>
                                             <th>Fecha Ingreso</th>
-                                            <th>Detalle</th>
+                                            <th>Detalle/Código</th>
                                             <th>Precio</th>
-                                            <th>Cant. Actual</th>
-                                            <th>Cant. Salida</th>
+                                            <th class="text-center">Cant. Actual</th>
+                                            <th class="text-center">Cant. Salida</th>
                                         </tr>
                                         </thead>
                                         <tbody></tbody>
@@ -258,11 +230,7 @@
         {{-- ══ Tabla Detalle ══ --}}
         <section class="content-header">
             <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h2>
-                        Detalle de Salida
-                    </h2>
-                </div>
+                <div class="col-sm-6"><h2>Detalle de Salida</h2></div>
             </div>
         </section>
 
@@ -277,10 +245,10 @@
                             <table class="table table-bordered table-hover mb-0" id="matriz">
                                 <thead>
                                 <tr>
-                                    <th style="width:6%">#</th>
-                                    <th style="width:55%">Material</th>
-                                    <th style="width:15%">Cantidad Salida</th>
-                                    <th style="width:14%">Opciones</th>
+                                    <th style="width:5%">#</th>
+                                    <th style="width:60%">Material</th>
+                                    <th style="width:20%">Cantidad Salida</th>
+                                    <th style="width:15%">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -291,23 +259,12 @@
             </div>
         </section>
 
-        {{-- ══ Botones finales ══ --}}
-        <div class="d-flex justify-content-center gap-2 mt-3" style="margin: 10px; padding-bottom: 15px">
-            <button type="button"
-                    class="btn btn-warning"
-                    style="border-radius:6px; padding:6px 14px; font-weight:400; font-size:12px; color:#333;"
-                    onclick="generarPdfTalonario()">
-                <i class="fas fa-file-pdf mr-1"></i>Generar PDF
-            </button>
-
-            <button type="button"
-                    class="btn-guardar-salida"
-                    style="border-radius:6px; padding:6px 14px; font-size:12px; margin-left: 15px"
-                    onclick="preguntaGuardar()">
-                <i class="fas fa-save mr-1"></i>Guardar
+        {{-- ══ Botón Guardar ══ --}}
+        <div class="modal-footer justify-content-between" style="margin-top:25px;">
+            <button type="button" class="btn btn-success" onclick="preguntaGuardar()">
+                <i class="fas fa-save mr-1"></i> Guardar Salida
             </button>
         </div>
-
 
     </div>
 
@@ -327,17 +284,22 @@
             var hoy = new Date();
             document.getElementById('fecha').value = hoy.toJSON().slice(0, 10);
 
-            $('#select-equipo').select2({
+            $('#select-tiposalida').select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('body'),
                 language: { noResults: function () { return 'No encontrado'; } }
             });
 
-            $('#select-equipo').on('change', function () {
+            $('#select-departamento').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('body'),
+                language: { noResults: function () { return 'No encontrado'; } }
+            });
+
+            // Habilitar botón buscar cuando se seleccione tipo salida
+            $('#select-tiposalida').on('change', function () {
                 var val = $(this).val();
                 $('#botonaddmaterial').prop('disabled', !val || val === '');
-                $('#matriz tbody tr').remove();
-                actualizarContador();
             });
 
             $(document).click(function () { $('.droplista').hide(); });
@@ -345,8 +307,8 @@
 
         // ── Modal buscador ────────────────────────────────────────────
         function abrirModal() {
-            document.getElementById('tablaRepuesto').innerHTML = '';
             document.getElementById('formulario-repuesto').reset();
+            $('.droplista').html('').hide();
             $('#modalRepuesto').modal('show');
         }
 
@@ -355,27 +317,31 @@
             if (!seguroBuscador) return;
             seguroBuscador = false;
 
-            var row   = $(e).closest('tr');
             var texto = e.value;
+            if (texto === '') {
+                $('.droplista').hide();
+                seguroBuscador = true;
+                return;
+            }
 
             axios.post(urlAdmin + '/admin/buscar/material/disponible', { query: texto })
-                .then((response) => {
+                .then(function (response) {
                     seguroBuscador = true;
-                    row.find('.droplista').fadeIn().html(response.data);
+                    $('#midropmenu').fadeIn().html(response.data);
                 })
-                .catch(() => { seguroBuscador = true; });
+                .catch(function () { seguroBuscador = true; });
         }
 
         // ── Seleccionar material → modal cantidades ───────────────────
         function modificarValor(edrop) {
             openLoading();
-            $('#matrizM tbody tr').remove();
+            $('#matrizM tbody').empty();
 
             var formData = new FormData();
             formData.append('id', edrop.id);
 
             axios.post(urlAdmin + '/admin/buscar/material/disponibilidad', formData)
-                .then((response) => {
+                .then(function (response) {
                     closeLoading();
                     if (response.data.success !== 1) {
                         toastr.error('Error al cargar material'); return;
@@ -394,10 +360,14 @@
                             '<td><input disabled value="' + val.fechaIngreso + '" class="form-control form-control-sm" type="text"></td>' +
                             '<td><input disabled value="' + (val.codigo ?? '') + '" class="form-control form-control-sm" type="text"></td>' +
                             '<td><input disabled value="' + val.precioFormat + '" class="form-control form-control-sm" type="text"></td>' +
-                            '<td><input disabled name="arrayCantidadActual[]" data-cantidadActualFila="' + val.cantidadActual + '" value="' + val.cantidadActual + '" class="form-control form-control-sm" type="number"></td>' +
+                            '<td class="text-center"><input disabled name="arrayCantidadActual[]" ' +
+                            'data-cantidadActualFila="' + val.cantidadActual + '" ' +
+                            'value="' + val.cantidadActual + '" ' +
+                            'class="form-control form-control-sm text-center" type="number"></td>' +
                             '<td><input class="form-control form-control-sm" ' +
                             'data-idfilaentradadetalle="' + val.id + '" ' +
-                            'name="arrayCantidadSalida[]" min="0" max="' + val.cantidadActual + '" type="number" ' +
+                            'name="arrayCantidadSalida[]" min="0" max="' + val.cantidadActual + '" ' +
+                            'type="number" placeholder="0" ' +
                             'onkeydown="return validateInput(event);" ' +
                             'oninput="validateCantidadSalida(this, ' + val.cantidadActual + ');">' +
                             '</td>' +
@@ -405,9 +375,10 @@
                         $('#matrizM tbody').append(fila);
                     });
 
+                    $('#modalRepuesto').modal('hide');
                     $('#modalCantidad').modal('show');
                 })
-                .catch(() => { closeLoading(); toastr.error('Error'); });
+                .catch(function () { closeLoading(); toastr.error('Error'); });
         }
 
         // ── Agregar al detalle ────────────────────────────────────────
@@ -420,41 +391,42 @@
                 .map(function () { return $(this).attr('data-cantidadActualFila'); }).get();
 
             colorBlancoMatriz();
-            var habraSalida = true;
+            var habraSalida = false;
 
             for (var a = 0; a < arrayCantidadSalida.length; a++) {
                 var fc  = arrayCantidadSalida[a];
                 var max = arrayCantidadActual[a];
 
-                if (fc !== '') {
-                    if (parseInt(fc) <= 0) {
+                if (fc !== '' && parseInt(fc) > 0) {
+                    habraSalida = true;
+                    if (parseInt(fc) > parseInt(max)) {
                         colorRojoMatriz(a);
-                        alertaMensaje('info', 'Error', 'Fila #' + (a + 1) + ': No se permite cero');
+                        toastr.error('Fila #' + (a + 1) + ': Supera cantidad disponible (' + max + ')');
                         return;
                     }
-                    habraSalida = false;
                 }
-                if (fc !== '' && parseInt(fc) > parseInt(max)) {
+                if (fc !== '' && parseInt(fc) <= 0 && fc !== '') {
                     colorRojoMatriz(a);
-                    alertaMensaje('info', 'Error', 'Fila #' + (a + 1) + ': Supera cantidad actual');
+                    toastr.error('Fila #' + (a + 1) + ': No se permite cero o negativo');
                     return;
                 }
             }
 
-            if (habraSalida) { toastr.error('Registre mínimo 1 salida'); return; }
+            if (!habraSalida) { toastr.error('Registre mínimo 1 cantidad de salida'); return; }
 
             var nombreTexto = document.getElementById('info-material').value;
-            var nFilas      = $('#matriz tbody tr').length;
 
             for (var z = 0; z < arrayCantidadSalida.length; z++) {
                 var fc2 = arrayCantidadSalida[z];
                 if (fc2 !== '' && parseInt(fc2) > 0) {
-                    nFilas++;
+                    var nFilas = $('#matriz tbody tr').length + 1;
                     var fila =
                         '<tr>' +
                         '<td><span class="num-fila">' + nFilas + '</span></td>' +
                         '<td>' +
-                        '<input name="idmaterialArray[]" type="hidden" data-idmaterialArray="' + arrayIdEntradaDetalle[z] + '" data-nombreMaterial="' + nombreTexto + '">' +
+                        '<input name="idmaterialArray[]" type="hidden" ' +
+                        'data-idmaterialArray="' + arrayIdEntradaDetalle[z] + '" ' +
+                        'data-nombreMaterial="' + nombreTexto + '">' +
                         nombreTexto +
                         '</td>' +
                         '<td>' +
@@ -470,73 +442,10 @@
                 }
             }
 
-            actualizarContador();
             $('#modalCantidad').modal('hide');
             document.getElementById('inputBuscador').value = '';
-            toastr.success('Agregado al detalle');
-        }
-
-        // ── Generar PDF ───────────────────────────────────────────────
-        function generarPdfTalonario() {
-            colorBlancoTabla();
-
-            var fecha          = document.getElementById('fecha').value;
-            var equipo         = document.getElementById('select-equipo').value;
-            var descripcion    = document.getElementById('descripcion').value;
-            var fichaNombre    = document.getElementById('ficha_nombre').value;
-            var fichaTalonario = document.getElementById('ficha_talonario').value;
-
-            if (!fecha)  { toastr.error('Fecha es requerida');  return; }
-            if (!equipo) { toastr.error('Seleccione un equipo'); return; }
-
-            if ($('#matriz tbody tr').length === 0) {
-                toastr.error('Agregue al menos un material para generar el PDF');
-                return;
-            }
-
-            var idEntradaDetalle = $("input[name='idmaterialArray[]']")
-                .map(function () { return $(this).attr('data-idmaterialArray'); }).get();
-            var salidaCantidad   = $("input[name='salidaArray[]']")
-                .map(function () { return $(this).attr('data-cantidadSalida'); }).get();
-            var nombreMaterial   = $("input[name='idmaterialArray[]']")
-                .map(function () { return $(this).attr('data-nombreMaterial'); }).get();
-
-            var contenedorArray = [];
-            for (var p = 0; p < salidaCantidad.length; p++) {
-                contenedorArray.push({
-                    infoIdEntradaDeta: idEntradaDetalle[p],
-                    infoCantidad:      salidaCantidad[p],
-                    nombreMaterial:    nombreMaterial[p],
-                });
-            }
-
-            // POST a nueva pestaña para que mPDF devuelva el PDF inline
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = urlAdmin + '/admin/reporte/talonario/salida';
-            form.target = '_blank';
-
-            var fields = {
-                '_token':          document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'fecha':           fecha,
-                'equipo':          equipo,
-                'descripcion':     descripcion,
-                'ficha_nombre':    fichaNombre,
-                'ficha_talonario': fichaTalonario,
-                'contenedorArray': JSON.stringify(contenedorArray),
-            };
-
-            Object.keys(fields).forEach(function (key) {
-                var input   = document.createElement('input');
-                input.type  = 'hidden';
-                input.name  = key;
-                input.value = fields[key];
-                form.appendChild(input);
-            });
-
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+            $('.droplista').html('').hide();
+            toastr.success('Material agregado al detalle');
         }
 
         // ── Guardar salida ────────────────────────────────────────────
@@ -550,39 +459,29 @@
                 cancelButtonColor: '#d33',
                 cancelButtonText: 'Cancelar',
                 confirmButtonText: 'Sí, guardar'
-            }).then((result) => {
+            }).then(function (result) {
                 if (result.isConfirmed) guardarSalida();
             });
         }
 
         function guardarSalida() {
-            var fecha          = document.getElementById('fecha').value;
-            var equipo         = document.getElementById('select-equipo').value;
-            var descripcion    = document.getElementById('descripcion').value;
-            var fichaNombre    = document.getElementById('ficha_nombre').value;
-            var fichaTalonario = document.getElementById('ficha_talonario').value;
+            var fecha            = document.getElementById('fecha').value;
+            var tiposalida       = document.getElementById('select-tiposalida').value;
+            var departamento     = document.getElementById('select-departamento').value;
+            var descripcion      = document.getElementById('descripcion').value;
+            var numero_solicitud = document.getElementById('numero_solicitud').value;
 
-            if (!fecha)  { toastr.error('Fecha es requerida');  return; }
-            if (!equipo) { toastr.error('Equipo es requerido'); return; }
+            if (!fecha)      { toastr.error('Fecha es requerida');           return; }
+            if (!tiposalida) { toastr.error('Tipo de Salida es requerido');  return; }
 
             if ($('#matriz tbody tr').length === 0) {
                 toastr.error('Agregue al menos un material'); return;
             }
 
-            var reglaEntero      = /^[0-9]\d*$/;
             var idEntradaDetalle = $("input[name='idmaterialArray[]']")
                 .map(function () { return $(this).attr('data-idmaterialArray'); }).get();
-            var salidaCantidad   = $("input[name='salidaArray[]']")
+            var salidaCantidad = $("input[name='salidaArray[]']")
                 .map(function () { return $(this).attr('data-cantidadSalida'); }).get();
-
-            for (var a = 0; a < salidaCantidad.length; a++) {
-                var ic = salidaCantidad[a];
-                if (!ic || !ic.match(reglaEntero) || parseInt(ic) <= 0) {
-                    colorRojoTabla(a);
-                    toastr.error('Fila #' + (a + 1) + ' — Cantidad inválida');
-                    return;
-                }
-            }
 
             var contenedorArray = [];
             for (var p = 0; p < salidaCantidad.length; p++) {
@@ -594,15 +493,15 @@
 
             openLoading();
             var formData = new FormData();
-            formData.append('fecha',           fecha);
-            formData.append('equipo',          equipo);
-            formData.append('descripcion',     descripcion);
-            formData.append('ficha_nombre',    fichaNombre);
-            formData.append('ficha_talonario', fichaTalonario);
-            formData.append('contenedorArray', JSON.stringify(contenedorArray));
+            formData.append('fecha',            fecha);
+            formData.append('tiposalida',       tiposalida);
+            formData.append('departamento',     departamento);
+            formData.append('descripcion',      descripcion);
+            formData.append('numero_solicitud', numero_solicitud);
+            formData.append('contenedorArray',  JSON.stringify(contenedorArray));
 
             axios.post(urlAdmin + '/admin/salida/guardar', formData)
-                .then((response) => {
+                .then(function (response) {
                     closeLoading();
                     if (response.data.success === 10) {
                         Swal.fire({
@@ -611,7 +510,7 @@
                             allowOutsideClick: false,
                             confirmButtonColor: '#28a745',
                             confirmButtonText: 'Aceptar'
-                        }).then(() => { location.reload(); });
+                        }).then(function () { location.reload(); });
                     } else if (response.data.success === 2) {
                         Swal.fire({
                             title: 'Cantidad no disponible',
@@ -626,24 +525,19 @@
                         toastr.error('Error al guardar');
                     }
                 })
-                .catch(() => { closeLoading(); toastr.error('Error al guardar'); });
+                .catch(function () { closeLoading(); toastr.error('Error al guardar'); });
         }
 
         // ── Utilidades ────────────────────────────────────────────────
         function borrarFila(btn) {
             $(btn).closest('tr').remove();
             renumerarFilas();
-            actualizarContador();
         }
 
         function renumerarFilas() {
             $('#matriz tbody tr').each(function (i) {
                 $(this).find('.num-fila').text(i + 1);
             });
-        }
-
-        function actualizarContador() {
-            var n = $('#matriz tbody tr').length;
         }
 
         function colorRojoTabla(index) {
@@ -664,7 +558,7 @@
 
         function validateInput(event) {
             const key = event.key;
-            if (['Backspace','ArrowLeft','ArrowRight','Delete','Tab'].includes(key)) return true;
+            if (['Backspace', 'ArrowLeft', 'ArrowRight', 'Delete', 'Tab'].includes(key)) return true;
             if (key === 'e' || key === 'E' || key === '-' || isNaN(Number(key))) return false;
             return true;
         }

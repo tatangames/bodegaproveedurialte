@@ -13,6 +13,7 @@ use App\Models\Reserva;
 use App\Models\Salidas;
 use App\Models\SalidasDetalle;
 use App\Models\TipoProyecto;
+use App\Models\TipoSalida;
 use App\Models\Transferencia;
 use App\Models\TransferenciaDetalle;
 use App\Models\UnidadMedida;
@@ -29,12 +30,12 @@ class SalidasController extends Controller
 
     public function indexRegistroSalida()
     {
-        $arrayEquipos = Equipos::orderBy('nombre')->get();
+        $arrayTipoSalida    = TipoSalida::orderBy('nombre')->get();
+        $arrayDepartamentos = Departamentos::orderBy('nombre')->get();
 
         return view('backend.admin.repuestos.salidas.vistasalidaregistro',
-            compact('arrayEquipos'));
+            compact('arrayTipoSalida', 'arrayDepartamentos'));
     }
-
 
     public function buscadorMaterialDisponible(Request $request)
     {
@@ -143,22 +144,11 @@ class SalidasController extends Controller
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
     public function guardarSalida(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'fecha'    => 'required|date',
-            'equipo'   => 'required',
+            'fecha'       => 'required|date',
+            'tiposalida'  => 'required',
         ]);
 
         if ($validator->fails()) {
@@ -186,7 +176,6 @@ class SalidasController extends Controller
         try {
             $fila = 1;
 
-            // Validar disponibilidad por cada entrada_detalle
             foreach ($agrupado as $idEntradaDetalle => $cantidadSalida) {
 
                 $disponible = DB::table('entradas_detalle as ed')
@@ -223,12 +212,12 @@ class SalidasController extends Controller
             }
 
             // Guardar cabecera
-            $salida                  = new Salidas();
-            $salida->id_equipo       = $request->equipo;
-            $salida->fecha           = $request->fecha;
-            $salida->descripcion     = $request->descripcion;
-            $salida->ficha_nombre    = $request->ficha_nombre;
-            $salida->ficha_talonario = $request->ficha_talonario;
+            $salida                   = new Salidas();
+            $salida->id_tiposalida    = $request->tiposalida;
+            $salida->id_departamento  = $request->departamento ?: null;
+            $salida->fecha            = $request->fecha;
+            $salida->descripcion      = $request->descripcion      ?: null;
+            $salida->numero_solicitud = $request->numero_solicitud ?: null;
             $salida->save();
 
             // Guardar detalle
@@ -249,25 +238,6 @@ class SalidasController extends Controller
             return ['success' => 99];
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

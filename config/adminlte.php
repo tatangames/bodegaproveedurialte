@@ -338,11 +338,7 @@ return [
                     'icon' => 'far fa-circle',
                     'route' => 'admin.materiales.index',
                 ],
-                [
-                    'text' => 'Lista de Equipos',
-                    'icon' => 'far fa-circle',
-                    'route' => 'admin.equipos.index',
-                ],
+
             ],
         ],
 
@@ -404,6 +400,18 @@ return [
                     'text' => 'Objeto Específico',
                     'icon' => 'far fa-circle',
                     'route' => 'admin.objetoespecifico.index',
+                ],
+
+                [
+                    'text' => 'Tipo de Compra',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.tipodecompra.index',
+                ],
+
+                [
+                    'text' => 'Proveedores',
+                    'icon' => 'far fa-circle',
+                    'route' => 'admin.proveedor.index',
                 ],
 
             ],
