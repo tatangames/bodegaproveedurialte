@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class SalidasDetalleEntregas extends Model
+{
+    use HasFactory;
+    protected $table = 'salidas_detalle_entregas';
+    public $timestamps = false;
+    protected $fillable = ['id_salida_detalle', 'id_departamento', 'cantidad', 'fecha_entrega', 'observacion'];
+
+
+
+}

@@ -90,26 +90,12 @@
                                     </div>
                                     <div class="col-md-5">
                                         <div class="form-group">
-                                            <label>Departamento: <small class="text-muted">(Opcional)</small></label>
-                                            <select class="form-control" id="select-departamento" style="width:100%">
-                                                <option value="">Sin departamento</option>
-                                                @foreach($arrayDepartamentos as $dep)
-                                                    <option value="{{ $dep->id }}">{{ $dep->nombre }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="form-group">
                                             <label>Descripción: <small class="text-muted">(Opcional)</small></label>
                                             <input type="text" class="form-control" autocomplete="off"
                                                    maxlength="800" id="descripcion">
                                         </div>
                                     </div>
-                                    <div class="col-md-4 d-flex align-items-end justify-content-end">
+                                    <div class="col-md-2 d-flex align-items-end justify-content-end">
                                         <div class="form-group">
                                             <button type="button" id="botonaddmaterial"
                                                     onclick="abrirModal()"
@@ -245,10 +231,12 @@
                             <table class="table table-bordered table-hover mb-0" id="matriz">
                                 <thead>
                                 <tr>
-                                    <th style="width:5%">#</th>
-                                    <th style="width:60%">Material</th>
-                                    <th style="width:20%">Cantidad Salida</th>
-                                    <th style="width:15%">Opciones</th>
+                                    <th style="width:4%">#</th>
+                                    <th style="width:30%">Material</th>
+                                    <th style="width:8%">Cantidad</th>
+                                    <th style="width:22%">Departamento</th>
+                                    <th style="width:13%">Estado</th>
+                                    <th style="width:10%">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -278,6 +266,15 @@
     <script src="{{ asset('js/select2.min.js') }}" type="text/javascript"></script>
 
     <script>
+
+        // Opciones de departamentos para el select de cada fila
+        var arrayDepartamentosOpciones = [
+            '<option value="">Sin departamento</option>',
+            @foreach($arrayDepartamentos as $dep)
+                '<option value="{{ $dep->id }}">{{ $dep->nombre }}</option>',
+            @endforeach
+        ].join('');
+
         var seguroBuscador = true;
 
         $(function () {
@@ -290,13 +287,6 @@
                 language: { noResults: function () { return 'No encontrado'; } }
             });
 
-            $('#select-departamento').select2({
-                theme: 'bootstrap-5',
-                dropdownParent: $('body'),
-                language: { noResults: function () { return 'No encontrado'; } }
-            });
-
-            // Habilitar botón buscar cuando se seleccione tipo salida
             $('#select-tiposalida').on('change', function () {
                 var val = $(this).val();
                 $('#botonaddmaterial').prop('disabled', !val || val === '');
@@ -423,19 +413,42 @@
                     var fila =
                         '<tr>' +
                         '<td><span class="num-fila">' + nFilas + '</span></td>' +
+
+                        // Material
                         '<td>' +
                         '<input name="idmaterialArray[]" type="hidden" ' +
                         'data-idmaterialArray="' + arrayIdEntradaDetalle[z] + '" ' +
                         'data-nombreMaterial="' + nombreTexto + '">' +
                         nombreTexto +
                         '</td>' +
-                        '<td>' +
+
+                        // Cantidad
+                        '<td class="text-center">' +
                         '<input name="salidaArray[]" type="hidden" data-cantidadSalida="' + fc2 + '">' +
                         fc2 +
                         '</td>' +
+
+                        // Departamento por ítem
+                        '<td>' +
+                        '<select name="departamentoArray[]" class="form-control form-control-sm select-depto">' +
+                        arrayDepartamentosOpciones +
+                        '</select>' +
+                        '</td>' +
+
+                        // Estado toggle
+                        '<td class="text-center">' +
+                        '<input name="estadoArray[]" type="hidden" data-estadoSalida="pendiente">' +
+                        '<button type="button" class="btn btn-warning btn-sm btn-estado" ' +
+                        'onclick="toggleEstado(this)" data-estado="pendiente">' +
+                        '<i class="fas fa-clock mr-1"></i> Pendiente' +
+                        '</button>' +
+                        '</td>' +
+
+                        // Opciones
                         '<td>' +
                         '<button type="button" class="btn btn-danger btn-sm btn-block" onclick="borrarFila(this)">' +
-                        '<i class="fas fa-trash"></i> Borrar</button>' +
+                        '<i class="fas fa-trash"></i> Borrar' +
+                        '</button>' +
                         '</td>' +
                         '</tr>';
                     $('#matriz tbody').append(fila);
@@ -446,6 +459,28 @@
             document.getElementById('inputBuscador').value = '';
             $('.droplista').html('').hide();
             toastr.success('Material agregado al detalle');
+        }
+
+        // ── Toggle estado por fila ────────────────────────────────────
+        function toggleEstado(btn) {
+            var estadoActual = $(btn).attr('data-estado');
+            var hiddenEstado = $(btn).siblings('input[name="estadoArray[]"]');
+
+            if (estadoActual === 'pendiente') {
+                $(btn)
+                    .attr('data-estado', 'finalizado')
+                    .removeClass('btn-warning')
+                    .addClass('btn-success')
+                    .html('<i class="fas fa-check-circle mr-1"></i> Finalizado');
+                hiddenEstado.attr('data-estadoSalida', 'finalizado');
+            } else {
+                $(btn)
+                    .attr('data-estado', 'pendiente')
+                    .removeClass('btn-success')
+                    .addClass('btn-warning')
+                    .html('<i class="fas fa-clock mr-1"></i> Pendiente');
+                hiddenEstado.attr('data-estadoSalida', 'pendiente');
+            }
         }
 
         // ── Guardar salida ────────────────────────────────────────────
@@ -467,27 +502,54 @@
         function guardarSalida() {
             var fecha            = document.getElementById('fecha').value;
             var tiposalida       = document.getElementById('select-tiposalida').value;
-            var departamento     = document.getElementById('select-departamento').value;
             var descripcion      = document.getElementById('descripcion').value;
             var numero_solicitud = document.getElementById('numero_solicitud').value;
 
-            if (!fecha)      { toastr.error('Fecha es requerida');           return; }
-            if (!tiposalida) { toastr.error('Tipo de Salida es requerido');  return; }
+            if (!fecha)      { toastr.error('Fecha es requerida');          return; }
+            if (!tiposalida) { toastr.error('Tipo de Salida es requerido'); return; }
 
             if ($('#matriz tbody tr').length === 0) {
                 toastr.error('Agregue al menos un material'); return;
             }
 
+            // ── Validar departamento obligatorio si es SALIDA CON SOLICITUD ──
+            if (parseInt(tiposalida) === 1) {
+                var sinDepartamento = false;
+                var filaError = 0;
+
+                $('#matriz tbody tr').each(function (index) {
+                    var depVal = $(this).find('select[name="departamentoArray[]"]').val();
+                    if (!depVal || depVal === '') {
+                        sinDepartamento = true;
+                        filaError = index + 1;
+                        $(this).css('background', '#f8d7da'); // marcar fila en rojo
+                        return false; // break
+                    }
+                });
+
+                if (sinDepartamento) {
+                    toastr.error('Fila #' + filaError + ': El departamento es obligatorio para Salida con Solicitud');
+                    return;
+                }
+            }
+            // ────────────────────────────────────────────────────────────────
+
             var idEntradaDetalle = $("input[name='idmaterialArray[]']")
                 .map(function () { return $(this).attr('data-idmaterialArray'); }).get();
             var salidaCantidad = $("input[name='salidaArray[]']")
                 .map(function () { return $(this).attr('data-cantidadSalida'); }).get();
+            var salidaEstado = $("input[name='estadoArray[]']")
+                .map(function () { return $(this).attr('data-estadoSalida'); }).get();
+            var salidaDepartamento = $("select[name='departamentoArray[]']")
+                .map(function () { return $(this).val(); }).get();
 
             var contenedorArray = [];
             for (var p = 0; p < salidaCantidad.length; p++) {
                 contenedorArray.push({
-                    infoIdEntradaDeta: idEntradaDetalle[p],
-                    infoCantidad:      salidaCantidad[p],
+                    infoIdEntradaDeta:  idEntradaDetalle[p],
+                    infoCantidad:       salidaCantidad[p],
+                    infoEstado:         salidaEstado[p],
+                    infoDepartamento:   salidaDepartamento[p],
                 });
             }
 
@@ -495,7 +557,6 @@
             var formData = new FormData();
             formData.append('fecha',            fecha);
             formData.append('tiposalida',       tiposalida);
-            formData.append('departamento',     departamento);
             formData.append('descripcion',      descripcion);
             formData.append('numero_solicitud', numero_solicitud);
             formData.append('contenedorArray',  JSON.stringify(contenedorArray));
@@ -503,6 +564,7 @@
             axios.post(urlAdmin + '/admin/salida/guardar', formData)
                 .then(function (response) {
                     closeLoading();
+                    colorBlancoTabla(); // limpiar rojos al terminar
                     if (response.data.success === 10) {
                         Swal.fire({
                             title: 'Salida Registrada',
@@ -567,5 +629,6 @@
             input.value = input.value.replace(/[^0-9]/g, '');
             if (Number(input.value) > maxCantidad) input.value = maxCantidad;
         }
+
     </script>
 @endsection

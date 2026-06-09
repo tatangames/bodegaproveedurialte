@@ -126,7 +126,25 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/salida/guardar',  [SalidasController::class,'guardarSalida']);
     Route::post('/admin/buscar/material/disponible',  [SalidasController::class,'buscadorMaterialDisponible']);
     Route::post('/admin/buscar/material/disponibilidad', [SalidasController::class, 'infoBodegaMaterialDetalleFila']);
+
+    // --- PENDIENTES ---
+    Route::get('/admin/pendientes/entregas',          [SalidasController::class, 'indexPendienteEntrega'])->name('admin.pendientes.index');
+    Route::post('/admin/pendientes/salida-parcial',   [SalidasController::class, 'registrarSalidaParcial'])->name('admin.pendientes.parcial');
+    Route::post('/admin/pendientes/finalizar',        [SalidasController::class, 'finalizarDetalle'])->name('admin.pendientes.finalizar');
+    Route::post('/admin/pendientes/detalle-entregas', [SalidasController::class, 'detalleEntregas'])->name('admin.pendientes.detalle');
+    Route::post('/admin/pendientes/entrega/editar',     [SalidasController::class, 'editarEntrega'])->name('admin.pendientes.entrega.editar');
+    Route::post('/admin/pendientes/entrega/actualizar', [SalidasController::class, 'actualizarEntrega'])->name('admin.pendientes.entrega.actualizar');
+    Route::post('/admin/pendientes/entrega/eliminar',   [SalidasController::class, 'eliminarEntrega'])->name('admin.pendientes.entrega.eliminar');
+
+
+
+
+
+
+
+
     Route::post('/admin/reporte/talonario/salida', [ReportesController::class, 'pdfReporteSalidaTalonario']);
+
 
 
     // --- HISTORIAL / ENTRADAS ---

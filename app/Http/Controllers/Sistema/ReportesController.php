@@ -663,6 +663,11 @@ class ReportesController extends Controller
 
 
 
+
+
+
+
+
     public function pdfReporteSalidaTalonario(Request $request)
     {
         $fecha          = $request->input('fecha', '');
@@ -673,7 +678,7 @@ class ReportesController extends Controller
         $contenedorJson = $request->input('contenedorArray', '[]');
         $contenedor     = json_decode($contenedorJson, true) ?? [];
 
-        $infoEquipo = \App\Models\Equipos::find($idEquipo);
+        $infoEquipo = Equips::find($idEquipo);
         $fechaFmt   = $fecha ? date('d/m/Y', strtotime($fecha)) : '';
         $logoalcaldia = 'images/logo.png';
 

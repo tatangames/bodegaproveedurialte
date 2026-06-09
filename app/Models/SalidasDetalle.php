@@ -30,5 +30,9 @@ class SalidasDetalle extends Model
         //         'id'             → PK en la tabla materiales
     }
 
+    public function isPendiente(): bool
+    {
+        return $this->estado === 'pendiente';
+    }
 
 }
