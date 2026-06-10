@@ -44,6 +44,13 @@ class HistorialController extends Controller
             ->when($request->fecha_hasta, fn($q) => $q->whereDate('fecha', '<=', $request->fecha_hasta))
             ->when($request->tipocompra,  fn($q) => $q->where('id_tipocompra', $request->tipocompra))
             ->when($request->proveedor,   fn($q) => $q->where('id_proveedor',  $request->proveedor))
+            // NUEVOS:
+            ->when($request->factura, fn($q) => $q->where('lote', 'like', '%' . $request->factura . '%'))
+            ->when($request->material, function ($q) use ($request) {
+                $q->whereHas('detalle.material', function ($q2) use ($request) {
+                    $q2->where('nombre', 'like', '%' . $request->material . '%');
+                });
+            })
             ->orderBy('fecha', 'desc')
             ->get()
             ->map(function ($item) {

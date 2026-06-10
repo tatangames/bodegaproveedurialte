@@ -22,7 +22,7 @@
                                         <td data-order="{{ $dato->fecha }}">{{ $dato->fecha_fmt }}</td>
                                         <td>{{ $dato->tipoCompra->nombre ?? '' }}</td>
                                         <td>{{ $dato->proveedor->nombre ?? '' }}</td>
-                                        <td>{{ $dato->lote ?? '' }}</td>
+                                        <td>{{ $dato->factura ?? '' }}</td>
                                         <td>{{ $dato->descripcion ?? '' }}</td>
                                         <td class="text-center text-nowrap">
                                             <button type="button"

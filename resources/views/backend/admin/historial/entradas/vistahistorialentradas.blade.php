@@ -51,6 +51,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row align-items-end">
+
                             <div class="col-md-2">
                                 <label class="font-weight-bold">Fecha desde</label>
                                 <input type="date" class="form-control" id="filtro-fecha-desde">
@@ -88,6 +89,20 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label class="font-weight-bold">Buscar por material</label>
+                                <input type="text" class="form-control" id="filtro-material"
+                                       placeholder="Nombre del material...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="font-weight-bold">Factura/Lote</label>
+                                <input type="text" class="form-control" id="filtro-factura"
+                                       placeholder="">
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -189,7 +204,7 @@
                                 <tr>
                                     <th style="width:4%">#</th>
                                     <th>Material</th>
-                                    <th style="width:16%">Detalle/Código</th>
+                                    <th style="width:16%"># de ITEM (opcional)</th>
                                     <th style="width:10%" class="text-center">Cantidad</th>
                                     <th style="width:13%" class="text-right">Precio unit.</th>
                                     <th style="width:12%" class="text-center">Acciones</th>
@@ -244,8 +259,8 @@
                                    min="1" max="1000000" placeholder="0">
                         </div>
                         <div class="form-group">
-                            <label>Detalle/Código <small class="text-muted">(Opcional)</small></label>
-                            <input type="text" id="detalle-codigo-editar" class="form-control" maxlength="100">
+                            <label># de ITEM (opcional) <small class="text-muted">(Opcional)</small></label>
+                            <input type="text" id="detalle-codigo-editar" autocomplete="off" class="form-control" maxlength="100">
                         </div>
                         <div class="form-group">
                             <label>Precio unitario <span class="text-danger">*</span></label>
@@ -318,28 +333,45 @@
 
             // ── Cargar tabla ──────────────────────────────────────
             function cargarTabla() {
+
                 const fechaDesde = $('#filtro-fecha-desde').val();
                 const fechaHasta = $('#filtro-fecha-hasta').val();
                 const tipocompra = $('#filtro-tipocompra').val();
                 const proveedor  = $('#filtro-proveedor').val();
+                const material   = $('#filtro-material').val().trim();
+                const factura    = $('#filtro-factura').val().trim();
 
                 const params = new URLSearchParams();
+
                 if (fechaDesde) params.append('fecha_desde', fechaDesde);
                 if (fechaHasta) params.append('fecha_hasta', fechaHasta);
-                if (tipocompra) params.append('tipocompra',  tipocompra);
-                if (proveedor)  params.append('proveedor',   proveedor);
+                if (tipocompra) params.append('tipocompra', tipocompra);
+                if (proveedor)  params.append('proveedor', proveedor);
+                if (material)   params.append('material', material);
+                if (factura)    params.append('factura', factura);
 
-                const url = params.toString() ? ruta + '?' + params.toString() : ruta;
-                $('#tablaDatatable').load(url, function () { initDataTable(); });
+                const url = params.toString()
+                    ? ruta + '?' + params.toString()
+                    : ruta;
+
+                $('#tablaDatatable').load(url, function () {
+                    initDataTable();
+                });
             }
 
-            window.recargar = function () { cargarTabla(); };
+            cargarTabla();
+
+            window.recargar = function () {
+                cargarTabla();
+            };
 
             window.limpiarFiltros = function () {
                 $('#filtro-fecha-desde').val('');
                 $('#filtro-fecha-hasta').val('');
                 $('#filtro-tipocompra').val('').trigger('change');
                 $('#filtro-proveedor').val('').trigger('change');
+                $('#filtro-material').val('');   // NUEVO
+                $('#filtro-factura').val('');    // NUEVO
                 cargarTabla();
             };
 

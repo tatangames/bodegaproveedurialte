@@ -41,7 +41,7 @@
 
     {{-- ══ Modal Agregar Entrega ══ --}}
     <div class="modal fade" id="modalEntrega">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header" style="background:#1a3a6b">
                     <h4 class="modal-title text-white">
@@ -84,6 +84,15 @@
                             <div class="form-group">
                                 <label>Fecha Entrega: <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="modal-fecha">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>N° Solicitud: <span class="text-danger">*</span></label>
+                                <input type="text" maxlength="100" class="form-control" id="modal-numerosolicitud">
                             </div>
                         </div>
                     </div>
@@ -175,6 +184,7 @@
                                 <th style="width:4%">#</th>
                                 <th style="width:15%">Fecha Entrega</th>
                                 <th style="width:22%">Departamento</th>
+                                <th style="width:22%"># de Solicitud</th>
                                 <th style="width:8%">Cantidad</th>
                                 <th style="width:33%">Observación</th>
                                 <th style="width:18%">Acciones</th>
@@ -183,7 +193,7 @@
                             <tbody></tbody>
                             <tfoot>
                             <tr class="table-secondary">
-                                <td colspan="3" class="text-right font-weight-bold">Total entregado:</td>
+                                <td colspan="4" class="text-right font-weight-bold">Total entregado:</td>
                                 <td class="text-center font-weight-bold" id="detalle-total">0</td>
                                 <td colspan="2"></td>
                             </tr>
@@ -241,6 +251,14 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label># de Solicitud: <small class="text-muted">(Opcional)</small></label>
+                            <input type="text" maxlength="100" autocomplete="off" class="form-control" id="editar-numerosolicitud">
+                        </div>
+                    </div>
+
 
                     <div class="form-group">
                         <label>Observación: <small class="text-muted">(Opcional)</small></label>
@@ -368,6 +386,7 @@
             document.getElementById('modal-material').value          = material;
             document.getElementById('modal-cantidad').value          = '';
             document.getElementById('modal-observacion').value       = '';
+            document.getElementById('modal-numerosolicitud').value   = '';
             document.getElementById('modal-fecha').value             = hoy.toJSON().slice(0, 10);
             $('#modal-departamento').val('').trigger('change');
             $('#modalEntrega').modal('show');
@@ -380,6 +399,7 @@
             var cantidad        = document.getElementById('modal-cantidad').value;
             var fecha           = document.getElementById('modal-fecha').value;
             var observacion     = document.getElementById('modal-observacion').value;
+            var numerosolicitud = document.getElementById('modal-numerosolicitud').value;
 
             if (!cantidad || parseInt(cantidad) <= 0) { toastr.error('Ingrese una cantidad válida'); return; }
             if (!fecha) { toastr.error('La fecha es requerida'); return; }
@@ -390,7 +410,7 @@
             formData.append('cantidad',          cantidad);
             formData.append('fecha_entrega',     fecha);
             formData.append('observacion',       observacion);
-
+            formData.append('numero_solicitud',       numerosolicitud);
             openLoading();
 
             axios.post(urlAdmin + '/admin/pendientes/salida-parcial', formData)
@@ -463,7 +483,7 @@
             $('#kit-descripcion').text('—');
 
             $('#tabla-detalle-entregas tbody').html(
-                '<tr><td colspan="6" class="text-center py-3">' +
+                '<tr><td colspan="7" class="text-center py-3">' +
                 '<i class="fas fa-spinner fa-spin mr-1"></i> Cargando...</td></tr>'
             );
             $('#detalle-total').text('0');
@@ -516,6 +536,7 @@
                             '<td>' + (index + 1) + '</td>' +
                             '<td>' + formatearFecha(e.fecha_entrega) + '</td>' +
                             '<td>' + (e.departamento ? e.departamento : '<span class="text-muted">Sin departamento</span>') + '</td>' +
+                            '<td>' + (e.numero_solicitud ? e.numero_solicitud : '<span class="text-muted">—</span>') + '</td>' +
                             '<td class="text-center">' + e.cantidad + '</td>' +
                             '<td>' + (e.observacion ? e.observacion : '<span class="text-muted">—</span>') + '</td>' +
                             '<td>' +
@@ -560,6 +581,7 @@
                     document.getElementById('editar-cantidad').value    = e.cantidad;
                     document.getElementById('editar-fecha').value       = e.fecha_entrega;
                     document.getElementById('editar-observacion').value = e.observacion ?? '';
+                    document.getElementById('editar-numerosolicitud').value = e.numero_solicitud ?? '';
                     $('#editar-departamento').val(e.id_departamento ?? '').trigger('change');
 
                     $('#modalEditar').modal('show');
@@ -577,6 +599,7 @@
             var cantidad       = document.getElementById('editar-cantidad').value;
             var fecha          = document.getElementById('editar-fecha').value;
             var observacion    = document.getElementById('editar-observacion').value;
+            var solicitud    = document.getElementById('editar-numerosolicitud').value;
 
             if (!cantidad || parseInt(cantidad) <= 0) { toastr.error('Ingrese una cantidad válida'); return; }
             if (!fecha) { toastr.error('La fecha es requerida'); return; }
@@ -587,6 +610,7 @@
             formData.append('cantidad',        cantidad);
             formData.append('fecha_entrega',   fecha);
             formData.append('observacion',     observacion);
+            formData.append('solicitud',     solicitud);
 
             openLoading();
 

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->bigInteger('id_salida_detalle')->unsigned();
             // PUEDE SER UNA SALIDA GENERAL
             $table->bigInteger('id_departamento')->unsigned()->nullable();
+            $table->string('numero_solicitud', 100)->nullable();
             $table->integer('cantidad');
             $table->date('fecha_entrega');
             $table->text('observacion')->nullable();

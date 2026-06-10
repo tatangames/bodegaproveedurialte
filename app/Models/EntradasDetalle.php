@@ -29,4 +29,5 @@ class EntradasDetalle extends Model
     {
         return $this->belongsTo(Entradas::class, 'id_entradas');
     }
+
 }

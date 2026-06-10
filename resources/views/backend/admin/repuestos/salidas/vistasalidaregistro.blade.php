@@ -240,7 +240,7 @@
                                         <thead class="thead-dark">
                                         <tr>
                                             <th>Fecha Ingreso</th>
-                                            <th>Detalle/Código</th>
+                                            <th># de ITEM (opcional)</th>
                                             <th>Precio</th>
                                             <th class="text-center">Cant. Actual</th>
                                             <th class="text-center">Cant. Salida</th>
@@ -591,7 +591,6 @@
         }
 
 
-
         function guardarSalida() {
             var tiposalida = document.getElementById('select-tiposalida').value;
 
@@ -601,24 +600,24 @@
                 toastr.error('Agregue al menos un material'); return;
             }
 
-            // ── Leer globales primero (se usan en las validaciones) ───────────────
+            // ── Leer globales ─────────────────────────────────────────────────────
             var fechaGlobal       = document.getElementById('fecha_global_item').value;
             var solicitudGlobal   = document.getElementById('numero_solicitud_global').value;
-            var descripcionGlobal = document.getElementById('descripcion_global').value;
+            var descripcionGlobal = document.getElementById('descripcion_global').value.trim();
             var deptoGlobal       = document.getElementById('departamento_global').value;
 
-            // ── Validar fecha obligatoria por fila (si global vacío, la fila debe tener) ──
-            var sinFecha    = false;
+            // ── Validar fecha obligatoria por fila ────────────────────────────────
+            var sinFecha       = false;
             var filaFechaError = 0;
 
             $('#matriz tbody tr').each(function (index) {
-                var fechaFila = $(this).find('input[name="fechaItemArray[]"]').val();
+                var fechaFila  = $(this).find('input[name="fechaItemArray[]"]').val();
                 var fechaFinal = (fechaGlobal && fechaGlobal !== '') ? fechaGlobal : fechaFila;
                 if (!fechaFinal || fechaFinal === '') {
-                    sinFecha = true;
+                    sinFecha       = true;
                     filaFechaError = index + 1;
                     $(this).css('background', '#f8d7da');
-                    return false; // break
+                    return false;
                 }
             });
 
@@ -627,12 +626,35 @@
                 return;
             }
 
-            // ── Validar departamento obligatorio si es SALIDA CON SOLICITUD (id=1) ──
-            // Solo se valida fila por fila si el global NO tiene departamento
+            // ── Validar descripción obligatoria si estado es PENDIENTE ────────────
+            var sinDescripcion = false;
+            var filaDescError  = 0;
+
+            $('#matriz tbody tr').each(function (index) {
+                var estadoFila = $(this).find('input[name="estadoArray[]"]').attr('data-estadoSalida');
+
+                if (estadoFila === 'pendiente') {
+                    var descFila  = $(this).find('input[name="descripcionItemArray[]"]').val().trim();
+                    var descFinal = descripcionGlobal !== '' ? descripcionGlobal : descFila;
+
+                    if (!descFinal || descFinal === '') {
+                        sinDescripcion = true;
+                        filaDescError  = index + 1;
+                        $(this).css('background', '#f8d7da');
+                        return false;
+                    }
+                }
+            });
+
+            if (sinDescripcion) {
+                toastr.error('Fila #' + filaDescError + ': La descripción es obligatoria cuando el estado es Pendiente');
+                return;
+            }
+
+            // ── Validar departamento obligatorio si es SALIDA CON SOLICITUD ───────
             if (parseInt(tiposalida) === 1) {
 
                 if (!deptoGlobal || deptoGlobal === '') {
-                    // Global vacío → cada fila debe tener su propio departamento
                     var sinDepartamento = false;
                     var filaDeptoError  = 0;
 
@@ -642,7 +664,7 @@
                             sinDepartamento = true;
                             filaDeptoError  = index + 1;
                             $(this).css('background', '#f8d7da');
-                            return false; // break
+                            return false;
                         }
                     });
 
@@ -651,7 +673,6 @@
                         return;
                     }
                 }
-                // Si global tiene departamento → OK, se aplicará a todas las filas al enviar
             }
 
             // ── Recolectar datos de la tabla ──────────────────────────────────────
@@ -672,12 +693,10 @@
 
             var contenedorArray = [];
             for (var p = 0; p < salidaCantidad.length; p++) {
-
-                // Global tiene valor → sobreescribe. Global vacío → usa valor de la fila
-                var fechaFinal       = (fechaGlobal       && fechaGlobal       !== '') ? fechaGlobal       : (salidaFechaItem[p]       || '');
-                var solicitudFinal   = (solicitudGlobal   && solicitudGlobal   !== '') ? solicitudGlobal   : (salidaSolicitudItem[p]   || '');
-                var descripcionFinal = (descripcionGlobal && descripcionGlobal !== '') ? descripcionGlobal : (salidaDescripcionItem[p] || '');
-                var deptoFinal       = (deptoGlobal       && deptoGlobal       !== '') ? deptoGlobal       : (salidaDepartamento[p]    || '');
+                var fechaFinal       = (fechaGlobal       && fechaGlobal       !== '') ? fechaGlobal                       : (salidaFechaItem[p]       || '');
+                var solicitudFinal   = (solicitudGlobal   && solicitudGlobal   !== '') ? solicitudGlobal                   : (salidaSolicitudItem[p]   || '');
+                var descripcionFinal = (descripcionGlobal && descripcionGlobal !== '') ? descripcionGlobal                 : (salidaDescripcionItem[p] || '');
+                var deptoFinal       = (deptoGlobal       && deptoGlobal       !== '') ? deptoGlobal                       : (salidaDepartamento[p]    || '');
 
                 contenedorArray.push({
                     infoIdEntradaDeta:   idEntradaDetalle[p],

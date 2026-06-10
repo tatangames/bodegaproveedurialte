@@ -100,6 +100,7 @@
                             <tr>
                                 <th style="width:4%">#</th>
                                 <th style="width:15%">Fecha Entrega</th>
+                                <th style="width:15%">N° Solicitud</th>   {{-- ← NUEVO --}}
                                 <th style="width:25%">Departamento</th>
                                 <th style="width:8%" class="text-center">Cantidad</th>
                                 <th>Observación</th>
@@ -405,7 +406,7 @@
             $('#det-material').text('—');
             $('#det-descripcion').text('—');
             $('#det-entregas-tbody').html(
-                '<tr><td colspan="5" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>'
+                '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>'
             );
             $('#modalDetalle').modal('show');
 
@@ -431,7 +432,7 @@
 
                     if (!entregas || entregas.length === 0) {
                         $('#det-entregas-tbody').html(
-                            '<tr><td colspan="5" class="text-center text-muted">Sin entregas adicionales</td></tr>'
+                            '<tr><td colspan="6" class="text-center text-muted">Sin entregas adicionales</td></tr>'
                         );
                         return;
                     }
@@ -441,6 +442,7 @@
                             '<tr>' +
                             '<td>' + (i + 1) + '</td>' +
                             '<td>' + formatearFecha(e.fecha_entrega) + '</td>' +
+                            '<td>' + (e.numero_solicitud || '<span class="text-muted">—</span>') + '</td>' +   // ← NUEVO
                             '<td>' + (e.departamento || '<span class="text-muted">Sin departamento</span>') + '</td>' +
                             '<td class="text-center">' + e.cantidad + '</td>' +
                             '<td>' + (e.observacion || '<span class="text-muted">—</span>') + '</td>' +

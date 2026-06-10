@@ -284,6 +284,7 @@ class SalidasController extends Controller
                 'cantidad'          => $request->cantidad,
                 'fecha_entrega'     => $request->fecha_entrega,
                 'observacion'       => $request->observacion ?: null,
+                'numero_solicitud' => $request->numero_solicitud,
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
@@ -354,7 +355,8 @@ class SalidasController extends Controller
                 'sde.cantidad',
                 'sde.fecha_entrega',
                 'sde.observacion',
-                'dep.nombre as departamento'
+                'dep.nombre as departamento',
+                'sde.numero_solicitud',
             )
             ->where('sde.id_salida_detalle', $request->id_salida_detalle)
             ->orderBy('sde.created_at', 'asc')
@@ -400,6 +402,7 @@ class SalidasController extends Controller
                     'cantidad'        => $request->cantidad,
                     'fecha_entrega'   => $request->fecha_entrega,
                     'observacion'     => $request->observacion ?: null,
+                    'numero_solicitud' => $request->solicitud,
                     'updated_at'      => now(),
                 ]);
 
