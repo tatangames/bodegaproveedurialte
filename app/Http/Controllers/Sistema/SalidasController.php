@@ -6,16 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Departamentos;
 use App\Models\Entradas;
 use App\Models\EntradasDetalle;
-use App\Models\Equipos;
 use App\Models\InformacionGeneral;
 use App\Models\Materiales;
-use App\Models\Reserva;
 use App\Models\Salidas;
 use App\Models\SalidasDetalle;
-use App\Models\TipoProyecto;
 use App\Models\TipoSalida;
-use App\Models\Transferencia;
-use App\Models\TransferenciaDetalle;
 use App\Models\UnidadMedida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -36,6 +31,101 @@ class SalidasController extends Controller
         return view('backend.admin.repuestos.salidas.vistasalidaregistro',
             compact('arrayTipoSalida', 'arrayDepartamentos'));
     }
+
+
+
+    public function guardarSalida(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'contenedorArray' => 'required',
+        ]);
+
+        if ($validator->fails()) return ['success' => 0];
+
+        $contenedor = json_decode($request->contenedorArray, true);
+        if (empty($contenedor)) return ['success' => 0];
+
+        // Validar que todos los items traigan tiposalida
+        foreach ($contenedor as $item) {
+            if (empty($item['infoTipoSalida'])) return ['success' => 0];
+        }
+
+        DB::beginTransaction();
+
+        try {
+
+            // ── Acumular cantidades por id_entrada_detalle ────────────────
+            $acumulado = [];
+            foreach ($contenedor as $item) {
+                $id = $item['infoIdEntradaDeta'];
+                if (!isset($acumulado[$id])) $acumulado[$id] = 0;
+                $acumulado[$id] += (int) $item['infoCantidad'];
+            }
+
+            // ── Validar stock acumulado antes de guardar ──────────────────
+            foreach ($acumulado as $idEntradaDetalle => $cantidadSalida) {
+
+                $cantidadInicial = DB::table('entradas_detalle')
+                    ->where('id', $idEntradaDetalle)
+                    ->value('cantidad_inicial');
+
+                if (is_null($cantidadInicial)) {
+                    DB::rollback();
+                    return ['success' => 0];
+                }
+
+                $totalSalido = DB::table('salidas_detalle')
+                    ->where('id_entrada_detalle', $idEntradaDetalle)
+                    ->sum('cantidad_salida');
+
+                $disponible = (int) $cantidadInicial - (int) $totalSalido;
+
+                if ($cantidadSalida > $disponible) {
+                    DB::rollback();
+
+                    $nombreMaterial = DB::table('entradas_detalle as ed')
+                        ->join('materiales as m', 'm.id', '=', 'ed.id_material')
+                        ->where('ed.id', $idEntradaDetalle)
+                        ->value('m.nombre');
+
+                    return [
+                        'success'         => 2,
+                        'nombre_material' => $nombreMaterial ?? 'Material desconocido',
+                        'cantidad_pedida' => $cantidadSalida,
+                        'disponible'      => $disponible,
+                    ];
+                }
+            }
+
+            // ── Guardar cada ítem directo en salidas_detalle ──────────────
+            foreach ($contenedor as $item) {
+                $detalle                     = new SalidasDetalle();
+                $detalle->id_entrada_detalle = (int) $item['infoIdEntradaDeta'];
+                $detalle->id_tiposalida      = (int) $item['infoTipoSalida'];
+                $detalle->cantidad_salida    = (int) $item['infoCantidad'];
+                $detalle->estado             = in_array($item['infoEstado'], ['pendiente', 'finalizado'])
+                    ? $item['infoEstado']
+                    : 'pendiente';
+
+                // Campos por ítem (ya vienen resueltos desde el JS — global sobreescribe fila)
+                $detalle->fecha            = !empty($item['infoFechaItem'])       ? $item['infoFechaItem']          : null;
+                $detalle->numero_solicitud = !empty($item['infoSolicitudItem'])   ? $item['infoSolicitudItem']      : null;
+                $detalle->descripcion      = !empty($item['infoDescripcionItem']) ? $item['infoDescripcionItem']    : null;
+                $detalle->id_departamento  = !empty($item['infoDepartamento'])    ? (int) $item['infoDepartamento'] : null;
+
+                $detalle->save();
+            }
+
+            DB::commit();
+            return ['success' => 10];
+
+        } catch (\Throwable $e) {
+            DB::rollback();
+            Log::error('guardarSalida: ' . $e);
+            return ['success' => 99];
+        }
+    }
+
 
     public function buscadorMaterialDisponible(Request $request)
     {
@@ -144,148 +234,44 @@ class SalidasController extends Controller
     }
 
 
-    public function guardarSalida(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'fecha'      => 'required|date',
-            'tiposalida' => 'required',
-        ]);
 
-        if ($validator->fails()) return ['success' => 0];
-
-        $contenedor = json_decode($request->contenedorArray, true);
-        if (empty($contenedor)) return ['success' => 0];
-
-        DB::beginTransaction();
-
-        try {
-
-            // ── Acumular cantidades por id_entrada_detalle ────────────────
-            $acumulado = [];
-            foreach ($contenedor as $item) {
-                $id = $item['infoIdEntradaDeta'];
-                if (!isset($acumulado[$id])) $acumulado[$id] = 0;
-                $acumulado[$id] += (int) $item['infoCantidad'];
-            }
-
-            // ── Validar stock acumulado antes de guardar ──────────────────
-            foreach ($acumulado as $idEntradaDetalle => $cantidadSalida) {
-
-                $cantidadInicial = DB::table('entradas_detalle')
-                    ->where('id', $idEntradaDetalle)
-                    ->value('cantidad_inicial');
-
-                if (is_null($cantidadInicial)) {
-                    DB::rollback();
-                    return ['success' => 0];
-                }
-
-                $totalSalido = DB::table('salidas_detalle')
-                    ->where('id_entrada_detalle', $idEntradaDetalle)
-                    ->sum('cantidad_salida');
-
-                $disponible = (int) $cantidadInicial - (int) $totalSalido;
-
-                if ($cantidadSalida > $disponible) {
-                    DB::rollback();
-
-                    $nombreMaterial = DB::table('entradas_detalle as ed')
-                        ->join('materiales as m', 'm.id', '=', 'ed.id_material')
-                        ->where('ed.id', $idEntradaDetalle)
-                        ->value('m.nombre');
-
-                    return [
-                        'success'         => 2,
-                        'nombre_material' => $nombreMaterial ?? 'Material desconocido',
-                        'cantidad_pedida' => $cantidadSalida,
-                        'disponible'      => $disponible,
-                    ];
-                }
-            }
-
-            // ── Guardar cabecera ──────────────────────────────────────────
-            $salida                   = new Salidas();
-            $salida->id_tiposalida    = $request->tiposalida;
-            $salida->fecha            = $request->fecha;
-            $salida->descripcion      = $request->descripcion      ?: null;
-            $salida->numero_solicitud = $request->numero_solicitud ?: null;
-            $salida->save();
-
-            // ── Guardar cada ítem con su departamento y estado ────────────
-            foreach ($contenedor as $item) {
-                $detalle                     = new SalidasDetalle();
-                $detalle->id_salida          = $salida->id;
-                $detalle->id_entrada_detalle = (int) $item['infoIdEntradaDeta'];
-                $detalle->cantidad_salida    = (int) $item['infoCantidad'];
-                $detalle->estado             = in_array($item['infoEstado'], ['pendiente', 'finalizado'])
-                    ? $item['infoEstado']
-                    : 'pendiente';
-                $detalle->save();
-
-                DB::table('salidas_detalle_entregas')->insert([
-                    'id_salida_detalle' => $detalle->id,
-                    'id_departamento'   => !empty($item['infoDepartamento']) ? (int) $item['infoDepartamento'] : null,
-                    'cantidad'          => (int) $item['infoCantidad'],
-                    'fecha_entrega'     => $request->fecha,
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
-                ]);
-            }
-
-            DB::commit();
-            return ['success' => 10];
-
-        } catch (\Throwable $e) {
-            DB::rollback();
-            Log::error('guardarSalida: ' . $e);
-            return ['success' => 99];
-        }
-    }
-
-
-
-
+// ── Index: listar pendientes ──────────────────────────────────────────────────
     public function indexPendienteEntrega()
     {
+        // salidas_detalle ya tiene fecha, numero_solicitud, descripcion directamente
+        // (sin join a tabla salidas que ya no existe)
         $pendientes = DB::table('salidas_detalle as sd')
-            ->join('salidas as s', 's.id', '=', 'sd.id_salida')
             ->join('entradas_detalle as ed', 'ed.id', '=', 'sd.id_entrada_detalle')
             ->join('materiales as m', 'm.id', '=', 'ed.id_material')
+            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
             ->select(
                 'sd.id as id_salida_detalle',
-                's.fecha',
-                's.numero_solicitud',
+                'sd.fecha',
+                'sd.numero_solicitud',
+                'sd.descripcion',
                 'm.nombre as material',
-                'sd.cantidad_salida'
+                'sd.cantidad_salida',
+                'dep.nombre as departamento'
             )
             ->where('sd.estado', 'pendiente')
-            ->orderBy('s.fecha', 'asc')
+            ->orderBy('sd.fecha', 'asc')
             ->orderBy('sd.id', 'asc')
             ->get();
 
         $arrayDepartamentos = Departamentos::orderBy('nombre')->get();
 
-
-        DB::table('salidas_detalle')
-            ->join('salidas', 'salidas_detalle.id_salida', '=', 'salidas.id')
-            ->update([
-                'salidas_detalle.fecha'            => DB::raw('salidas.fecha'),
-                'salidas_detalle.descripcion'      => DB::raw('salidas.descripcion'),
-                'salidas_detalle.numero_solicitud' => DB::raw('salidas.numero_solicitud'),
-            ]);
-
-
         return view('backend.admin.repuestos.pendiente.vistapendiente',
             compact('pendientes', 'arrayDepartamentos'));
     }
 
-    // Agregar nueva entrega a un ítem pendiente
+// ── Agregar nueva entrega a un ítem pendiente ─────────────────────────────────
     public function registrarSalidaParcial(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'id_salida_detalle' => 'required|exists:salidas_detalle,id',
             'id_departamento'   => 'nullable|exists:departamentos,id',
             'cantidad'          => 'required|integer|min:1',
+            'fecha_entrega'     => 'required|date',
             'observacion'       => 'nullable|string|max:500',
         ]);
 
@@ -296,7 +282,7 @@ class SalidasController extends Controller
                 'id_salida_detalle' => $request->id_salida_detalle,
                 'id_departamento'   => $request->id_departamento ?: null,
                 'cantidad'          => $request->cantidad,
-                'fecha_entrega'     => now()->toDateString(),
+                'fecha_entrega'     => $request->fecha_entrega,
                 'observacion'       => $request->observacion ?: null,
                 'created_at'        => now(),
                 'updated_at'        => now(),
@@ -310,7 +296,7 @@ class SalidasController extends Controller
         }
     }
 
-// Marcar ítem como finalizado manualmente
+// ── Marcar ítem como finalizado manualmente ───────────────────────────────────
     public function finalizarDetalle(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -341,10 +327,30 @@ class SalidasController extends Controller
 
         if ($validator->fails()) return ['success' => 0];
 
+        // ── Info del kit (cabecera del modal) ─────────────────────────────
+        $kit = DB::table('salidas_detalle as sd')
+            ->join('entradas_detalle as ed', 'ed.id', '=', 'sd.id_entrada_detalle')
+            ->join('materiales as m', 'm.id', '=', 'ed.id_material')
+            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
+            ->leftJoin('tipo_salida as ts', 'ts.id', '=', 'sd.id_tiposalida')
+            ->select(
+                'm.nombre as material',
+                'sd.fecha',
+                'sd.numero_solicitud',
+                'sd.descripcion',
+                'sd.cantidad_salida',
+                'dep.nombre as departamento',
+                'ts.nombre as tipo_salida'
+            )
+            ->where('sd.id', $request->id_salida_detalle)
+            ->first();
+
+        // ── Entregas registradas ──────────────────────────────────────────
         $entregas = DB::table('salidas_detalle_entregas as sde')
             ->leftJoin('departamentos as dep', 'dep.id', '=', 'sde.id_departamento')
             ->select(
                 'sde.id',
+                'sde.id_departamento',
                 'sde.cantidad',
                 'sde.fecha_entrega',
                 'sde.observacion',
@@ -354,10 +360,10 @@ class SalidasController extends Controller
             ->orderBy('sde.created_at', 'asc')
             ->get();
 
-        return ['success' => 10, 'entregas' => $entregas];
+        return ['success' => 10, 'kit' => $kit, 'entregas' => $entregas];
     }
 
-
+// ── Cargar datos de una entrega para editar ───────────────────────────────────
     public function editarEntrega(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -373,6 +379,7 @@ class SalidasController extends Controller
         return ['success' => 10, 'entrega' => $entrega];
     }
 
+// ── Actualizar entrega ────────────────────────────────────────────────────────
     public function actualizarEntrega(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -404,6 +411,7 @@ class SalidasController extends Controller
         }
     }
 
+// ── Eliminar entrega ──────────────────────────────────────────────────────────
     public function eliminarEntrega(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -420,7 +428,5 @@ class SalidasController extends Controller
             return ['success' => 99];
         }
     }
-
-
 
 }

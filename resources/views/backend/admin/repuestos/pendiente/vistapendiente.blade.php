@@ -118,11 +118,57 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>Material</label>
-                        <input type="text" class="form-control" id="detalle-material" disabled>
+
+                    {{-- ── Info del kit ── --}}
+                    <div class="card card-outline card-secondary mb-3">
+                        <div class="card-header py-2">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-info-circle mr-1 text-info"></i>
+                                Información del registro
+                            </h6>
+                        </div>
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small class="text-muted d-block">Material</small>
+                                    <strong id="kit-material">—</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Tipo de Salida</small>
+                                    <span id="kit-tiposalida">—</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Cantidad salida</small>
+                                    <span id="kit-cantidad">—</span>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Fecha</small>
+                                    <span id="kit-fecha">—</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">N° Solicitud</small>
+                                    <span id="kit-solicitud">—</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Departamento</small>
+                                    <span id="kit-departamento">—</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted d-block">Descripción</small>
+                                    <span id="kit-descripcion">—</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="table-responsive mt-2">
+
+                    {{-- ── Tabla entregas adicionales ── --}}
+                    <h6 class="mb-2">
+                        <i class="fas fa-truck mr-1 text-primary"></i>
+                        Entregas adicionales registradas
+                    </h6>
+                    <div class="table-responsive">
                         <table class="table table-bordered table-sm" id="tabla-detalle-entregas">
                             <thead class="thead-dark">
                             <tr>
@@ -144,6 +190,7 @@
                             </tfoot>
                         </table>
                     </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
@@ -232,29 +279,24 @@
                             <thead class="thead-dark">
                             <tr>
                                 <th style="width:4%">#</th>
-                                <th style="width:10%">Fecha</th>
-                                <th style="width:13%">N° Solicitud</th>
-                                <th style="width:38%">Material</th>
-                                <th style="width:8%">Cantidad</th>
-                                <th style="width:27%">Acciones</th>
+                                <th style="width:12%">Fecha</th>
+                                <th style="width:46%">Material</th>
+                                <th style="width:8%" class="text-center">Cantidad</th>
+                                <th style="width:30%">Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
                             @forelse($pendientes as $index => $item)
                                 <tr id="fila-{{ $item->id_salida_detalle }}">
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ date('d-m-Y', strtotime($item->fecha)) }}</td>
-                                    <td>{{ $item->numero_solicitud ?? '—' }}</td>
+                                    <td>{{ $item->fecha ? date('d-m-Y', strtotime($item->fecha)) : '—' }}</td>
                                     <td>{{ $item->material }}</td>
                                     <td class="text-center">{{ $item->cantidad_salida }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm w-100">
                                             <button type="button"
                                                     class="btn btn-info"
-                                                    onclick="verDetalle(
-                                                        {{ $item->id_salida_detalle }},
-                                                        '{{ addslashes($item->material) }}'
-                                                    )">
+                                                    onclick="verDetalle({{ $item->id_salida_detalle }})">
                                                 <i class="fas fa-list mr-1"></i> Detalle
                                             </button>
                                             <button type="button"
@@ -275,7 +317,7 @@
                                 </tr>
                             @empty
                                 <tr id="fila-vacia">
-                                    <td colspan="6" class="text-center text-muted py-4">
+                                    <td colspan="5" class="text-center text-muted py-4">
                                         <i class="fas fa-check-circle fa-2x mb-2 text-success d-block"></i>
                                         No hay ítems pendientes
                                     </td>
@@ -304,8 +346,7 @@
 
         $(function () {
             var hoy = new Date();
-            var fechaHoy = hoy.toJSON().slice(0, 10);
-            document.getElementById('modal-fecha').value = fechaHoy;
+            document.getElementById('modal-fecha').value = hoy.toJSON().slice(0, 10);
 
             $('#modal-departamento').select2({
                 theme: 'bootstrap-5',
@@ -407,12 +448,23 @@
             });
         }
 
-        // ── Ver detalle de entregas ───────────────────────────────────
-        function verDetalle(idSalidaDetalle, material) {
+        // ── Ver detalle ───────────────────────────────────────────────
+        // Solo recibe el id — el material y demás vienen del servidor
+        function verDetalle(idSalidaDetalle) {
             idSalidaDetalleActual = idSalidaDetalle;
-            document.getElementById('detalle-material').value = material;
+
+            // Resetear card info mientras carga
+            $('#kit-material').text('—');
+            $('#kit-tiposalida').text('—');
+            $('#kit-cantidad').text('—');
+            $('#kit-fecha').text('—');
+            $('#kit-solicitud').text('—');
+            $('#kit-departamento').text('—');
+            $('#kit-descripcion').text('—');
+
             $('#tabla-detalle-entregas tbody').html(
-                '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>'
+                '<tr><td colspan="6" class="text-center py-3">' +
+                '<i class="fas fa-spinner fa-spin mr-1"></i> Cargando...</td></tr>'
             );
             $('#detalle-total').text('0');
             $('#modalDetalle').modal('show');
@@ -420,11 +472,6 @@
         }
 
         function cargarDetalleEntregas(idSalidaDetalle) {
-            $('#detalle-total').text('0'); // 👈 resetear antes de cargar
-            $('#tabla-detalle-entregas tbody').html(
-                '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>'
-            );
-
             var formData = new FormData();
             formData.append('id_salida_detalle', idSalidaDetalle);
 
@@ -437,14 +484,27 @@
                         return;
                     }
 
+                    // ── Rellenar card info del kit ────────────────────
+                    var k = response.data.kit;
+                    if (k) {
+                        $('#kit-material').text(k.material         || '—');
+                        $('#kit-tiposalida').text(k.tipo_salida    || '—');
+                        $('#kit-cantidad').text(k.cantidad_salida  != null ? k.cantidad_salida : '—');
+                        $('#kit-fecha').text(k.fecha               ? formatearFecha(k.fecha) : '—');
+                        $('#kit-solicitud').text(k.numero_solicitud || '—');
+                        $('#kit-departamento').text(k.departamento  || '—');
+                        $('#kit-descripcion').text(k.descripcion    || '—');
+                    }
+
+                    // ── Rellenar tabla entregas ───────────────────────
                     var entregas = response.data.entregas;
                     $('#tabla-detalle-entregas tbody').empty();
+                    $('#detalle-total').text('0');
 
                     if (entregas.length === 0) {
                         $('#tabla-detalle-entregas tbody').html(
-                            '<tr><td colspan="6" class="text-center text-muted">Sin entregas registradas</td></tr>'
+                            '<tr><td colspan="6" class="text-center text-muted">Sin entregas adicionales registradas</td></tr>'
                         );
-                        $('#detalle-total').text('0'); // 👈 asegurar que quede en 0
                         return;
                     }
 
@@ -472,7 +532,7 @@
                         $('#tabla-detalle-entregas tbody').append(fila);
                     });
 
-                    $('#detalle-total').text(total); // 👈 actualizar con el nuevo total
+                    $('#detalle-total').text(total);
                 })
                 .catch(function () {
                     $('#tabla-detalle-entregas tbody').html(
@@ -590,7 +650,7 @@
 
             if (filas === 0) {
                 $('#tabla-pendientes tbody').html(
-                    '<tr id="fila-vacia"><td colspan="6" class="text-center text-muted py-4">' +
+                    '<tr id="fila-vacia"><td colspan="5" class="text-center text-muted py-4">' +
                     '<i class="fas fa-check-circle fa-2x mb-2 text-success d-block"></i>' +
                     'No hay ítems pendientes</td></tr>'
                 );
@@ -600,6 +660,7 @@
         function formatearFecha(fecha) {
             if (!fecha) return '—';
             var partes = fecha.split('-');
+            if (partes.length !== 3) return fecha;
             return partes[2] + '-' + partes[1] + '-' + partes[0];
         }
 

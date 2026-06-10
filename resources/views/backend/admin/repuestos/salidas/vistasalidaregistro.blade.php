@@ -45,6 +45,14 @@
         .cursor-pointer { cursor: pointer; }
         .cursor-pointer:hover { color: #401fd2; font-weight: bold; }
         *:focus { outline: none; }
+        .badge-global {
+            background: #17a2b8;
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            vertical-align: middle;
+        }
     </style>
 
     <div id="divcontenedor">
@@ -53,29 +61,14 @@
         <section class="content">
             <div class="container-fluid">
                 <div class="row">
-                    <div class="col-md-10">
+                    <div class="col-md-12">
                         <div class="card card-gray-dark">
                             <div class="card-header">
                                 <h3 class="card-title">Información de Salida</h3>
                             </div>
                             <div class="card-body">
 
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Fecha: <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" id="fecha">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label>N° Solicitud: <small class="text-muted">(Opcional)</small></label>
-                                            <input type="text" class="form-control" autocomplete="off"
-                                                   maxlength="100" id="numero_solicitud" placeholder="Ej: SOL-001">
-                                        </div>
-                                    </div>
-                                </div>
-
+                                {{-- Fila 1: Tipo de salida + botón --}}
                                 <div class="row">
                                     <div class="col-md-5">
                                         <div class="form-group">
@@ -88,13 +81,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-5">
-                                        <div class="form-group">
-                                            <label>Descripción: <small class="text-muted">(Opcional)</small></label>
-                                            <input type="text" class="form-control" autocomplete="off"
-                                                   maxlength="800" id="descripcion">
-                                        </div>
-                                    </div>
+                                    <div class="col-md-5"></div>
                                     <div class="col-md-2 d-flex align-items-end justify-content-end">
                                         <div class="form-group">
                                             <button type="button" id="botonaddmaterial"
@@ -102,6 +89,69 @@
                                                     class="btn btn-primary btn-sm" disabled>
                                                 <i class="fas fa-search mr-1"></i> Buscar Material
                                             </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="mt-1 mb-3">
+
+                                {{-- ══ Campos globales por ítem ══ --}}
+                                <div class="alert alert-info py-2 mb-3" style="border-left: 4px solid #17a2b8;">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    <strong>Campos globales por ítem:</strong>
+                                    Si completas los campos a continuación, se copiarán automáticamente en
+                                    <strong>todas las filas</strong> que agregues al detalle.
+                                    Podrás editarlos individualmente por fila después.
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>
+                                                Fecha por ítem
+                                                <span class="badge-global">global</span>
+                                                <small class="text-muted">(Opcional)</small>
+                                            </label>
+                                            <input type="date" class="form-control" id="fecha_global_item">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>
+                                                N° Solicitud por ítem
+                                                <span class="badge-global">global</span>
+                                                <small class="text-muted">(Opcional)</small>
+                                            </label>
+                                            <input type="text" class="form-control" autocomplete="off"
+                                                   maxlength="100" id="numero_solicitud_global"
+                                                   placeholder="Ej: SOL-001">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>
+                                                Descripción por ítem
+                                                <span class="badge-global">global</span>
+                                                <small class="text-muted">(Opcional)</small>
+                                            </label>
+                                            <input type="text" class="form-control" autocomplete="off"
+                                                   maxlength="800" id="descripcion_global"
+                                                   placeholder="Se copiará en todas las filas...">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>
+                                                Departamento por ítem
+                                                <span class="badge-global">global</span>
+                                                <small class="text-muted">(Opcional)</small>
+                                            </label>
+                                            <select class="form-control" id="departamento_global">
+                                                <option value="">Sin departamento</option>
+                                                @foreach($arrayDepartamentos as $dep)
+                                                    <option value="{{ $dep->id }}">{{ $dep->nombre }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -231,12 +281,15 @@
                             <table class="table table-bordered table-hover mb-0" id="matriz">
                                 <thead>
                                 <tr>
-                                    <th style="width:4%">#</th>
-                                    <th style="width:30%">Material</th>
-                                    <th style="width:8%">Cantidad</th>
-                                    <th style="width:22%">Departamento</th>
-                                    <th style="width:13%">Estado</th>
-                                    <th style="width:10%">Opciones</th>
+                                    <th style="width:3%;  min-width:40px">#</th>
+                                    <th style="width:14%; min-width:120px">Material</th>
+                                    <th style="width:5%;  min-width:60px" class="text-center">Cant.</th>
+                                    <th style="width:10%; min-width:120px">Fecha</th>
+                                    <th style="width:10%; min-width:110px">N° Solicitud</th>
+                                    <th style="width:16%; min-width:140px">Descripción</th>
+                                    <th style="width:16%; min-width:140px">Departamento</th>
+                                    <th style="width:11%; min-width:110px" class="text-center">Estado</th>
+                                    <th style="width:7%;  min-width:70px">Opciones</th>
                                 </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -271,16 +324,13 @@
         var arrayDepartamentosOpciones = [
             '<option value="">Sin departamento</option>',
             @foreach($arrayDepartamentos as $dep)
-                '<option value="{{ $dep->id }}">{{ $dep->nombre }}</option>',
+                '<option value="{{ $dep->id }}" data-id="{{ $dep->id }}">{{ $dep->nombre }}</option>',
             @endforeach
         ].join('');
 
         var seguroBuscador = true;
 
         $(function () {
-            var hoy = new Date();
-            document.getElementById('fecha').value = hoy.toJSON().slice(0, 10);
-
             $('#select-tiposalida').select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('body'),
@@ -404,12 +454,29 @@
 
             if (!habraSalida) { toastr.error('Registre mínimo 1 cantidad de salida'); return; }
 
+            // ── Leer valores globales ─────────────────────────────────
+            var fechaGlobal       = document.getElementById('fecha_global_item').value;
+            var solicitudGlobal   = document.getElementById('numero_solicitud_global').value;
+            var descripcionGlobal = document.getElementById('descripcion_global').value;
+            var deptoGlobalVal    = document.getElementById('departamento_global').value;
+            var deptoGlobalText   = document.getElementById('departamento_global')
+                .options[document.getElementById('departamento_global').selectedIndex].text;
+
             var nombreTexto = document.getElementById('info-material').value;
 
             for (var z = 0; z < arrayCantidadSalida.length; z++) {
                 var fc2 = arrayCantidadSalida[z];
                 if (fc2 !== '' && parseInt(fc2) > 0) {
                     var nFilas = $('#matriz tbody tr').length + 1;
+
+                    // Construir options del select de departamento pre-seleccionando el global
+                    var deptoOptions = '<option value="">Sin departamento</option>';
+                    @foreach($arrayDepartamentos as $dep)
+                        deptoOptions += '<option value="{{ $dep->id }}"' +
+                        (deptoGlobalVal === '{{ $dep->id }}' ? ' selected' : '') +
+                        '>{{ $dep->nombre }}</option>';
+                    @endforeach
+
                     var fila =
                         '<tr>' +
                         '<td><span class="num-fila">' + nFilas + '</span></td>' +
@@ -428,26 +495,49 @@
                         fc2 +
                         '</td>' +
 
-                        // Departamento por ítem
+                        // Fecha por fila
                         '<td>' +
-                        '<select name="departamentoArray[]" class="form-control form-control-sm select-depto">' +
-                        arrayDepartamentosOpciones +
+                        '<input name="fechaItemArray[]" type="date" ' +
+                        'class="form-control form-control-sm" ' +
+                        'value="' + fechaGlobal + '">' +
+                        '</td>' +
+
+                        // N° Solicitud por fila
+                        '<td>' +
+                        '<input name="solicitudItemArray[]" type="text" ' +
+                        'class="form-control form-control-sm" ' +
+                        'maxlength="100" placeholder="SOL-..." ' +
+                        'value="' + solicitudGlobal + '">' +
+                        '</td>' +
+
+                        // Descripción por fila
+                        '<td>' +
+                        '<input name="descripcionItemArray[]" type="text" ' +
+                        'class="form-control form-control-sm" ' +
+                        'maxlength="800" placeholder="Descripción..." ' +
+                        'value="' + descripcionGlobal + '">' +
+                        '</td>' +
+
+                        // Departamento por fila (pre-selecciona global)
+                        '<td>' +
+                        '<select name="departamentoArray[]" class="form-control form-control-sm">' +
+                        deptoOptions +
                         '</select>' +
                         '</td>' +
 
                         // Estado toggle
                         '<td class="text-center">' +
-                        '<input name="estadoArray[]" type="hidden" data-estadoSalida="pendiente">' +
-                        '<button type="button" class="btn btn-warning btn-sm btn-estado" ' +
-                        'onclick="toggleEstado(this)" data-estado="pendiente">' +
-                        '<i class="fas fa-clock mr-1"></i> Pendiente' +
+                        '<input name="estadoArray[]" type="hidden" data-estadoSalida="finalizado">' +
+                        '<button type="button" class="btn btn-success btn-sm btn-estado" ' +
+                        'onclick="toggleEstado(this)" data-estado="finalizado">' +
+                        '<i class="fas fa-check-circle mr-1"></i> Finalizado' +
                         '</button>' +
                         '</td>' +
 
                         // Opciones
                         '<td>' +
                         '<button type="button" class="btn btn-danger btn-sm btn-block" onclick="borrarFila(this)">' +
-                        '<i class="fas fa-trash"></i> Borrar' +
+                        '<i class="fas fa-trash"></i>' +
                         '</button>' +
                         '</td>' +
                         '</tr>';
@@ -460,6 +550,7 @@
             $('.droplista').html('').hide();
             toastr.success('Material agregado al detalle');
         }
+
 
         // ── Toggle estado por fila ────────────────────────────────────
         function toggleEstado(btn) {
@@ -499,72 +590,115 @@
             });
         }
 
-        function guardarSalida() {
-            var fecha            = document.getElementById('fecha').value;
-            var tiposalida       = document.getElementById('select-tiposalida').value;
-            var descripcion      = document.getElementById('descripcion').value;
-            var numero_solicitud = document.getElementById('numero_solicitud').value;
 
-            if (!fecha)      { toastr.error('Fecha es requerida');          return; }
+
+        function guardarSalida() {
+            var tiposalida = document.getElementById('select-tiposalida').value;
+
             if (!tiposalida) { toastr.error('Tipo de Salida es requerido'); return; }
 
             if ($('#matriz tbody tr').length === 0) {
                 toastr.error('Agregue al menos un material'); return;
             }
 
-            // ── Validar departamento obligatorio si es SALIDA CON SOLICITUD ──
-            if (parseInt(tiposalida) === 1) {
-                var sinDepartamento = false;
-                var filaError = 0;
+            // ── Leer globales primero (se usan en las validaciones) ───────────────
+            var fechaGlobal       = document.getElementById('fecha_global_item').value;
+            var solicitudGlobal   = document.getElementById('numero_solicitud_global').value;
+            var descripcionGlobal = document.getElementById('descripcion_global').value;
+            var deptoGlobal       = document.getElementById('departamento_global').value;
 
-                $('#matriz tbody tr').each(function (index) {
-                    var depVal = $(this).find('select[name="departamentoArray[]"]').val();
-                    if (!depVal || depVal === '') {
-                        sinDepartamento = true;
-                        filaError = index + 1;
-                        $(this).css('background', '#f8d7da'); // marcar fila en rojo
-                        return false; // break
-                    }
-                });
+            // ── Validar fecha obligatoria por fila (si global vacío, la fila debe tener) ──
+            var sinFecha    = false;
+            var filaFechaError = 0;
 
-                if (sinDepartamento) {
-                    toastr.error('Fila #' + filaError + ': El departamento es obligatorio para Salida con Solicitud');
-                    return;
+            $('#matriz tbody tr').each(function (index) {
+                var fechaFila = $(this).find('input[name="fechaItemArray[]"]').val();
+                var fechaFinal = (fechaGlobal && fechaGlobal !== '') ? fechaGlobal : fechaFila;
+                if (!fechaFinal || fechaFinal === '') {
+                    sinFecha = true;
+                    filaFechaError = index + 1;
+                    $(this).css('background', '#f8d7da');
+                    return false; // break
                 }
-            }
-            // ────────────────────────────────────────────────────────────────
+            });
 
-            var idEntradaDetalle = $("input[name='idmaterialArray[]']")
+            if (sinFecha) {
+                toastr.error('Fila #' + filaFechaError + ': La fecha es obligatoria (complétala en la fila o en el campo global)');
+                return;
+            }
+
+            // ── Validar departamento obligatorio si es SALIDA CON SOLICITUD (id=1) ──
+            // Solo se valida fila por fila si el global NO tiene departamento
+            if (parseInt(tiposalida) === 1) {
+
+                if (!deptoGlobal || deptoGlobal === '') {
+                    // Global vacío → cada fila debe tener su propio departamento
+                    var sinDepartamento = false;
+                    var filaDeptoError  = 0;
+
+                    $('#matriz tbody tr').each(function (index) {
+                        var depVal = $(this).find('select[name="departamentoArray[]"]').val();
+                        if (!depVal || depVal === '') {
+                            sinDepartamento = true;
+                            filaDeptoError  = index + 1;
+                            $(this).css('background', '#f8d7da');
+                            return false; // break
+                        }
+                    });
+
+                    if (sinDepartamento) {
+                        toastr.error('Fila #' + filaDeptoError + ': El departamento es obligatorio (complétalo en la fila o en el campo global)');
+                        return;
+                    }
+                }
+                // Si global tiene departamento → OK, se aplicará a todas las filas al enviar
+            }
+
+            // ── Recolectar datos de la tabla ──────────────────────────────────────
+            var idEntradaDetalle      = $("input[name='idmaterialArray[]']")
                 .map(function () { return $(this).attr('data-idmaterialArray'); }).get();
-            var salidaCantidad = $("input[name='salidaArray[]']")
+            var salidaCantidad        = $("input[name='salidaArray[]']")
                 .map(function () { return $(this).attr('data-cantidadSalida'); }).get();
-            var salidaEstado = $("input[name='estadoArray[]']")
+            var salidaEstado          = $("input[name='estadoArray[]']")
                 .map(function () { return $(this).attr('data-estadoSalida'); }).get();
-            var salidaDepartamento = $("select[name='departamentoArray[]']")
+            var salidaDepartamento    = $("select[name='departamentoArray[]']")
+                .map(function () { return $(this).val(); }).get();
+            var salidaFechaItem       = $("input[name='fechaItemArray[]']")
+                .map(function () { return $(this).val(); }).get();
+            var salidaSolicitudItem   = $("input[name='solicitudItemArray[]']")
+                .map(function () { return $(this).val(); }).get();
+            var salidaDescripcionItem = $("input[name='descripcionItemArray[]']")
                 .map(function () { return $(this).val(); }).get();
 
             var contenedorArray = [];
             for (var p = 0; p < salidaCantidad.length; p++) {
+
+                // Global tiene valor → sobreescribe. Global vacío → usa valor de la fila
+                var fechaFinal       = (fechaGlobal       && fechaGlobal       !== '') ? fechaGlobal       : (salidaFechaItem[p]       || '');
+                var solicitudFinal   = (solicitudGlobal   && solicitudGlobal   !== '') ? solicitudGlobal   : (salidaSolicitudItem[p]   || '');
+                var descripcionFinal = (descripcionGlobal && descripcionGlobal !== '') ? descripcionGlobal : (salidaDescripcionItem[p] || '');
+                var deptoFinal       = (deptoGlobal       && deptoGlobal       !== '') ? deptoGlobal       : (salidaDepartamento[p]    || '');
+
                 contenedorArray.push({
-                    infoIdEntradaDeta:  idEntradaDetalle[p],
-                    infoCantidad:       salidaCantidad[p],
-                    infoEstado:         salidaEstado[p],
-                    infoDepartamento:   salidaDepartamento[p],
+                    infoIdEntradaDeta:   idEntradaDetalle[p],
+                    infoCantidad:        salidaCantidad[p],
+                    infoEstado:          salidaEstado[p],
+                    infoTipoSalida:      tiposalida,
+                    infoDepartamento:    deptoFinal,
+                    infoFechaItem:       fechaFinal,
+                    infoSolicitudItem:   solicitudFinal,
+                    infoDescripcionItem: descripcionFinal,
                 });
             }
 
             openLoading();
             var formData = new FormData();
-            formData.append('fecha',            fecha);
-            formData.append('tiposalida',       tiposalida);
-            formData.append('descripcion',      descripcion);
-            formData.append('numero_solicitud', numero_solicitud);
-            formData.append('contenedorArray',  JSON.stringify(contenedorArray));
+            formData.append('contenedorArray', JSON.stringify(contenedorArray));
 
             axios.post(urlAdmin + '/admin/salida/guardar', formData)
                 .then(function (response) {
                     closeLoading();
-                    colorBlancoTabla(); // limpiar rojos al terminar
+                    colorBlancoTabla();
                     if (response.data.success === 10) {
                         Swal.fire({
                             title: 'Salida Registrada',
@@ -590,6 +724,8 @@
                 .catch(function () { closeLoading(); toastr.error('Error al guardar'); });
         }
 
+
+
         // ── Utilidades ────────────────────────────────────────────────
         function borrarFila(btn) {
             $(btn).closest('tr').remove();
@@ -600,10 +736,6 @@
             $('#matriz tbody tr').each(function (i) {
                 $(this).find('.num-fila').text(i + 1);
             });
-        }
-
-        function colorRojoTabla(index) {
-            $('#matriz tbody tr:eq(' + index + ')').css('background', '#f8d7da');
         }
 
         function colorBlancoTabla() {
