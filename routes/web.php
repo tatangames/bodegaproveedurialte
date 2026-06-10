@@ -120,7 +120,6 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/buscar/material',  [RepuestosController::class,'buscadorMaterial']);
     Route::post('/admin/entradas/guardar',  [RepuestosController::class,'guardarEntrada']);
 
-
     // --- REGISTRAR SALIDA ---
     Route::get('/admin/registro/salida', [SalidasController::class,'indexRegistroSalida'])->name('admin.salida.registro.index');
     Route::post('/admin/salida/guardar',  [SalidasController::class,'guardarSalida']);
@@ -166,9 +165,9 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/historial/salidas/editar',      [HistorialController::class, 'editarSalida']);
     Route::post('/admin/historial/salidas/eliminar',    [HistorialController::class, 'eliminarSalida']);
     Route::post('/admin/historial/salidas/detalle', [HistorialController::class, 'detalleSalida']);
-    Route::get('/admin/historial/salidas/extras/{id}',      [HistorialController::class, 'vistaExtrasSalida'])->name('admin.historial.salidas.extras');
-    Route::post('/admin/historial/salidas/extras/guardar',  [HistorialController::class, 'guardarExtrasSalida']);
-    Route::post('/admin/historial/salidas/detalle/eliminar', [HistorialController::class, 'eliminarDetalleSalida']);
+
+
+
 
     // --- REPORTE / ENTRADA POR PROYECTO
     Route::get('/admin/reporte/inventario/quehaentrado', [ReportesController::class,'vistaQueHaEntrado'])->name('admin.reporte.inventario.entrada.index');

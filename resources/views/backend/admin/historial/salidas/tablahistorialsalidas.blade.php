@@ -1,63 +1,53 @@
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <table id="tabla" class="table table-bordered table-striped">
-                            <thead>
-                            <tr>
-                                <th style="width:5%">ID</th>
-                                <th style="width:14%">Equipo</th>
-                                <th style="width:10%">Fecha</th>
-                                <th style="width:10%">Talonario</th>
-                                <th style="width:13%">Recibe</th>
-                                <th style="width:18%">Descripción</th>
-                                <th style="width:30%">Opciones</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @foreach($arraySalidas as $dato)
-                                <tr>
-                                    <td>{{ $dato->id }}</td>
-                                    <td>{{ $dato->equipo->nombre ?? '' }}</td>
-                                    <td>{{ $dato->fecha_fmt }}</td>
-                                    <td>{{ $dato->ficha_talonario ?? '' }}</td>
-                                    <td>{{ $dato->ficha_nombre ?? '' }}</td>
-                                    <td>{{ $dato->descripcion ?? '' }}</td>
-                                    <td class="text-center">
-                                        <button type="button"
-                                                class="btn btn-success btn-xs"
-                                                style="margin:2px"
-                                                onclick="window.location.href='{{ url('/admin/historial/salidas/extras') }}/{{ $dato->id }}'">
-                                            <i class="fas fa-plus"></i> Extras
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-info btn-xs"
-                                                style="margin:2px"
-                                                onclick="verDetalle({{ $dato->id }}, 'Salida #{{ $dato->id }} — {{ $dato->fecha_fmt }}')">
-                                            <i class="fas fa-list"></i> Detalle
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-warning btn-xs"
-                                                style="margin:2px"
-                                                onclick="modalEditar({{ $dato->id }})">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </button>
-                                        <button type="button"
-                                                class="btn btn-danger btn-xs"
-                                                style="margin:2px"
-                                                onclick="eliminar({{ $dato->id }})">
-                                            <i class="fas fa-trash"></i> Borrar
-                                        </button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<table id="tabla-historial" class="table table-bordered table-striped table-hover mb-0">
+    <thead class="thead-dark">
+    <tr>
+        <th style="width:4%">ID</th>
+        <th style="width:10%">Fecha</th>
+        <th style="width:13%">Tipo Salida</th>
+        <th style="width:13%">Departamento</th>
+        <th style="width:12%">N° Solicitud</th>
+        <th style="width:28%">Material</th>
+        <th style="width:6%" class="text-center">Cant.</th>
+        <th style="width:14%">Acciones</th>
+    </tr>
+    </thead>
+    <tbody>
+    @forelse($arraySalidas as $dato)
+        <tr>
+            <td>{{ $dato->id }}</td>
+            <td>{{ $dato->fecha ? date('d-m-Y', strtotime($dato->fecha)) : '—' }}</td>
+            <td>{{ $dato->tipo_salida ?? '—' }}</td>
+            <td>{{ $dato->departamento ?? '—' }}</td>
+            <td>{{ $dato->numero_solicitud ?? '—' }}</td>
+            <td>{{ $dato->material }}</td>
+            <td class="text-center">{{ $dato->cantidad_salida }}</td>
+            <td class="text-center">
+                <button type="button"
+                        class="btn btn-info btn-xs"
+                        style="margin:2px"
+                        onclick="verDetalle({{ $dato->id }})">
+                    <i class="fas fa-list"></i> Ver
+                </button>
+                <button type="button"
+                        class="btn btn-warning btn-xs"
+                        style="margin:2px"
+                        onclick="modalEditar({{ $dato->id }})">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button type="button"
+                        class="btn btn-danger btn-xs"
+                        style="margin:2px"
+                        onclick="eliminar({{ $dato->id }})">
+                    <i class="fas fa-trash"></i> Borrar
+                </button>
+            </td>
+        </tr>
+    @empty
+        <tr>
+            <td colspan="8" class="text-center text-muted py-4">
+                No se encontraron registros con los filtros aplicados
+            </td>
+        </tr>
+    @endforelse
+    </tbody>
+</table>

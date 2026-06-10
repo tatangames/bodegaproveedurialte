@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sistema;
 
 use App\Http\Controllers\Controller;
+use App\Models\Departamentos;
 use App\Models\Entradas;
 use App\Models\EntradasDetalle;
 use App\Models\Equipos;
@@ -15,6 +16,7 @@ use App\Models\SalidasDetalle;
 use App\Models\TipoCompra;
 use App\Models\TipoEntrada;
 use App\Models\TipoProyecto;
+use App\Models\TipoSalida;
 use App\Models\Transferencia;
 use App\Models\TransferenciaDetalle;
 use Carbon\Carbon;
@@ -283,238 +285,191 @@ class HistorialController extends Controller
     //***** ========================================================================================= **********
 
 
+// ── Index ─────────────────────────────────────────────────────────────────────
     public function indexHistorialSalidas()
     {
-        $arrayEquipos = Equipos::orderBy('nombre')->get();
+        $arrayTipoSalida    = TipoSalida::orderBy('nombre')->get();
+        $arrayDepartamentos = Departamentos::orderBy('nombre')->get();
 
         return view('backend.admin.historial.salidas.vistahistorialsalidas',
-            compact('arrayEquipos'));
+            compact('arrayTipoSalida', 'arrayDepartamentos'));
     }
 
+// ── Tabla (cargada vía jQuery .load()) ───────────────────────────────────────
     public function tablaHistorialSalidas(Request $request)
     {
-        $arraySalidas = Salidas::with('equipo')
-            ->when($request->equipo, fn($q) =>
-            $q->where('id_equipo', $request->equipo)
+        $arraySalidas = DB::table('salidas_detalle as sd')
+            ->join('entradas_detalle as ed', 'ed.id', '=', 'sd.id_entrada_detalle')
+            ->join('materiales as m', 'm.id', '=', 'ed.id_material')
+            ->leftJoin('tipo_salida as ts', 'ts.id', '=', 'sd.id_tiposalida')
+            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
+            ->select(
+                'sd.id',
+                'sd.fecha',
+                'sd.numero_solicitud',
+                'sd.descripcion',
+                'sd.cantidad_salida',
+                'sd.estado',
+                'm.nombre as material',
+                'ts.nombre as tipo_salida',
+                'dep.nombre as departamento'
+            )
+            ->when($request->tiposalida, fn($q) =>
+            $q->where('sd.id_tiposalida', $request->tiposalida)
+            )
+            ->when($request->departamento, fn($q) =>
+            $q->where('sd.id_departamento', $request->departamento)
             )
             ->when($request->fecha_desde, fn($q) =>
-            $q->whereDate('fecha', '>=', $request->fecha_desde)
+            $q->whereDate('sd.fecha', '>=', $request->fecha_desde)
             )
             ->when($request->fecha_hasta, fn($q) =>
-            $q->whereDate('fecha', '<=', $request->fecha_hasta)
+            $q->whereDate('sd.fecha', '<=', $request->fecha_hasta)
             )
-            ->when($request->material, function ($q) use ($request) {
-                $busqueda = '%' . $request->material . '%';
-                $q->whereHas('detalle.entradaDetalle.material', function ($q2) use ($busqueda) {
-                    $q2->where('nombre', 'LIKE', $busqueda);
-                });
-            })
-            ->orderBy('fecha', 'desc')
-            ->get()
-            ->map(function ($item) {
-                $item->fecha_fmt = date('d/m/Y', strtotime($item->fecha));
-                return $item;
-            });
+            ->when($request->material, fn($q) =>
+            $q->where('m.nombre', 'LIKE', '%' . $request->material . '%')
+            )
+            ->when($request->solicitud, fn($q) =>
+            $q->where('sd.numero_solicitud', 'LIKE', '%' . $request->solicitud . '%')
+            )
+            ->orderBy('sd.fecha', 'desc')
+            ->orderBy('sd.id', 'desc')
+            ->get();
 
         return view('backend.admin.historial.salidas.tablahistorialsalidas',
             compact('arraySalidas'));
     }
 
-
+// ── Información de una salida para editar ─────────────────────────────────────
     public function informacionSalida(Request $request)
     {
-        $salida = Salidas::find($request->id);
+        $salida = DB::table('salidas_detalle as sd')
+            ->leftJoin('tipo_salida as ts', 'ts.id', '=', 'sd.id_tiposalida')
+            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
+            ->select(
+                'sd.id',
+                'sd.fecha',
+                'sd.numero_solicitud',
+                'sd.descripcion',
+                'sd.id_tiposalida',
+                'sd.id_departamento',
+                'sd.estado',
+                'ts.nombre as tipo_salida',
+                'dep.nombre as departamento'
+            )
+            ->where('sd.id', $request->id)
+            ->first();
 
-        if (!$salida) {
-            return response()->json(['success' => 0]);
-        }
+        if (!$salida) return ['success' => 0];
 
-        return response()->json([
-            'success' => 1,
-            'salida'  => [
-                'id'              => $salida->id,
-                'fecha'           => $salida->fecha,
-                'descripcion'     => $salida->descripcion,
-                'id_equipo'       => $salida->id_equipo,
-                'ficha_nombre'    => $salida->ficha_nombre,
-                'ficha_talonario' => $salida->ficha_talonario,
-            ]
-        ]);
+        return ['success' => 1, 'salida' => $salida];
     }
 
+// ── Editar salida ─────────────────────────────────────────────────────────────
     public function editarSalida(Request $request)
     {
-        $salida = Salidas::find($request->id);
+        $validator = Validator::make($request->all(), [
+            'id'            => 'required|exists:salidas_detalle,id',
+            'fecha'         => 'required|date',
+            'id_tiposalida' => 'required|exists:tipo_salida,id',
+        ]);
 
-        if (!$salida) {
-            return response()->json(['success' => 0]);
+        if ($validator->fails()) return ['success' => 0];
+
+        try {
+            DB::table('salidas_detalle')
+                ->where('id', $request->id)
+                ->update([
+                    'fecha'            => $request->fecha,
+                    'id_tiposalida'    => $request->id_tiposalida,
+                    'id_departamento'  => $request->id_departamento ?: null,
+                    'numero_solicitud' => $request->numero_solicitud ?: null,
+                    'descripcion'      => $request->descripcion      ?: null,
+                    'estado'           => in_array($request->estado, ['pendiente', 'finalizado'])
+                        ? $request->estado : 'finalizado',
+                ]);
+
+            return ['success' => 1];
+
+        } catch (\Throwable $e) {
+            Log::error('editarSalida: ' . $e);
+            return ['success' => 99];
         }
-
-        $salida->fecha           = $request->fecha;
-        $salida->descripcion     = $request->descripcion     ?: null;
-        $salida->id_equipo       = $request->id_equipo;
-        $salida->ficha_nombre    = $request->ficha_nombre    ?: null;
-        $salida->ficha_talonario = $request->ficha_talonario ?: null;
-        $salida->save();
-
-        return response()->json(['success' => 1]);
     }
 
+// ── Eliminar salida ───────────────────────────────────────────────────────────
     public function eliminarSalida(Request $request)
     {
-        $salida = Salidas::find($request->id);
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:salidas_detalle,id',
+        ]);
 
-        if (!$salida) {
-            return response()->json(['success' => 0]);
-        }
+        if ($validator->fails()) return ['success' => 0];
 
         DB::beginTransaction();
         try {
-            $salida->detalle()->delete();
-            $salida->delete();
+            // Eliminar entregas adicionales primero
+            DB::table('salidas_detalle_entregas')
+                ->where('id_salida_detalle', $request->id)
+                ->delete();
+
+            DB::table('salidas_detalle')
+                ->where('id', $request->id)
+                ->delete();
+
             DB::commit();
-            return response()->json(['success' => 1]);
+            return ['success' => 1];
+
         } catch (\Throwable $e) {
             DB::rollback();
-            Log::error('eliminarSalida: ' . $e->getMessage());
-            return response()->json(['success' => 99]);
+            Log::error('eliminarSalida: ' . $e);
+            return ['success' => 99];
         }
     }
 
+// ── Detalle de una salida (info + entregas adicionales) ───────────────────────
     public function detalleSalida(Request $request)
     {
-        $salida = Salidas::find($request->id);
+        $salida = DB::table('salidas_detalle as sd')
+            ->join('entradas_detalle as ed', 'ed.id', '=', 'sd.id_entrada_detalle')
+            ->join('materiales as m', 'm.id', '=', 'ed.id_material')
+            ->leftJoin('tipo_salida as ts', 'ts.id', '=', 'sd.id_tiposalida')
+            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
+            ->select(
+                'sd.id',
+                'sd.fecha',
+                'sd.numero_solicitud',
+                'sd.descripcion',
+                'sd.cantidad_salida',
+                'sd.estado',
+                'm.nombre as material',
+                'ts.nombre as tipo_salida',
+                'dep.nombre as departamento'
+            )
+            ->where('sd.id', $request->id)
+            ->first();
 
-        if (!$salida) {
-            return response()->json(['success' => 0]);
-        }
+        if (!$salida) return ['success' => 0];
 
-        $detalle = $salida->detalle()
-            ->with('entradaDetalle.material')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id'              => $item->id,
-                    'material'        => $item->entradaDetalle->material->nombre ?? '',
-                    'cantidad_salida' => $item->cantidad_salida,
-                    'precio'          => number_format($item->entradaDetalle->precio ?? 0, 4),
-                ];
-            });
+        $entregas = DB::table('salidas_detalle_entregas as sde')
+            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sde.id_departamento')
+            ->select(
+                'sde.id',
+                'sde.cantidad',
+                'sde.fecha_entrega',
+                'sde.observacion',
+                'dep.nombre as departamento'
+            )
+            ->where('sde.id_salida_detalle', $request->id)
+            ->orderBy('sde.created_at', 'asc')
+            ->get();
 
-        return response()->json([
-            'success' => 1,
-            'detalle' => $detalle,
-        ]);
+        return ['success' => 1, 'salida' => $salida, 'entregas' => $entregas];
     }
 
 
-    public function vistaExtrasSalida($id)
-    {
-        $salida = Salidas::with('equipo')->find($id);
-
-        if (!$salida) {
-            return redirect()->route('admin.historial.salidas.index');
-        }
-
-        return view('backend.admin.historial.salidas.vistaextrassalidas', compact('salida'));
-    }
-
-    public function guardarExtrasSalida(Request $request)
-    {
-        $salida = Salidas::find($request->id_salida);
-
-        if (!$salida) {
-            return response()->json(['success' => 0]);
-        }
-
-        $contenedor = json_decode($request->contenedorArray, true);
-
-        if (empty($contenedor)) {
-            return response()->json(['success' => 0]);
-        }
-
-        // ── Agrupar por id_entrada_detalle para sumar si viene el mismo lote dos veces ──
-        $agrupado = [];
-        foreach ($contenedor as $index => $item) {
-            $id = $item['infoIdEntradaDeta'];
-            if (!isset($agrupado[$id])) {
-                $agrupado[$id] = ['cantidad' => 0, 'fila' => $index + 1];
-            }
-            $agrupado[$id]['cantidad'] += (int) $item['infoCantidad'];
-        }
-
-        // ── Validar disponibilidad ──
-        foreach ($agrupado as $idEntradaDeta => $datos) {
-            $entDetalle = EntradasDetalle::with('material')->find($idEntradaDeta);
-
-            if (!$entDetalle) {
-                return response()->json([
-                    'success' => 2,
-                    'fila'    => $datos['fila'],
-                    'msg'     => 'Material no encontrado en el lote.',
-                ]);
-            }
-
-            $totalSalido = SalidasDetalle::where('id_entrada_detalle', $entDetalle->id)
-                ->sum('cantidad_salida');
-
-            $disponible = $entDetalle->cantidad_inicial - $totalSalido;
-
-            if ($datos['cantidad'] > $disponible) {
-                return response()->json([
-                    'success'         => 2,
-                    'fila'            => $datos['fila'],
-                    'msg'             => 'Cantidad insuficiente.',
-                    'nombre_material' => $entDetalle->material->nombre ?? 'Material desconocido',
-                    'cantidad_pedida' => $datos['cantidad'],
-                    'disponible'      => (int) $disponible,
-                ]);
-            }
-        }
-
-        // ── Guardar ──
-        foreach ($contenedor as $item) {
-            SalidasDetalle::create([
-                'id_salida'          => $salida->id,
-                'id_entrada_detalle' => $item['infoIdEntradaDeta'],
-                'cantidad_salida'    => (int) $item['infoCantidad'],
-            ]);
-        }
-
-        return response()->json(['success' => 10]);
-    }
 
 
-    public function eliminarDetalleSalida(Request $request)
-    {
-        $detalle = SalidasDetalle::find($request->id);
-
-        if (!$detalle) {
-            return response()->json(['success' => 0]);
-        }
-
-        DB::beginTransaction();
-        try {
-            $salidaId = $detalle->id_salida;
-            $detalle->delete();
-
-            $quedan = SalidasDetalle::where('id_salida', $salidaId)->count();
-
-            if ($quedan === 0) {
-                Salidas::where('id', $salidaId)->delete();
-                DB::commit();
-                return response()->json(['success' => 1, 'salida_borrada' => true]);
-            }
-
-            DB::commit();
-            return response()->json(['success' => 1, 'salida_borrada' => false]);
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-            Log::error('eliminarDetalleSalida: ' . $e->getMessage());
-            return response()->json(['success' => 99]);
-        }
-    }
 
 
 
