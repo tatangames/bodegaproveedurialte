@@ -518,14 +518,14 @@
             Swal.fire({
                 title: '¿Eliminar esta salida?',
                 text: 'Esta acción no se puede deshacer.',
-                icon: 'warning',
+                type: 'warning',                          // ← icon en lugar de type
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             }).then(function (result) {
-                if (!result.isConfirmed) return;
+                if (!result.value) return;                // ← result.value en lugar de result.isConfirmed
                 openLoading();
                 var formData = new FormData();
                 formData.append('id', id);

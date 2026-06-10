@@ -295,7 +295,7 @@ class HistorialController extends Controller
             compact('arrayTipoSalida', 'arrayDepartamentos'));
     }
 
-// ── Tabla (cargada vía jQuery .load()) ───────────────────────────────────────
+    // ── Tabla (cargada vía jQuery .load()) ───────────────────────────────────────
     public function tablaHistorialSalidas(Request $request)
     {
         $arraySalidas = DB::table('salidas_detalle as sd')
@@ -312,7 +312,8 @@ class HistorialController extends Controller
                 'sd.estado',
                 'm.nombre as material',
                 'ts.nombre as tipo_salida',
-                'dep.nombre as departamento'
+                'dep.nombre as departamento',
+                DB::raw('(SELECT COUNT(*) FROM salidas_detalle_entregas WHERE id_salida_detalle = sd.id) as total_entregas')
             )
             ->when($request->tiposalida, fn($q) =>
             $q->where('sd.id_tiposalida', $request->tiposalida)

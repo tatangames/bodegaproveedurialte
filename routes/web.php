@@ -101,20 +101,6 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/inventario/editar', [RepuestosController::class, 'editarMaterial']);
     Route::post('/admin/inventario/catalogo', [RepuestosController::class, 'inventarioConteoDeMateriales']);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // --- REGISTRAR ENTRADA ---
     Route::get('/admin/registro/entrada', [RepuestosController::class,'indexRegistroEntrada'])->name('admin.entrada.registro.index');
     Route::post('/admin/buscar/material',  [RepuestosController::class,'buscadorMaterial']);
@@ -134,17 +120,6 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/admin/pendientes/entrega/editar',     [SalidasController::class, 'editarEntrega'])->name('admin.pendientes.entrega.editar');
     Route::post('/admin/pendientes/entrega/actualizar', [SalidasController::class, 'actualizarEntrega'])->name('admin.pendientes.entrega.actualizar');
     Route::post('/admin/pendientes/entrega/eliminar',   [SalidasController::class, 'eliminarEntrega'])->name('admin.pendientes.entrega.eliminar');
-
-
-
-
-
-
-
-
-    Route::post('/admin/reporte/talonario/salida', [ReportesController::class, 'pdfReporteSalidaTalonario']);
-
-
 
     // --- HISTORIAL / ENTRADAS ---
     Route::get('/admin/historial/entradas', [HistorialController::class,'indexHistorialEntradas'])->name('admin.historial.entradas.index');
@@ -169,6 +144,17 @@ Route::middleware('auth:admin')->group(function () {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
     // --- REPORTE / ENTRADA POR PROYECTO
     Route::get('/admin/reporte/inventario/quehaentrado', [ReportesController::class,'vistaQueHaEntrado'])->name('admin.reporte.inventario.entrada.index');
     Route::get('/admin/reporte/quehaentrado/pdf/{desde}/{hasta}/{tipo}', [ReportesController::class, 'pdfQueHaEntradoProyectos']);
@@ -180,6 +166,8 @@ Route::middleware('auth:admin')->group(function () {
         ->name('admin.informacion.actualizar.px');
 
 
+
+    Route::post('/admin/reporte/talonario/salida', [ReportesController::class, 'pdfReporteSalidaTalonario']);
 
 
 
