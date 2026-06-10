@@ -146,6 +146,7 @@ Route::middleware('auth:admin')->group(function () {
 
     Route::get('/admin/reporte/generales', [ReportesController::class,'vistaReporteGenerales'])->name('admin.reporte.generales.index');
     Route::get('/admin/reporte/pdf/inventario', [ReportesController::class,'generarPDFExistencias']);
+    Route::get('/admin/bodega/reportespdf/inicial/final/{desde}/{hasta}', [ReportesController::class, 'reportePDFInicialPorPeriodos']);
 
 
 
@@ -156,20 +157,6 @@ Route::middleware('auth:admin')->group(function () {
 
 
 
-
-
-    // --- REPORTE / ENTRADA POR PROYECTO
-    Route::get('/admin/reporte/quehaentrado/pdf/{desde}/{hasta}/{tipo}', [ReportesController::class, 'pdfQueHaEntradoProyectos']);
-    Route::get('/admin/reporte/quehasalido/pdf/{desde}/{hasta}/{tipo}', [ReportesController::class, 'pdfQueHaSalidoProyectos']);
-    Route::get('admin/reporte/inventario/pdf/{idMaterial}', [ReportesController::class, 'pdfInventarioActual'])->name('admin.reporte.inventario.pdf');
-
-    // --- ACTUALIZAR DISTANCIA FIRMAS ---
-    Route::post('/admin/informacion/actualizar/px', [ReportesController::class, 'actualizarPxInformacionGeneral'])
-        ->name('admin.informacion.actualizar.px');
-
-
-
-    Route::post('/admin/reporte/talonario/salida', [ReportesController::class, 'pdfReporteSalidaTalonario']);
 
 
 

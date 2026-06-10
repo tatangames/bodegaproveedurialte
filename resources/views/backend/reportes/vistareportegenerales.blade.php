@@ -110,7 +110,38 @@
                     </div>
                 </div>
 
+                {{-- ══ ENTRADAS / SALIDAS POR PERÍODO ══ --}}
+                <div class="col-md-4">
+                    <div class="reporte-card">
+                        <div class="reporte-header" style="background: linear-gradient(135deg, #6b4a1a, #e88e1a);">
+                            <i class="fas fa-exchange-alt"></i>
+                            <h5>Control de Entradas/Salidas por Período</h5>
+                        </div>
+                        <div class="reporte-body">
+                            <p style="font-size:13px; color:#666; margin-bottom:14px;">
+                                Muestra saldo inicial, entradas, salidas y saldo final de cada material dentro del rango de fechas seleccionado.
+                            </p>
+                            <hr class="divider">
 
+                            <div class="fecha-row">
+                                <div class="fecha-box">
+                                    <label>Fecha desde <span class="text-danger">*</span></label>
+                                    <input type="date" id="periodo-fecha-desde" class="form-control form-control-sm">
+                                </div>
+                                <div class="fecha-box">
+                                    <label>Fecha hasta <span class="text-danger">*</span></label>
+                                    <input type="date" id="periodo-fecha-hasta" class="form-control form-control-sm">
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="generarPdfPeriodo()" class="btn-pdf"
+                                    style="background: linear-gradient(135deg, #6b4a1a, #e88e1a); color:#fff;
+                               box-shadow: 0 4px 14px rgba(232,142,26,.35); margin-top:0;">
+                                <i class="fas fa-file-pdf"></i> Generar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -128,6 +159,25 @@
 
         function generarPdfInventario() {
             window.open("{{ url('admin/reporte/pdf/inventario') }}/", '_blank');
+        }
+
+        // ── Reporte de Entradas/Salidas por Período ────────────────────
+        function generarPdfPeriodo() {
+            var desde = document.getElementById('periodo-fecha-desde').value;
+            var hasta = document.getElementById('periodo-fecha-hasta').value;
+
+            if (!desde || !hasta) {
+                toastr.error('Debes seleccionar fecha desde y fecha hasta');
+                return;
+            }
+
+            if (desde > hasta) {
+                toastr.error('La fecha "desde" no puede ser mayor que "hasta"');
+                return;
+            }
+
+            var url = "{{ url('admin/bodega/reportespdf/inicial/final') }}/" + desde + '/' + hasta;
+            window.open(url, '_blank');
         }
 
     </script>
