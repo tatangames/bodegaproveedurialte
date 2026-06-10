@@ -62,23 +62,29 @@ class SalidasController extends Controller
                 $acumulado[$id] += (int) $item['infoCantidad'];
             }
 
-            // ── Validar stock acumulado antes de guardar ──────────────────
+            // ── Validar stock acumulado + obtener fecha de entrada ────────
+            $fechasEntrada = []; // cache: id_entrada_detalle => fecha de entrada
+
             foreach ($acumulado as $idEntradaDetalle => $cantidadSalida) {
 
-                $cantidadInicial = DB::table('entradas_detalle')
-                    ->where('id', $idEntradaDetalle)
-                    ->value('cantidad_inicial');
+                $entradaInfo = DB::table('entradas_detalle as ed')
+                    ->join('entradas as e', 'e.id', '=', 'ed.id_entradas')
+                    ->where('ed.id', $idEntradaDetalle)
+                    ->select('ed.cantidad_inicial', 'e.fecha')
+                    ->first();
 
-                if (is_null($cantidadInicial)) {
+                if (is_null($entradaInfo)) {
                     DB::rollback();
                     return ['success' => 0];
                 }
+
+                $fechasEntrada[$idEntradaDetalle] = $entradaInfo->fecha;
 
                 $totalSalido = DB::table('salidas_detalle')
                     ->where('id_entrada_detalle', $idEntradaDetalle)
                     ->sum('cantidad_salida');
 
-                $disponible = (int) $cantidadInicial - (int) $totalSalido;
+                $disponible = (int) $entradaInfo->cantidad_inicial - (int) $totalSalido;
 
                 if ($cantidadSalida > $disponible) {
                     DB::rollback();
@@ -93,6 +99,36 @@ class SalidasController extends Controller
                         'nombre_material' => $nombreMaterial ?? 'Material desconocido',
                         'cantidad_pedida' => $cantidadSalida,
                         'disponible'      => $disponible,
+                    ];
+                }
+            }
+
+            // ── Validar fecha de salida no menor a la fecha de entrada (por ítem) ──
+            foreach ($contenedor as $item) {
+                $idEntradaDetalle = $item['infoIdEntradaDeta'];
+                $fechaSalidaItem  = $item['infoFechaItem'] ?? null;
+
+                if (empty($fechaSalidaItem)) continue;
+
+                $fechaEntrada = $fechasEntrada[$idEntradaDetalle] ?? null;
+                if (empty($fechaEntrada)) continue;
+
+                $fEntrada = substr($fechaEntrada, 0, 10);
+                $fSalida  = substr($fechaSalidaItem, 0, 10);
+
+                if (strtotime($fSalida) < strtotime($fEntrada)) {
+                    DB::rollback();
+
+                    $nombreMaterial = DB::table('entradas_detalle as ed')
+                        ->join('materiales as m', 'm.id', '=', 'ed.id_material')
+                        ->where('ed.id', $idEntradaDetalle)
+                        ->value('m.nombre');
+
+                    return [
+                        'success'         => 3,
+                        'nombre_material' => $nombreMaterial ?? 'Material desconocido',
+                        'fecha_entrada'   => date('d-m-Y', strtotime($fEntrada)),
+                        'fecha_salida'    => date('d-m-Y', strtotime($fSalida)),
                     ];
                 }
             }

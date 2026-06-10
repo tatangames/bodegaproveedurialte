@@ -736,7 +736,19 @@
                             confirmButtonColor: '#d33',
                             confirmButtonText: 'Entendido'
                         });
-                    } else {
+                    } else if (response.data.success === 3) {
+                        Swal.fire({
+                            title: 'Fecha de salida inválida',
+                            html: '<b>' + response.data.nombre_material + '</b><br><br>' +
+                                'Fecha de entrada: <b>' + response.data.fecha_entrada + '</b><br>' +
+                                'Fecha de salida: <b>' + response.data.fecha_salida + '</b><br><br>' +
+                                'La fecha de salida no puede ser anterior a la fecha de entrada.',
+                            icon: 'warning',
+                            confirmButtonColor: '#d33',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
+                    else {
                         toastr.error('Error al guardar');
                     }
                 })
