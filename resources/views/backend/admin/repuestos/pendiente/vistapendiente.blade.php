@@ -98,7 +98,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Observación: <small class="text-muted">(Opcional)</small></label>
+                        <label>Observación: <span style="color: red">*</span> </label>
                         <textarea class="form-control" id="modal-observacion" rows="2"
                                   maxlength="500" placeholder="Ej: Recibido por Juan Pérez..."></textarea>
                     </div>
@@ -261,7 +261,7 @@
 
 
                     <div class="form-group">
-                        <label>Observación: <small class="text-muted">(Opcional)</small></label>
+                        <label>Observación: <span style="color: red">*</span> </label>
                         <textarea class="form-control" id="editar-observacion" rows="2" maxlength="500"></textarea>
                     </div>
 
@@ -403,6 +403,7 @@
 
             if (!cantidad || parseInt(cantidad) <= 0) { toastr.error('Ingrese una cantidad válida'); return; }
             if (!fecha) { toastr.error('La fecha es requerida'); return; }
+            if (!observacion) { toastr.error('Observación es requerida'); return; }
 
             var formData = new FormData();
             formData.append('id_salida_detalle', idSalidaDetalle);
@@ -603,6 +604,7 @@
 
             if (!cantidad || parseInt(cantidad) <= 0) { toastr.error('Ingrese una cantidad válida'); return; }
             if (!fecha) { toastr.error('La fecha es requerida'); return; }
+            if (!observacion) { toastr.error('Observacion es requerida'); return; }
 
             var formData = new FormData();
             formData.append('id',              id);

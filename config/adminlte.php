@@ -430,10 +430,13 @@ return [
             'can'     => 'sidebar.inventario',
             'submenu' => [
                 [
-                    'text' => 'Entradas / Salidas',
+                    'text' => 'Generales',
                     'icon' => 'far fa-circle',
-                    'route' => 'admin.reporte.inventario.entrada.index',
+                    'route' => 'admin.reporte.generales.index',
                 ],
+
+
+
             ],
         ],
 
