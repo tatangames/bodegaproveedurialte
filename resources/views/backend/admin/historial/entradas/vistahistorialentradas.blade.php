@@ -433,7 +433,7 @@
                         const e = response.data.entrada;
                         $('#id-editar').val(e.id);
                         $('#fecha-editar').val(e.fecha);
-                        $('#factura-editar').val(e.factura ?? '');
+                        $('#factura-editar').val(e.lote ?? '');
                         $('#descripcion-editar').val(e.descripcion ?? '');
                         $('#select-tipocompra-editar').val(e.id_tipocompra).trigger('change');
                         $('#select-proveedor-editar').val(e.id_proveedor ?? '').trigger('change');

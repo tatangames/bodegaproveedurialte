@@ -75,7 +75,7 @@ class HistorialController extends Controller
             'entrada' => [
                 'id'           => $entrada->id,
                 'fecha'        => $entrada->fecha,
-                'factura'      => $entrada->factura,
+                'lote'      =>    $entrada->lote,
                 'descripcion'  => $entrada->descripcion,
                 'id_tipocompra'=> $entrada->id_tipocompra,
                 'id_proveedor' => $entrada->id_proveedor,
@@ -93,7 +93,7 @@ class HistorialController extends Controller
         }
 
         $entrada->fecha         = $request->fecha;
-        $entrada->factura       = $request->factura      ?: null;
+        $entrada->lote       =    $request->factura      ?: null;
         $entrada->descripcion   = $request->descripcion  ?: null;
         $entrada->id_tipocompra = $request->id_tipocompra;
         $entrada->id_proveedor  = $request->id_proveedor ?: null;

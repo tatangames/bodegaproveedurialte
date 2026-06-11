@@ -17,7 +17,7 @@ return new class extends Migration
             $table->bigInteger('id_tiposalida')->unsigned()->nullable();
             $table->bigInteger('id_departamento')->unsigned()->nullable();
 
-            $table->string('fecha');
+            $table->date('fecha');
             $table->text('descripcion')->nullable();
             $table->string('numero_solicitud', 100)->nullable();
 
