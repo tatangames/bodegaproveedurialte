@@ -240,7 +240,7 @@
                                         <thead class="thead-dark">
                                         <tr>
                                             <th>Fecha Ingreso</th>
-                                            <th># de ITEM (opcional)</th>
+                                            <th>Detalle (opcional)</th>
                                             <th>Precio</th>
                                             <th class="text-center">Cant. Actual</th>
                                             <th class="text-center">Cant. Salida</th>

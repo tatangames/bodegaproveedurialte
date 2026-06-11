@@ -140,7 +140,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label># de ITEM (Opcional): <small class="text-muted">(Opcional)</small></label>
+                                            <label>Detalle (Opcional): <small class="text-muted">(Opcional)</small></label>
                                             <input type="text" id="codigo" maxlength="100"
                                                    class="form-control" autocomplete="off">
                                         </div>
@@ -179,7 +179,7 @@
                                     <th style="width:5%">#</th>
                                     <th style="width:38%">Material</th>
                                     <th style="width:12%">Cantidad</th>
-                                    <th style="width:15%"># de ITEM (opcional)</th>
+                                    <th style="width:15%">Detalle (opcional)</th>
                                     <th style="width:15%">Precio</th>
                                     <th style="width:15%">Opciones</th>
                                 </tr>

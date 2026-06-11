@@ -204,7 +204,7 @@
                                 <tr>
                                     <th style="width:4%">#</th>
                                     <th>Material</th>
-                                    <th style="width:16%"># de ITEM (opcional)</th>
+                                    <th style="width:16%">Detalle (opcional)</th>
                                     <th style="width:10%" class="text-center">Cantidad</th>
                                     <th style="width:13%" class="text-right">Precio unit.</th>
                                     <th style="width:12%" class="text-center">Acciones</th>
@@ -259,7 +259,7 @@
                                    min="1" max="1000000" placeholder="0">
                         </div>
                         <div class="form-group">
-                            <label># de ITEM (opcional) <small class="text-muted">(Opcional)</small></label>
+                            <label>Detalle (opcional) <small class="text-muted">(Opcional)</small></label>
                             <input type="text" id="detalle-codigo-editar" autocomplete="off" class="form-control" maxlength="100">
                         </div>
                         <div class="form-group">

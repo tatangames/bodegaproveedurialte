@@ -173,7 +173,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label># de ITEM (Opcional):</label>
+                                            <label>Detalle (Opcional):</label>
                                             <input type="text" id="codigo" maxlength="100"
                                                    class="form-control" autocomplete="off">
                                         </div>
