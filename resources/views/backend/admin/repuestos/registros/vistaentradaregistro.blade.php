@@ -80,7 +80,6 @@
                                         <div class="form-group">
                                             <label>Tipo de Compra: <span class="text-danger">*</span></label>
                                             <select class="form-control" id="select-tipocompra" style="width:100%">
-                                                <option value="">Seleccione...</option>
                                                 @foreach($arrayTipoCompra as $tc)
                                                     <option value="{{ $tc->id }}">{{ $tc->nombre }}</option>
                                                 @endforeach
