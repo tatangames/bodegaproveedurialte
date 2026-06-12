@@ -29,7 +29,9 @@ class ReportesController extends Controller
 
     public function vistaReporteGenerales()
     {
-        return view('backend.reportes.vistareportegenerales');
+        $arrayDepartamento = Departamentos::orderBy('nombre')->get();
+
+        return view('backend.reportes.vistareportegenerales', compact('arrayDepartamento'));
     }
 
 
@@ -432,220 +434,90 @@ class ReportesController extends Controller
         $hastaFormat = Carbon::parse($hasta)->format('d/m/Y');
 
         // ==========================================================
-        // REPORTE POR MOVIMIENTOS
-        // INICIAL = stock antes del período
-        // ENTRADAS = movimientos del período
-        // SALIDAS = movimientos del período
-        // SALDO = inicial + entradas - salidas
+        // REPORTE POR LOTE (entradas_detalle), calculando dinero
+        // con el precio REAL de cada lote, luego agrupando por material
         // ==========================================================
         $rows = DB::select("
-    WITH movimientos AS (
-
-        -- ENTRADAS
-        SELECT
-            ed.id_material,
-            COALESCE(NULLIF(oe.codigo, ''), 'SIN-CODIGO') AS codigo,
-            m.nombre AS descripcion,
-            ed.precio,
-            e.fecha AS fecha_movimiento,
-            ed.cantidad_inicial AS entrada,
-            0 AS salida
-        FROM entradas_detalle ed
-        INNER JOIN entradas e
-            ON e.id = ed.id_entradas
-        INNER JOIN materiales m
-            ON m.id = ed.id_material
-        LEFT JOIN objeto_especifico oe
-            ON oe.id = m.id_objespecifico
-
-        UNION ALL
-
-        -- SALIDAS
-        SELECT
-            ed.id_material,
-            COALESCE(NULLIF(oe.codigo, ''), 'SIN-CODIGO') AS codigo,
-            m.nombre AS descripcion,
-            ed.precio,
-            COALESCE(
-                STR_TO_DATE(sd.fecha, '%Y-%m-%d %H:%i:%s'),
-                STR_TO_DATE(sd.fecha, '%Y-%m-%d'),
-                STR_TO_DATE(sd.fecha, '%d/%m/%Y')
-            ) AS fecha_movimiento,
-            0 AS entrada,
-            sd.cantidad_salida AS salida
-        FROM salidas_detalle sd
-        INNER JOIN entradas_detalle ed
-            ON ed.id = sd.id_entrada_detalle
-        INNER JOIN materiales m
-            ON m.id = ed.id_material
-        LEFT JOIN objeto_especifico oe
-            ON oe.id = m.id_objespecifico
-    )
-
+WITH in_before AS (
+    SELECT ed.id AS id_entrada_detalle, ed.cantidad_inicial AS qty_in_before
+    FROM entradas_detalle ed
+    INNER JOIN entradas e ON e.id = ed.id_entradas
+    WHERE e.fecha < ?
+),
+out_before AS (
+    SELECT sd.id_entrada_detalle, SUM(sd.cantidad_salida) AS qty_out_before
+    FROM salidas_detalle sd
+    WHERE sd.fecha < ?
+    GROUP BY sd.id_entrada_detalle
+),
+in_period AS (
+    SELECT ed.id AS id_entrada_detalle, ed.cantidad_inicial AS qty_in_period
+    FROM entradas_detalle ed
+    INNER JOIN entradas e ON e.id = ed.id_entradas
+    WHERE e.fecha >= ? AND e.fecha <= ?
+),
+out_period AS (
+    SELECT sd.id_entrada_detalle, SUM(sd.cantidad_salida) AS qty_out_period
+    FROM salidas_detalle sd
+    WHERE sd.fecha >= ? AND sd.fecha <= ?
+    GROUP BY sd.id_entrada_detalle
+),
+base AS (
     SELECT
-        id_material,
-        codigo,
-        descripcion,
-        MAX(precio) AS precio,
+        ed.id              AS id_entrada_detalle,
+        ed.id_material,
+        COALESCE(NULLIF(oe.codigo, ''), 'SIN-CODIGO') AS codigo,
+        m.nombre           AS descripcion,
+        ed.precio,
 
-        SUM(
-            CASE
-                WHEN fecha_movimiento < ?
-                THEN entrada - salida
-                ELSE 0
-            END
-        ) AS saldo_inicial_cant,
+        COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0) AS saldo_inicial_cant,
+        COALESCE(ip.qty_in_period, 0)  AS entradas_mes_cant,
+        COALESCE(op.qty_out_period, 0) AS salidas_mes_cant,
 
-        SUM(
-            CASE
-                WHEN fecha_movimiento >= ?
-                AND fecha_movimiento <= ?
-                THEN entrada
-                ELSE 0
-            END
-        ) AS entradas_mes_cant,
+        (COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0)
+         + COALESCE(ip.qty_in_period, 0)
+         - COALESCE(op.qty_out_period, 0)) AS saldo_final_cant,
 
-        SUM(
-            CASE
-                WHEN fecha_movimiento >= ?
-                AND fecha_movimiento <= ?
-                THEN salida
-                ELSE 0
-            END
-        ) AS salidas_mes_cant,
+        (COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0)) * ed.precio AS saldo_inicial_money,
+        COALESCE(ip.qty_in_period, 0) * ed.precio  AS entradas_mes_money,
+        COALESCE(op.qty_out_period, 0) * ed.precio AS salidas_mes_money,
+        ((COALESCE(ib.qty_in_before, 0) - COALESCE(ob.qty_out_before, 0)
+          + COALESCE(ip.qty_in_period, 0)
+          - COALESCE(op.qty_out_period, 0)) * ed.precio) AS saldo_final_money
 
-        (
-            SUM(
-                CASE
-                    WHEN fecha_movimiento < ?
-                    THEN entrada - salida
-                    ELSE 0
-                END
-            )
-            +
-            SUM(
-                CASE
-                    WHEN fecha_movimiento >= ?
-                    AND fecha_movimiento <= ?
-                    THEN entrada
-                    ELSE 0
-                END
-            )
-            -
-            SUM(
-                CASE
-                    WHEN fecha_movimiento >= ?
-                    AND fecha_movimiento <= ?
-                    THEN salida
-                    ELSE 0
-                END
-            )
-        ) AS saldo_final_cant,
+    FROM entradas_detalle ed
+    INNER JOIN materiales m ON m.id = ed.id_material
+    LEFT JOIN objeto_especifico oe ON oe.id = m.id_objespecifico
+    LEFT JOIN in_before  ib ON ib.id_entrada_detalle = ed.id
+    LEFT JOIN out_before ob ON ob.id_entrada_detalle = ed.id
+    LEFT JOIN in_period  ip ON ip.id_entrada_detalle = ed.id
+    LEFT JOIN out_period op ON op.id_entrada_detalle = ed.id
+)
 
-        (
-            SUM(
-                CASE
-                    WHEN fecha_movimiento < ?
-                    THEN entrada - salida
-                    ELSE 0
-                END
-            ) * MAX(precio)
-        ) AS saldo_inicial_money,
+SELECT
+    id_material,
+    codigo,
+    descripcion,
+    MAX(precio) AS precio,
 
-        (
-            SUM(
-                CASE
-                    WHEN fecha_movimiento >= ?
-                    AND fecha_movimiento <= ?
-                    THEN entrada
-                    ELSE 0
-                END
-            ) * MAX(precio)
-        ) AS entradas_mes_money,
+    SUM(saldo_inicial_cant)  AS saldo_inicial_cant,
+    SUM(entradas_mes_cant)   AS entradas_mes_cant,
+    SUM(salidas_mes_cant)    AS salidas_mes_cant,
+    SUM(saldo_final_cant)    AS saldo_final_cant,
 
-        (
-            SUM(
-                CASE
-                    WHEN fecha_movimiento >= ?
-                    AND fecha_movimiento <= ?
-                    THEN salida
-                    ELSE 0
-                END
-            ) * MAX(precio)
-        ) AS salidas_mes_money,
+    SUM(saldo_inicial_money) AS saldo_inicial_money,
+    SUM(entradas_mes_money)  AS entradas_mes_money,
+    SUM(salidas_mes_money)   AS salidas_mes_money,
+    SUM(saldo_final_money)   AS saldo_final_money
 
-        (
-            (
-                SUM(
-                    CASE
-                        WHEN fecha_movimiento < ?
-                        THEN entrada - salida
-                        ELSE 0
-                    END
-                )
-                +
-                SUM(
-                    CASE
-                        WHEN fecha_movimiento >= ?
-                        AND fecha_movimiento <= ?
-                        THEN entrada
-                        ELSE 0
-                    END
-                )
-                -
-                SUM(
-                    CASE
-                        WHEN fecha_movimiento >= ?
-                        AND fecha_movimiento <= ?
-                        THEN salida
-                        ELSE 0
-                    END
-                )
-            ) * MAX(precio)
-        ) AS saldo_final_money
-
-    FROM movimientos
-    GROUP BY
-        id_material,
-        codigo,
-        descripcion
-    ORDER BY codigo, descripcion
+FROM base
+GROUP BY id_material, codigo, descripcion
+ORDER BY codigo, descripcion
 ", [
-            // saldo inicial
-            $start->toDateString(),
-
-            // entradas del mes
-            $start->toDateString(),
-            $end->toDateString(),
-
-            // salidas del mes
-            $start->toDateString(),
-            $end->toDateString(),
-
-            // saldo final
-            $start->toDateString(),
-            $start->toDateString(),
-            $end->toDateString(),
-            $start->toDateString(),
-            $end->toDateString(),
-
-            // money inicial
-            $start->toDateString(),
-
-            // money entradas
-            $start->toDateString(),
-            $end->toDateString(),
-
-            // money salidas
-            $start->toDateString(),
-            $end->toDateString(),
-
-            // money final
-            $start->toDateString(),
-            $start->toDateString(),
-            $end->toDateString(),
-            $start->toDateString(),
-            $end->toDateString(),
+            $start->toDateString(), // in_before
+            $start->toDateString(), // out_before
+            $start->toDateString(), $end->toDateString(), // in_period
+            $start->toDateString(), $end->toDateString(), // out_period
         ]);
 
         // ==========================================================
@@ -660,7 +532,6 @@ class ReportesController extends Controller
             $salidas  = (float) ($r->salidas_mes_cant ?? 0);
             $final    = (float) ($r->saldo_final_cant ?? 0);
 
-            // Ocultar solo si TODO es cero (sin saldo inicial, sin movimientos, sin saldo final)
             if ($inicial == 0 && $entradas == 0 && $salidas == 0 && $final == 0) {
                 return false;
             }
@@ -732,42 +603,42 @@ class ReportesController extends Controller
         $logoalcaldia = 'images/gobiernologo.jpg';
 
         $encabezado = "
-    <table width='100%' style='border-collapse:collapse; font-family: Arial, sans-serif;'>
-        <tr>
-            <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
-                <table width='100%'>
-                    <tr>
-                        <td style='width:30%; text-align:left;'>
-                            <img src='{$logoalcaldia}' style='height:38px'>
-                        </td>
-                        <td style='width:70%; text-align:left; color:#104e8c; font-size:13px; font-weight:bold; line-height:1.3;'>
-                            REPORTE DE INVENTARIO
-                        </td>
-                    </tr>
-                </table>
-            </td>
-            <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
-                CONTROL DE ENTRADAS / SALIDAS
-            </td>
-            <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
-                <table width='100%' style='font-size:10px;'>
-                    <tr>
-                        <td width='40%' style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Código:</strong></td>
-                        <td width='60%' style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'></td>
-                    </tr>
-                    <tr>
-                        <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Versión:</strong></td>
-                        <td style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>000</td>
-                    </tr>
-                    <tr>
-                        <td style='border-right:0.8px solid #000; padding:4px 6px;'><strong>Fecha de vigencia:</strong></td>
-                        <td style='padding:4px 6px; text-align:center;'></td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-    <br>
+<table width='100%' style='border-collapse:collapse; font-family: Arial, sans-serif;'>
+    <tr>
+        <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
+            <table width='100%'>
+                <tr>
+                    <td style='width:30%; text-align:left;'>
+                        <img src='{$logoalcaldia}' style='height:38px'>
+                    </td>
+                    <td style='width:70%; text-align:left; color:#104e8c; font-size:13px; font-weight:bold; line-height:1.3;'>
+                        REPORTE DE INVENTARIO
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
+            CONTROL DE ENTRADAS / SALIDAS
+        </td>
+        <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
+            <table width='100%' style='font-size:10px;'>
+                <tr>
+                    <td width='40%' style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Código:</strong></td>
+                    <td width='60%' style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>PROV-002-REPO</td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Versión:</strong></td>
+                    <td style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>000</td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; padding:4px 6px;'><strong>Fecha de vigencia:</strong></td>
+                    <td style='padding:4px 6px; text-align:center;'>22/12/2025</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<br>
 ";
 
         $encabezado .= "<span style='font-weight:bold;'>Del {$desdeFormat} al {$hastaFormat}</span><br>";
@@ -780,44 +651,44 @@ class ReportesController extends Controller
         $html = $encabezado;
 
         $html .= "
-    <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px; margin-top: 8px'>
-        <thead style='background:#f2f4f8'>
-            <tr>
-                <th>#</th>
-                <th>Código</th>
-                <th>Descripción / Nombre</th>
-                <th style='text-align:right; width:8%'>PRECIO</th>
-                <th style='text-align:right; width:6%'>INICIAL</th>
-                <th style='text-align:right; width:7%'>$ INICIAL</th>
-                <th style='text-align:right; width:8%'>ENTRADAS</th>
-                <th style='text-align:right; width:9%'>$ ENTRADAS</th>
-                <th style='text-align:right; width:8%'>SALIDAS</th>
-                <th style='text-align:right; width:8%'>$ SALIDAS</th>
-                <th style='text-align:right; width:6%'>SALDO</th>
-                <th style='text-align:right; width:7%'>$ SALDO</th>
-            </tr>
-        </thead>
-        <tbody>
+<table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px; margin-top: 8px'>
+    <thead style='background:#f2f4f8'>
+        <tr>
+            <th>#</th>
+            <th>COD.</th>
+            <th>DESCRIPCION</th>
+            <th style='text-align:right; width:8%'>PRECIO</th>
+            <th style='text-align:right; width:6%'>INICIAL</th>
+            <th style='text-align:right; width:7%'>$ INICIAL</th>
+            <th style='text-align:right; width:8%'>ENTRADAS</th>
+            <th style='text-align:right; width:9%'>$ ENTRADAS</th>
+            <th style='text-align:right; width:8%'>SALIDAS</th>
+            <th style='text-align:right; width:8%'>$ SALIDAS</th>
+            <th style='text-align:right; width:6%'>SALDO</th>
+            <th style='text-align:right; width:7%'>$ SALDO</th>
+        </tr>
+    </thead>
+    <tbody>
 ";
 
         $i = 1;
         foreach ($rows as $r) {
             $html .= "
-        <tr>
-            <td>{$i}</td>
-            <td>" . e($r->codigo ?? '') . "</td>
-            <td>" . e($r->descripcion ?? '') . "</td>
-            <td style='text-align:right'>$" . number_format($r->precio ?? 0, 4) . "</td>
-            <td style='text-align:right'>" . number_format($r->saldo_inicial_cant ?? 0) . "</td>
-            <td style='text-align:right'>$" . number_format($r->saldo_inicial_money ?? 0, 2) . "</td>
-            <td style='text-align:right'>" . number_format($r->entradas_mes_cant ?? 0) . "</td>
-            <td style='text-align:right'>$" . number_format($r->entradas_mes_money ?? 0, 2) . "</td>
-            <td style='text-align:right'>" . number_format($r->salidas_mes_cant ?? 0) . "</td>
-            <td style='text-align:right'>$" . number_format($r->salidas_mes_money ?? 0, 2) . "</td>
-            <td style='text-align:right'>" . number_format($r->saldo_final_cant ?? 0) . "</td>
-            <td style='text-align:right'>$" . number_format($r->saldo_final_money ?? 0, 2) . "</td>
-        </tr>
-    ";
+    <tr>
+        <td>{$i}</td>
+        <td>" . e($r->codigo ?? '') . "</td>
+        <td>" . e($r->descripcion ?? '') . "</td>
+        <td style='text-align:right'>$" . number_format($r->precio ?? 0, 6) . "</td>
+        <td style='text-align:right'>" . number_format($r->saldo_inicial_cant ?? 0) . "</td>
+        <td style='text-align:right'>$" . number_format($r->saldo_inicial_money ?? 0, 6) . "</td>
+        <td style='text-align:right'>" . number_format($r->entradas_mes_cant ?? 0) . "</td>
+        <td style='text-align:right'>$" . number_format($r->entradas_mes_money ?? 0, 6) . "</td>
+        <td style='text-align:right'>" . number_format($r->salidas_mes_cant ?? 0) . "</td>
+        <td style='text-align:right'>$" . number_format($r->salidas_mes_money ?? 0, 6) . "</td>
+        <td style='text-align:right'>" . number_format($r->saldo_final_cant ?? 0) . "</td>
+        <td style='text-align:right'>$" . number_format($r->saldo_final_money ?? 0, 6) . "</td>
+    </tr>
+";
             $i++;
         }
 
@@ -826,113 +697,112 @@ class ReportesController extends Controller
         }
 
         $html .= "
-        </tbody>
-        <tfoot>
-            <tr style='font-weight:bold; background:#f9fafb'>
-                <td colspan='4' style='text-align:right'>Totales:</td>
-                <td style='text-align:right'>" . number_format($totales['inicial_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($totales['inicial_money'], 2) . "</td>
-                <td style='text-align:right'>" . number_format($totales['entradas_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($totales['entradas_money'], 2) . "</td>
-                <td style='text-align:right'>" . number_format($totales['salidas_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($totales['salidas_money'], 2) . "</td>
-                <td style='text-align:right'>" . number_format($totales['final_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($totales['final_money'], 2) . "</td>
-            </tr>
-        </tfoot>
-    </table>
+    </tbody>
+    <tfoot>
+        <tr style='font-weight:bold; background:#f9fafb'>
+            <td colspan='4' style='text-align:right'>Totales:</td>
+            <td style='text-align:right'>" . number_format($totales['inicial_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($totales['inicial_money'], 6) . "</td>
+            <td style='text-align:right'>" . number_format($totales['entradas_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($totales['entradas_money'], 6) . "</td>
+            <td style='text-align:right'>" . number_format($totales['salidas_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($totales['salidas_money'], 6) . "</td>
+            <td style='text-align:right'>" . number_format($totales['final_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($totales['final_money'], 6) . "</td>
+        </tr>
+    </tfoot>
+</table>
 ";
 
         $html .= "
-    <br>
-    <table width='60%' border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; font-size:12px'>
-        <tr style='background:#eef3ff; font-weight:bold; text-align:center'>
-            <td colspan='3'>Resumen del período {$desdeFormat} - {$hastaFormat}</td>
-        </tr>
-        <tr style='font-weight:bold; background:#f9fafb'>
-            <td></td>
-            <td style='text-align:right'>Cantidad</td>
-            <td style='text-align:right'>Dinero ($)</td>
-        </tr>
-        <tr>
-            <td>Ingresó (Entradas del mes)</td>
-            <td style='text-align:right'>" . number_format($totales['entradas_cant']) . "</td>
-            <td style='text-align:right'>$" . number_format($totales['entradas_money'], 2) . "</td>
-        </tr>
-        <tr>
-            <td>Salió (Salidas del mes)</td>
-            <td style='text-align:right'>" . number_format($totales['salidas_cant']) . "</td>
-            <td style='text-align:right'>$" . number_format($totales['salidas_money'], 2) . "</td>
-        </tr>
-        <tr>
-            <td>Disponible al cierre (Saldo final)</td>
-            <td style='text-align:right'>" . number_format($totales['final_cant']) . "</td>
-            <td style='text-align:right'>$" . number_format($totales['final_money'], 2) . "</td>
-        </tr>
-    </table>
+<br>
+<table width='60%' border='1' cellspacing='0' cellpadding='6' style='border-collapse:collapse; font-size:12px'>
+    <tr style='background:#eef3ff; font-weight:bold; text-align:center'>
+        <td colspan='3'>Resumen del período {$desdeFormat} - {$hastaFormat}</td>
+    </tr>
+    <tr style='font-weight:bold; background:#f9fafb'>
+        <td></td>
+        <td style='text-align:right'>Cantidad</td>
+        <td style='text-align:right'>Dinero ($)</td>
+    </tr>
+    <tr>
+        <td>Ingresó (Entradas del mes)</td>
+        <td style='text-align:right'>" . number_format($totales['entradas_cant']) . "</td>
+        <td style='text-align:right'>$" . number_format($totales['entradas_money'], 6) . "</td>
+    </tr>
+    <tr>
+        <td>Salió (Salidas del mes)</td>
+        <td style='text-align:right'>" . number_format($totales['salidas_cant']) . "</td>
+        <td style='text-align:right'>$" . number_format($totales['salidas_money'], 6) . "</td>
+    </tr>
+    <tr>
+        <td>Disponible al cierre (Saldo final)</td>
+        <td style='text-align:right'>" . number_format($totales['final_cant']) . "</td>
+        <td style='text-align:right'>$" . number_format($totales['final_money'], 6) . "</td>
+    </tr>
+</table>
 ";
 
         if (!empty($sumPorCodigo)) {
             $totalSaldoFinalCodigos = 0;
 
             $html .= "
-        <br><br>
-        <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px'>
-            <thead style='background:#f2f4f8'>
-                <tr>
-                    <th style='width:4%'>#</th>
-                    <th style='width:10%'>Código</th>
-                    <th style='text-align:right; width:6%'>INICIAL</th>
-                    <th style='text-align:right; width:10%'>$ INICIAL</th>
-                    <th style='text-align:right; width:6%'>ENTRADAS</th>
-                    <th style='text-align:right; width:10%'>$ ENTRADAS</th>
-                    <th style='text-align:right; width:6%'>SALIDAS</th>
-                    <th style='text-align:right; width:10%'>$ SALIDAS</th>
-                    <th style='text-align:right; width:6%'>SALDO</th>
-                    <th style='text-align:right; width:10%'>$ SALDO</th>
-                </tr>
-            </thead>
-            <tbody>
-    ";
+    <br><br>
+    <table width='100%' border='1' cellspacing='0' cellpadding='4' style='border-collapse:collapse; font-size:11px'>
+        <thead style='background:#f2f4f8'>
+            <tr>
+                <th style='width:4%'>#</th>
+                <th style='width:10%'>COD.</th>
+                <th style='text-align:right; width:6%'>INICIAL</th>
+                <th style='text-align:right; width:10%'>$ INICIAL</th>
+                <th style='text-align:right; width:6%'>ENTRADAS</th>
+                <th style='text-align:right; width:10%'>$ ENTRADAS</th>
+                <th style='text-align:right; width:6%'>SALIDAS</th>
+                <th style='text-align:right; width:10%'>$ SALIDAS</th>
+                <th style='text-align:right; width:6%'>SALDO</th>
+                <th style='text-align:right; width:10%'>$ SALDO</th>
+            </tr>
+        </thead>
+        <tbody>
+";
 
             $j = 1;
             foreach ($sumPorCodigo as $s) {
                 $totalSaldoFinalCodigos += (float) $s['final_money'];
 
                 $html .= "
-            <tr>
-                <td>{$j}</td>
-                <td>" . e($s['codigo']) . "</td>
-                <td style='text-align:right'>" . number_format($s['inicial_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($s['inicial_money'], 2) . "</td>
-                <td style='text-align:right'>" . number_format($s['entradas_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($s['entradas_money'], 2) . "</td>
-                <td style='text-align:right'>" . number_format($s['salidas_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($s['salidas_money'], 2) . "</td>
-                <td style='text-align:right'>" . number_format($s['final_cant']) . "</td>
-                <td style='text-align:right'>$" . number_format($s['final_money'], 2) . "</td>
-            </tr>
-        ";
+        <tr>
+            <td>{$j}</td>
+            <td>" . e($s['codigo']) . "</td>
+            <td style='text-align:right'>" . number_format($s['inicial_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($s['inicial_money'], 6) . "</td>
+            <td style='text-align:right'>" . number_format($s['entradas_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($s['entradas_money'], 6) . "</td>
+            <td style='text-align:right'>" . number_format($s['salidas_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($s['salidas_money'], 6) . "</td>
+            <td style='text-align:right'>" . number_format($s['final_cant']) . "</td>
+            <td style='text-align:right'>$" . number_format($s['final_money'], 6) . "</td>
+        </tr>
+    ";
                 $j++;
             }
 
             $html .= "
-            <tr style='font-weight:bold; background:#f9fafb'>
-                <td colspan='9' style='text-align:right'>TOTAL</td>
-                <td style='text-align:right'>$" . number_format($totalSaldoFinalCodigos, 2) . "</td>
-            </tr>
-            </tbody>
-        </table>
-    ";
+        <tr style='font-weight:bold; background:#f9fafb'>
+            <td colspan='9' style='text-align:right'>TOTAL</td>
+            <td style='text-align:right'>$" . number_format($totalSaldoFinalCodigos, 6) . "</td>
+        </tr>
+        </tbody>
+    </table>
+";
         }
 
-        $margenFirma = $infoGerencia->margen ?? '40px';
-
         $html .= "
-    <div style='text-align:center; font-size:13px; margin-top: {$margenFirma};'>
-        F._____________________________<br>
-        <span style='font-weight:bold; font-size:12px;'>Unidad de Tecnologías de la Información</span>
-    </div>
+<br><br><br><br><br><br><br>
+<div style='text-align:center; padding-top: 80px; font-size:16px;'>
+    F._____________________________<br>
+    <span style='font-weight:bold; font-size:16px;'>Unidad de Proveeduría y Bodega</span>
+</div>
 ";
 
         $mpdf->setFooter('Página {PAGENO} de {nb}');
@@ -941,12 +811,148 @@ class ReportesController extends Controller
     }
 
 
-
-    public function generarPDFEntregados()
+    public function generarPDFEntregados($desde, $hasta, $idDepartamento)
     {
+        $start = Carbon::parse($desde)->startOfDay();
+        $end   = Carbon::parse($hasta)->endOfDay();
 
+        $desdeFormat = date("d-m-Y", strtotime($desde));
+        $hastaFormat = date("d-m-Y", strtotime($hasta));
+
+        $infoDepartamento = Departamentos::where('id', $idDepartamento)->first();
+
+        // Todas las salidas hacia ese departamento en el rango de fechas
+        $arraySalidas = SalidasDetalle::with('entradaDetalle.material.unidadMedida')
+            ->where('id_departamento', $idDepartamento)
+            ->whereBetween('fecha', [$start, $end])
+            ->orderBy('fecha', 'asc')
+            ->get();
+
+        $totalGeneral = 0;
+        $arrayDetalle = collect();
+
+        foreach ($arraySalidas as $fila) {
+
+            $entradaDetalle = $fila->entradaDetalle;
+            $material       = $entradaDetalle->material ?? null;
+
+            if (!$material) {
+                continue;
+            }
+
+            $precio       = (float) $entradaDetalle->precio;
+            $multiplicado = $fila->cantidad_salida * $precio;
+            $totalGeneral += $multiplicado;
+
+            $arrayDetalle->push((object)[
+                'fechaFormat'     => date("d-m-Y", strtotime($fila->fecha)),
+                'nombreMaterial'  => $material->nombre ?? '',
+                'unidadMedida'    => $material->unidadMedida->nombre ?? '',
+                'cantidadSalida'  => $fila->cantidad_salida,
+                'precioFormat'    => "$" . number_format($precio, 6, '.', ','),
+                'multiplicado'    => "$" . number_format((float)$multiplicado, 6, '.', ','),
+                'numeroSolicitud' => $fila->numero_solicitud ?? '',
+                'descripcion'     => $fila->descripcion ?? '',
+                'estado'          => $fila->estado,
+            ]);
+        }
+
+        $totalGeneralFmt = "$" . number_format((float)$totalGeneral, 2, '.', ',');
+
+        $mpdf = new \Mpdf\Mpdf([
+            'tempDir' => sys_get_temp_dir(),
+            'format'  => 'LETTER',
+            'mode'    => 'utf-8',
+        ]);
+        $mpdf->SetTitle('Entregado a Unidad');
+        $mpdf->showImageErrors = false;
+
+        $logoalcaldia = 'images/gobiernologo.jpg';
+        $logosantaana = 'images/logo.png';
+
+        $tabla = "
+    <table style='width: 100%; border-collapse: collapse;'>
+        <tr>
+            <td style='width: 15%; text-align: left;'>
+                <img src='$logosantaana' alt='Santa Ana Norte' style='max-width: 100px; height: auto;'>
+            </td>
+            <td style='width: 60%; text-align: center;'>
+                <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>
+                    ALCALDÍA MUNICIPAL DE SANTA ANA NORTE
+                </h1>
+            </td>
+            <td style='width: 10%; text-align: right;'>
+                <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
+            </td>
+        </tr>
+    </table>
+
+    <hr style='border: none; border-top: 2px solid #003366; margin: 0;'>
+    ";
+
+        $tabla .= "
+    <div style='text-align: center; margin-top: 20px;'>
+        <h1 style='font-size: 15px; margin: 0; color: #000;'>
+            ENTREGADO A UNIDAD: " . ($infoDepartamento->nombre ?? '') . "
+        </h1>
+        <p style='font-size: 13px; margin: 5px 0 0 0; color: #000;'>
+            <strong>DESDE: $desdeFormat &nbsp;&nbsp; HASTA: $hastaFormat</strong>
+        </p>
+    </div>
+    ";
+
+        $tabla .= "
+    <table id='tablaFor'
+           style='width: 100%;
+                  border-collapse: collapse;
+                  margin-top: 25px'>
+
+        <tbody>
+
+            <tr>
+                <th style='text-align: center; font-size:12px; width: 10%; font-weight: bold; border: 1px solid black;'>Fecha</th>
+                <th style='text-align: center; font-size:12px; width: 28%; font-weight: bold; border: 1px solid black;'>Material</th>
+                <th style='text-align: center; font-size:12px; width: 10%; font-weight: bold; border: 1px solid black;'>U.M</th>
+                <th style='text-align: center; font-size:12px; width: 12%; font-weight: bold; border: 1px solid black;'>Cant. Entregada</th>
+                <th style='text-align: center; font-size:12px; width: 12%; font-weight: bold; border: 1px solid black;'>Precio</th>
+                <th style='text-align: center; font-size:12px; width: 13%; font-weight: bold; border: 1px solid black;'>Total</th>
+                <th style='text-align: center; font-size:12px; width: 15%; font-weight: bold; border: 1px solid black;'>N° Solicitud</th>
+            </tr>
+    ";
+
+        foreach ($arrayDetalle as $fila) {
+            $tabla .= "
+        <tr>
+            <td style='text-align: center; font-size:11px; border: 1px solid black; padding: 3px;'>{$fila->fechaFormat}</td>
+            <td style='text-align: left; font-size:11px; border: 1px solid black; padding: 3px;'>{$fila->nombreMaterial}</td>
+            <td style='text-align: center; font-size:11px; border: 1px solid black;'>{$fila->unidadMedida}</td>
+            <td style='text-align: center; font-size:11px; border: 1px solid black;'>{$fila->cantidadSalida}</td>
+            <td style='text-align: right; font-size:11px; border: 1px solid black; padding: 3px;'>{$fila->precioFormat}</td>
+            <td style='text-align: right; font-size:11px; border: 1px solid black; padding: 3px;'>{$fila->multiplicado}</td>
+            <td style='text-align: center; font-size:11px; border: 1px solid black;'>{$fila->numeroSolicitud}</td>
+        </tr>";
+        }
+
+        $tabla .= "
+        <tr>
+            <td colspan='5' style='text-align: right; font-size:13px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+                Total General
+            </td>
+            <td style='text-align: right; font-size:13px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+                $totalGeneralFmt
+            </td>
+            <td style='border: 1px solid black;'></td>
+        </tr>
+    </tbody></table>";
+
+        $stylesheet = file_get_contents('css/cssbodega.css');
+        $mpdf->WriteHTML($stylesheet, 1);
+
+        $mpdf->setFooter('Página: {PAGENO}/{nb}');
+        $mpdf->WriteHTML($tabla, 2);
+
+        $mpdf->Output();
     }
-
 
 
 

@@ -143,6 +143,51 @@
                     </div>
                 </div>
 
+
+                {{-- ══ ENTREGADO A UNIDAD ══ --}}
+                <div class="col-md-4">
+                    <div class="reporte-card">
+                        <div class="reporte-header" style="background: linear-gradient(135deg, #4a1a6b, #8e1ae8);">
+                            <i class="fas fa-truck"></i>
+                            <h5>Entregado a Unidad</h5>
+                        </div>
+                        <div class="reporte-body">
+                            <p style="font-size:13px; color:#666; margin-bottom:14px;">
+                                Detalle de materiales entregados a una unidad/departamento específico en un rango de fechas.
+                            </p>
+                            <hr class="divider">
+
+                            <div class="fecha-row">
+                                <div class="fecha-box">
+                                    <label>Fecha desde <span class="text-danger">*</span></label>
+                                    <input type="date" id="entregado-fecha-desde" class="form-control form-control-sm">
+                                </div>
+                                <div class="fecha-box">
+                                    <label>Fecha hasta <span class="text-danger">*</span></label>
+                                    <input type="date" id="entregado-fecha-hasta" class="form-control form-control-sm">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="field-label">Unidad / Departamento <span class="text-danger">*</span></label>
+                                <select class="form-control form-control-sm" id="entregado-select-departamento" style="width:100%">
+                                    <option value="">Seleccione...</option>
+                                    @foreach($arrayDepartamento as $dep)
+                                        <option value="{{ $dep->id }}">{{ $dep->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <button type="button" onclick="generarPdfEntregados()" class="btn-pdf"
+                                    style="background: linear-gradient(135deg, #4a1a6b, #8e1ae8); color:#fff;
+                       box-shadow: 0 4px 14px rgba(142,26,232,.35); margin-top:0;">
+                                <i class="fas fa-file-pdf"></i> Generar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
             </div>
         </div>
     </section>
@@ -156,6 +201,37 @@
     <script src="{{ asset('js/jquery.simpleaccordion.js') }}"></script>
     <script src="{{ asset('js/select2.min.js') }}" type="text/javascript"></script>
     <script>
+
+        $('#entregado-select-departamento').select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $('body'),
+            language: { noResults: function () { return 'No encontrado'; } }
+        });
+
+        function generarPdfEntregados() {
+            var desde = document.getElementById('entregado-fecha-desde').value;
+            var hasta = document.getElementById('entregado-fecha-hasta').value;
+            var idDepartamento = document.getElementById('entregado-select-departamento').value;
+
+            if (!desde || !hasta) {
+                toastr.error('Debes seleccionar fecha desde y fecha hasta');
+                return;
+            }
+
+            if (!idDepartamento) {
+                toastr.error('Debes seleccionar una unidad/departamento');
+                return;
+            }
+
+            if (desde > hasta) {
+                toastr.error('La fecha "desde" no puede ser mayor que "hasta"');
+                return;
+            }
+
+            var url = "{{ url('admin/reporte/pdf/entregados') }}/" + desde + '/' + hasta + '/' + idDepartamento;
+            window.open(url, '_blank');
+        }
+
 
         function generarPdfInventario() {
             window.open("{{ url('admin/reporte/pdf/inventario') }}/", '_blank');
