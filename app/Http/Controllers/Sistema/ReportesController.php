@@ -36,7 +36,7 @@ class ReportesController extends Controller
 
     public function generarPDFExistencias()
     {
-        // â”€â”€ Existencias actuales: entradas_detalle con cantidad disponible > 0 â”€â”€
+        // ── Existencias actuales: entradas_detalle con cantidad disponible > 0 ──
         $arrayInfo = EntradasDetalle::with('material.objetoEspecifico', 'material.unidadMedida', 'entrada')
             ->get();
 
@@ -128,7 +128,7 @@ class ReportesController extends Controller
                 'precioFormat' =>
                     "$" . number_format(
                         (float)$fila->precio,
-                        4,
+                        6,
                         '.',
                         ','
                     ),
@@ -136,7 +136,7 @@ class ReportesController extends Controller
                 'multiplicado' =>
                     "$" . number_format(
                         (float)$multiplicado,
-                        2,
+                        6,
                         '.',
                         ','
                     ),
@@ -146,12 +146,16 @@ class ReportesController extends Controller
             ]);
         }
 
-        $totalColumnaFmt = "$" . number_format((float)$totalColumna, 2, '.', ',');
+        $totalColumnaFmt = "$" . number_format((float)$totalColumna, 6, '.', ',');
         $arrayDetalle = $arrayDetalle->sortBy('nombreMaterial')->values();
         $arrayPendientes = $arrayPendientes->sortBy('nombreMaterial')->values();
         $fechaFormat = date("d-m-Y", strtotime(Carbon::now('America/El_Salvador')));
 
-        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER']);
+        $mpdf = new \Mpdf\Mpdf([
+            'tempDir' => sys_get_temp_dir(),
+            'format' => 'LETTER',
+            'mode' => 'utf-8',
+        ]);
         $mpdf->SetTitle('Existencias General');
         $mpdf->showImageErrors = false;
 
@@ -159,176 +163,175 @@ class ReportesController extends Controller
         $logosantaana = 'images/logo.png';
 
         $tabla = "
-    <table style='width: 100%; border-collapse: collapse;'>
+<table style='width: 100%; border-collapse: collapse;'>
+    <tr>
+        <td style='width: 15%; text-align: left;'>
+            <img src='$logosantaana' alt='Santa Ana Norte' style='max-width: 100px; height: auto;'>
+        </td>
+        <td style='width: 60%; text-align: center;'>
+            <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>
+                ALCALDÍA MUNICIPAL DE SANTA ANA NORTE
+            </h1>
+        </td>
+        <td style='width: 10%; text-align: right;'>
+            <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
+        </td>
+    </tr>
+</table>
+
+<hr style='border: none; border-top: 2px solid #003366; margin: 0;'>
+";
+
+        $tabla .= "
+<div style='text-align: center; margin-top: 20px;'>
+    <h1 style='font-size: 15px; margin: 0; color: #000;'>EXISTENCIAS</h1>
+</div>
+
+<div style='text-align: left; margin-top: 10px;'>
+    <p style='font-size: 13px; margin: 0; color: #000;'>
+        Fecha: $fechaFormat
+    </p>
+</div>
+";
+
+        // ── Tabla principal ──
+        $tabla .= "
+<table id='tablaFor'
+       style='width: 100%;
+              border-collapse: collapse;
+              margin-top: 35px'>
+
+    <tbody>
+
         <tr>
-            <td style='width: 15%; text-align: left;'>
-                <img src='$logosantaana' alt='Santa Ana Norte' style='max-width: 100px; height: auto;'>
-            </td>
-            <td style='width: 60%; text-align: center;'>
-                <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>
-                    ALCALDÃA MUNICIPAL DE SANTA ANA NORTE
-                </h1>
-            </td>
-            <td style='width: 10%; text-align: right;'>
-                <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
-            </td>
+            <th style='text-align: center; font-size:14px; width: 40%; font-weight: bold; border: 1px solid black;'>
+                Producto
+            </th>
+
+            <th style='text-align: center; font-size:14px; width: 10%; font-weight: bold; border: 1px solid black;'>
+                U.M
+            </th>
+
+            <th style='text-align: center; font-size:14px; width: 13%; font-weight: bold; border: 1px solid black;'>
+                Cantidad
+            </th>
+
+            <th style='text-align: center; font-size:14px; width: 12%; font-weight: bold; border: 1px solid black;'>
+                Precio
+            </th>
+
+            <th style='text-align: center; font-size:14px; width: 13%; font-weight: bold; border: 1px solid black;'>
+                Total
+            </th>
+
+            <th style='text-align: center; font-size:14px; width: 15%; font-weight: bold; border: 1px solid black;'>
+                Obj. Específico
+            </th>
         </tr>
-    </table>
-
-    <hr style='border: none; border-top: 2px solid #003366; margin: 0;'>
-    ";
-
-        $tabla .= "
-    <div style='text-align: center; margin-top: 20px;'>
-        <h1 style='font-size: 15px; margin: 0; color: #000;'>EXISTENCIAS</h1>
-    </div>
-
-    <div style='text-align: left; margin-top: 10px;'>
-        <p style='font-size: 13px; margin: 0; color: #000;'>
-            Fecha: $fechaFormat
-        </p>
-    </div>
-    ";
-
-        // â”€â”€ Tabla principal â”€â”€
-        $tabla .= "
-    <table id='tablaFor'
-           style='width: 100%;
-                  border-collapse: collapse;
-                  margin-top: 35px'>
-
-        <tbody>
-
-            <tr>
-                <th style='text-align: center; font-size:15px; width: 40%; font-weight: bold; border: 1px solid black;'>
-                    Producto
-                </th>
-
-                <th style='text-align: center; font-size:15px; width: 10%; font-weight: bold; border: 1px solid black;'>
-                    U.M
-                </th>
-
-                <th style='text-align: center; font-size:15px; width: 10%; font-weight: bold; border: 1px solid black;'>
-                    Cantidad
-                </th>
-
-                <th style='text-align: center; font-size:15px; width: 12%; font-weight: bold; border: 1px solid black;'>
-                    Precio
-                </th>
-
-                <th style='text-align: center; font-size:15px; width: 13%; font-weight: bold; border: 1px solid black;'>
-                    Total
-                </th>
-
-                <th style='text-align: center; font-size:15px; width: 15%; font-weight: bold; border: 1px solid black;'>
-                    Obj. EspecÃ­fico
-                </th>
-            </tr>
-    ";
+";
 
         foreach ($arrayDetalle as $fila) {
 
             $tabla .= "
-        <tr>
+    <tr>
 
-            <td style='text-align: left; font-size:14px; border: 1px solid black; padding: 3px;'>
-                $fila->nombreMaterial
-            </td>
+        <td style='text-align: left; font-size:12px; border: 1px solid black; padding: 3px;'>
+            $fila->nombreMaterial
+        </td>
 
-            <td style='text-align: center; font-size:14px; border: 1px solid black;'>
-                $fila->unidadMedida
-            </td>
+        <td style='text-align: center; font-size:12px; border: 1px solid black;'>
+            $fila->unidadMedida
+        </td>
 
-            <td style='text-align: center; font-size:14px; border: 1px solid black;'>
-                $fila->cantidadActual
-            </td>
+        <td style='text-align: center; font-size:12px; border: 1px solid black;'>
+            $fila->cantidadActual
+        </td>
 
-            <td style='text-align: right; font-size:14px; border: 1px solid black; padding: 3px;'>
-                $fila->precioFormat
-            </td>
+        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: 3px;'>
+            $fila->precioFormat
+        </td>
 
-            <td style='text-align: right; font-size:14px; border: 1px solid black; padding: 3px;'>
-                $fila->multiplicado
-            </td>
+        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: 3px;'>
+            $fila->multiplicado
+        </td>
 
-            <td style='text-align: center; font-size:14px; border: 1px solid black;'>
-                $fila->nombreCodigo
-            </td>
+        <td style='text-align: center; font-size:12px; border: 1px solid black;'>
+            $fila->nombreCodigo
+        </td>
 
-        </tr>";
+    </tr>";
         }
 
         $tabla .= "
-        <tr>
-            <td colspan='4' style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: 3px;'>
-                Total
-            </td>
-            <td style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: 3px;'>
-                $totalColumnaFmt
-            </td>
-            <td style='border: 1px solid black;'></td>
-        </tr>
-    </tbody></table>";
+    <tr>
+        <td colspan='4' style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+            Total
+        </td>
+        <td colspan='2' style='text-align: center; font-size:13px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+            $totalColumnaFmt
+        </td>
+    </tr>
+</tbody></table>";
 
-        // â”€â”€ Tabla de pendientes â”€â”€
+        // ── Tabla de pendientes ──
         if ($arrayPendientes->isNotEmpty()) {
 
             $tabla .= "
-        <div style='text-align: left; margin-top: 25px;'>
-            <h1 style='font-size: 14px; margin: 0; color: #000;'>
-                KITS PENDIENTES / ABIERTOS
-            </h1>
-        </div>
-        ";
+    <div style='text-align: left; margin-top: 25px;'>
+        <h1 style='font-size: 14px; margin: 0; color: #000;'>
+            KITS PENDIENTES / ABIERTOS
+        </h1>
+    </div>
+    ";
 
             $tabla .= "
-        <table id='tablaPendientes'
-               style='width: 100%;
-                      border-collapse: collapse;
-                      margin-top: 10px'>
+    <table id='tablaPendientes'
+           style='width: 100%;
+                  border-collapse: collapse;
+                  margin-top: 10px'>
 
-            <tbody>
+        <tbody>
 
-                <tr>
+            <tr>
 
-                    <th style='text-align:center;
-                               font-size:14px;
-                               width:28%;
-                               font-weight:bold;
-                               border:1px solid black;'>
+                <th style='text-align:center;
+                           font-size:14px;
+                           width:28%;
+                           font-weight:bold;
+                           border:1px solid black;'>
 
-                        Producto
-                    </th>
+                    Producto
+                </th>
 
-                    <th style='text-align:center;
-                               font-size:14px;
-                               width:12%;
-                               font-weight:bold;
-                               border:1px solid black;'>
+                <th style='text-align:center;
+                           font-size:14px;
+                           width:12%;
+                           font-weight:bold;
+                           border:1px solid black;'>
 
-                        Cant. Salida
-                    </th>
+                    Cant. Salida
+                </th>
 
-                    <th style='text-align:center;
-                               font-size:14px;
-                               width:25%;
-                               font-weight:bold;
-                               border:1px solid black;'>
+                <th style='text-align:center;
+                           font-size:14px;
+                           width:25%;
+                           font-weight:bold;
+                           border:1px solid black;'>
 
-                        DescripciÃ³n Salida
-                    </th>
+                    Descripción Salida
+                </th>
 
-                    <th style='text-align:center;
-                               font-size:14px;
-                               width:35%;
-                               font-weight:bold;
-                               border:1px solid black;'>
+                <th style='text-align:center;
+                           font-size:14px;
+                           width:35%;
+                           font-weight:bold;
+                           border:1px solid black;'>
 
-                        Detalle de entregas
-                    </th>
+                    Detalle de entregas
+                </th>
 
-                </tr>
-        ";
+            </tr>
+    ";
 
             foreach ($arrayPendientes as $pend) {
 
@@ -338,8 +341,8 @@ class ReportesController extends Controller
 
                     $detalleEntregas =
                         "<span style='font-style: italic; color:#888;'>
-                        Sin entregas registradas
-                    </span>";
+                    Sin entregas registradas
+                </span>";
 
                 } else {
 
@@ -352,11 +355,10 @@ class ReportesController extends Controller
                             strtotime($ent->fecha_entrega)
                         );
 
-                        $obs = $ent->observacion ?: 'â€”';
+                        $obs = $ent->observacion ?: '';
 
                         $lineas[] =
-                            "{$ent->cantidad} {$pend->unidadMedida}
-                        â€” {$obs}";
+                            "{$ent->cantidad} {$pend->unidadMedida} - {$obs}";
                     }
 
                     $detalleEntregas = implode('<br>', $lineas);
@@ -365,66 +367,60 @@ class ReportesController extends Controller
                 $descripcionSalida =
                     !empty($pend->descripcion)
                         ? $pend->descripcion
-                        : 'â€”';
+                        : '-';
 
                 $tabla .= "
-            <tr>
+        <tr>
 
-                <td style='text-align:left;
-                           font-size:14px;
-                           border:1px solid black;
-                           padding:3px;
-                           vertical-align:top;'>
+            <td style='text-align:left;
+                       font-size:14px;
+                       border:1px solid black;
+                       padding:3px;
+                       vertical-align:top;'>
 
-                    {$pend->nombreMaterial}
-                </td>
+                {$pend->nombreMaterial}
+            </td>
 
-                <td style='text-align:center;
-                           font-size:14px;
-                           border:1px solid black;
-                           vertical-align:top;'>
+            <td style='text-align:center;
+                       font-size:14px;
+                       border:1px solid black;
+                       vertical-align:top;'>
 
-                    {$pend->cantidad_salida}
-                    {$pend->unidadMedida}
-                </td>
+                {$pend->cantidad_salida}
+                {$pend->unidadMedida}
+            </td>
 
-                <td style='text-align:left;
-                           font-size:13px;
-                           border:1px solid black;
-                           padding:3px;
-                           vertical-align:top;'>
+            <td style='text-align:left;
+                       font-size:13px;
+                       border:1px solid black;
+                       padding:3px;
+                       vertical-align:top;'>
 
-                    {$descripcionSalida}
-                </td>
+                {$descripcionSalida}
+            </td>
 
-                <td style='text-align:left;
-                           font-size:14px;
-                           border:1px solid black;
-                           padding:3px;'>
+            <td style='text-align:left;
+                       font-size:14px;
+                       border:1px solid black;
+                       padding:3px;'>
 
-                    {$detalleEntregas}
-                </td>
+                {$detalleEntregas}
+            </td>
 
-            </tr>";
+        </tr>";
             }
 
             $tabla .= "
-            </tbody>
-        </table>";
+        </tbody>
+    </table>";
         }
 
         $stylesheet = file_get_contents('css/cssbodega.css');
-
         $mpdf->WriteHTML($stylesheet, 1);
-
-        $mpdf->setFooter('PÃ¡gina: {PAGENO}/{nb}');
-
+        $mpdf->setFooter('Página: {PAGENO}/{nb}');
         $mpdf->WriteHTML($tabla, 2);
-
         $mpdf->Output();
     }
-
-
 
 
     public function reportePDFInicialPorPeriodos($desde, $hasta)
@@ -944,6 +940,12 @@ class ReportesController extends Controller
         $mpdf->Output();
     }
 
+
+
+    public function generarPDFEntregados()
+    {
+
+    }
 
 
 
