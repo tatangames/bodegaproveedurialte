@@ -33,9 +33,10 @@ class ReportesController extends Controller
     }
 
 
+
     public function generarPDFExistencias()
     {
-        // ── Existencias actuales: entradas_detalle con cantidad disponible > 0 ──
+        // â”€â”€ Existencias actuales: entradas_detalle con cantidad disponible > 0 â”€â”€
         $arrayInfo = EntradasDetalle::with('material.objetoEspecifico', 'material.unidadMedida', 'entrada')
             ->get();
 
@@ -165,7 +166,7 @@ class ReportesController extends Controller
             </td>
             <td style='width: 60%; text-align: center;'>
                 <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>
-                    ALCALDÍA MUNICIPAL DE SANTA ANA NORTE
+                    ALCALDÃA MUNICIPAL DE SANTA ANA NORTE
                 </h1>
             </td>
             <td style='width: 10%; text-align: right;'>
@@ -189,7 +190,7 @@ class ReportesController extends Controller
     </div>
     ";
 
-        // ── Tabla principal ──
+        // â”€â”€ Tabla principal â”€â”€
         $tabla .= "
     <table id='tablaFor'
            style='width: 100%;
@@ -199,20 +200,28 @@ class ReportesController extends Controller
         <tbody>
 
             <tr>
-                <th style='text-align: center; font-size:15px; width: 65%; font-weight: bold; border: 1px solid black;'>
+                <th style='text-align: center; font-size:15px; width: 40%; font-weight: bold; border: 1px solid black;'>
                     Producto
                 </th>
 
-                <th style='text-align: center; font-size:15px; width: 12%; font-weight: bold; border: 1px solid black;'>
+                <th style='text-align: center; font-size:15px; width: 10%; font-weight: bold; border: 1px solid black;'>
                     U.M
                 </th>
 
-                <th style='text-align: center; font-size:15px; width: 13%; font-weight: bold; border: 1px solid black;'>
+                <th style='text-align: center; font-size:15px; width: 10%; font-weight: bold; border: 1px solid black;'>
                     Cantidad
                 </th>
 
-                <th style='text-align: center; font-size:15px; width: 14%; font-weight: bold; border: 1px solid black;'>
-                    Obj. Específico
+                <th style='text-align: center; font-size:15px; width: 12%; font-weight: bold; border: 1px solid black;'>
+                    Precio
+                </th>
+
+                <th style='text-align: center; font-size:15px; width: 13%; font-weight: bold; border: 1px solid black;'>
+                    Total
+                </th>
+
+                <th style='text-align: center; font-size:15px; width: 15%; font-weight: bold; border: 1px solid black;'>
+                    Obj. EspecÃ­fico
                 </th>
             </tr>
     ";
@@ -234,6 +243,14 @@ class ReportesController extends Controller
                 $fila->cantidadActual
             </td>
 
+            <td style='text-align: right; font-size:14px; border: 1px solid black; padding: 3px;'>
+                $fila->precioFormat
+            </td>
+
+            <td style='text-align: right; font-size:14px; border: 1px solid black; padding: 3px;'>
+                $fila->multiplicado
+            </td>
+
             <td style='text-align: center; font-size:14px; border: 1px solid black;'>
                 $fila->nombreCodigo
             </td>
@@ -241,9 +258,19 @@ class ReportesController extends Controller
         </tr>";
         }
 
-        $tabla .= "</tbody></table>";
+        $tabla .= "
+        <tr>
+            <td colspan='4' style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+                Total
+            </td>
+            <td style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+                $totalColumnaFmt
+            </td>
+            <td style='border: 1px solid black;'></td>
+        </tr>
+    </tbody></table>";
 
-        // ── Tabla de pendientes ──
+        // â”€â”€ Tabla de pendientes â”€â”€
         if ($arrayPendientes->isNotEmpty()) {
 
             $tabla .= "
@@ -288,7 +315,7 @@ class ReportesController extends Controller
                                font-weight:bold;
                                border:1px solid black;'>
 
-                        Descripción Salida
+                        DescripciÃ³n Salida
                     </th>
 
                     <th style='text-align:center;
@@ -325,11 +352,11 @@ class ReportesController extends Controller
                             strtotime($ent->fecha_entrega)
                         );
 
-                        $obs = $ent->observacion ?: '—';
+                        $obs = $ent->observacion ?: 'â€”';
 
                         $lineas[] =
                             "{$ent->cantidad} {$pend->unidadMedida}
-                        — {$obs}";
+                        â€” {$obs}";
                     }
 
                     $detalleEntregas = implode('<br>', $lineas);
@@ -338,7 +365,7 @@ class ReportesController extends Controller
                 $descripcionSalida =
                     !empty($pend->descripcion)
                         ? $pend->descripcion
-                        : '—';
+                        : 'â€”';
 
                 $tabla .= "
             <tr>
@@ -390,12 +417,14 @@ class ReportesController extends Controller
 
         $mpdf->WriteHTML($stylesheet, 1);
 
-        $mpdf->setFooter('Página: {PAGENO}/{nb}');
+        $mpdf->setFooter('PÃ¡gina: {PAGENO}/{nb}');
 
         $mpdf->WriteHTML($tabla, 2);
 
         $mpdf->Output();
     }
+
+
 
 
     public function reportePDFInicialPorPeriodos($desde, $hasta)

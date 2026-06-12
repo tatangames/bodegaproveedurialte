@@ -133,9 +133,9 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label>Precio (4 decimales) <span class="text-danger">*</span></label>
+                                            <label>Precio (6 decimales) <span class="text-danger">*</span></label>
                                             <input type="number" id="precio-producto" min="0" max="9000000"
-                                                   step="0.0001" class="form-control" autocomplete="off" placeholder="0.0000">
+                                                   step="0.000001" class="form-control" autocomplete="off" placeholder="0.000000">
                                         </div>
                                     </div>
                                     <div class="col-md-4">
