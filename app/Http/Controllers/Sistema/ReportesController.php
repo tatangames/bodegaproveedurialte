@@ -30,8 +30,9 @@ class ReportesController extends Controller
     public function vistaReporteGenerales()
     {
         $arrayDepartamento = Departamentos::orderBy('nombre')->get();
+        $arrayMateriales = Materiales::orderBy('nombre')->get();
 
-        return view('backend.reportes.vistareportegenerales', compact('arrayDepartamento'));
+        return view('backend.reportes.vistareportegenerales', compact('arrayDepartamento', 'arrayMateriales'));
     }
 
 
@@ -959,6 +960,143 @@ ORDER BY codigo, descripcion
         $mpdf->Output();
     }
 
+
+
+    public function reporteEntregadoPorMaterial($desde, $hasta, $idmaterial)
+    {
+        $infoMaterial = Materiales::where('id', $idmaterial)->first();
+
+        $desdeFormat = date('d/m/Y', strtotime($desde));
+        $hastaFormat = date('d/m/Y', strtotime($hasta));
+
+        $arrayBodegaSalidaDetalle = DB::table('salidas_detalle AS salideta')
+            ->join('entradas_detalle AS entradadetalle', 'salideta.id_entrada_detalle', '=', 'entradadetalle.id')
+            ->select(
+                'entradadetalle.id_material',
+                'salideta.cantidad_salida',
+                'salideta.fecha',
+                'salideta.id_departamento'
+            )
+            ->where('entradadetalle.id_material', $idmaterial)
+            ->whereBetween('salideta.fecha', [$desde, $hasta])
+            ->orderBy('salideta.fecha', 'ASC')
+            ->get();
+
+        foreach ($arrayBodegaSalidaDetalle as $filaP) {
+
+            $filaP->fechaFormat = date('d-m-Y', strtotime($filaP->fecha));
+
+            $unidad = "";
+            if ($filaP->id_departamento != null) {
+                $infoDepartamento = Departamentos::where('id', $filaP->id_departamento)->first();
+                $unidad = $infoDepartamento->nombre ?? '';
+            }
+
+            $filaP->unidad = $unidad;
+        }
+
+        $mpdf = new \Mpdf\Mpdf(['tempDir' => sys_get_temp_dir(), 'format' => 'LETTER', 'mode' => 'utf-8']);
+        $mpdf->SetTitle('Salidas por Material');
+        $mpdf->showImageErrors = false;
+
+        $logoalcaldia = 'images/gobiernologo.jpg';
+        $logosantaana = 'images/logo.png';
+
+        $tabla = "
+<table style='width: 100%; border-collapse: collapse;'>
+    <tr>
+        <td style='width: 15%; text-align: left;'>
+            <img src='$logosantaana' alt='Santa Ana Norte' style='max-width: 100px; height: auto;'>
+        </td>
+        <td style='width: 60%; text-align: center;'>
+            <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>ALCALDÍA MUNICIPAL DE SANTA ANA NORTE</h1>
+            <h2 style='font-size: 14px; margin: 0; color: #003366; text-transform: uppercase;'>UNIDAD DE PROVEEDURÍA Y BODEGA</h2>
+        </td>
+        <td style='width: 10%; text-align: right;'>
+            <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
+        </td>
+    </tr>
+</table>
+<hr style='border: none; border-top: 2px solid #003366; margin: 0;'>
+";
+
+        $tabla .= "
+
+
+<div style='text-align: left; margin-top: 10px;'>
+    <p style='font-size: 13px; margin: 2px 0; color: #000;'>
+        Material: <strong>$infoMaterial->nombre</strong>
+    </p>
+    <p style='font-size: 13px; margin: 2px 0; color: #000;'>
+        Período: <strong>$desdeFormat</strong> al <strong>$hastaFormat</strong>
+    </p>
+</div>
+";
+
+        $tabla .= "
+<table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>
+    <tbody>
+        <tr>
+            <th style='text-align: center; font-size: 13px; width: 20%; font-weight: bold; border: 1px solid black; padding: 4px;'>
+                F. Salida
+            </th>
+            <th style='text-align: center; font-size: 13px; width: 60%; font-weight: bold; border: 1px solid black; padding: 4px;'>
+                Unidad Alcaldía
+            </th>
+            <th style='text-align: center; font-size: 13px; width: 20%; font-weight: bold; border: 1px solid black; padding: 4px;'>
+                Cantidad Entregada
+            </th>
+        </tr>
+";
+
+        if ($arrayBodegaSalidaDetalle->isEmpty()) {
+            $tabla .= "
+        <tr>
+            <td colspan='3' style='text-align: center; font-size: 12px; border: 1px solid black; padding: 6px; color: #888;'>
+                Sin registros en el rango seleccionado.
+            </td>
+        </tr>";
+        } else {
+            foreach ($arrayBodegaSalidaDetalle as $fila) {
+                $tabla .= "
+        <tr>
+            <td style='text-align: center; font-size: 12px; border: 1px solid black; padding: 3px;'>
+                $fila->fechaFormat
+            </td>
+            <td style='text-align: left; font-size: 12px; border: 1px solid black; padding: 3px;'>
+                $fila->unidad
+            </td>
+            <td style='text-align: center; font-size: 12px; border: 1px solid black; padding: 3px;'>
+                $fila->cantidad_salida
+            </td>
+        </tr>";
+            }
+        }
+
+        $tabla .= "
+    </tbody>
+</table>
+";
+
+        $infoGeneral = InformacionGeneral::where('id', 1)->first();
+        $spacer = "<div style='height: " . $infoGeneral->px_firmas . "px;'></div>";
+
+        $tabla .= "
+$spacer
+<div style='text-align:center; font-size:16px;'>
+    F._____________________________<br><br>
+    <span style='display:block; margin-top:8px; font-weight:bold; font-size:16px;'>
+        Unidad de Proveeduría y Bodega
+    </span>
+</div>
+";
+
+        $stylesheet = file_get_contents('css/cssbodega.css');
+        $mpdf->WriteHTML($stylesheet, 1);
+        $mpdf->setFooter('Página: {PAGENO}/{nb}');
+        $mpdf->WriteHTML($tabla, 2);
+        $mpdf->Output();
+    }
 
 
 }

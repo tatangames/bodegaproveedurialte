@@ -188,6 +188,52 @@
                 </div>
 
 
+                {{-- ══ REPORTE POR MATERIAL ══ --}}
+                <div class="col-md-6">
+                    <div class="reporte-card">
+                        <div class="reporte-header" style="background: linear-gradient(135deg, #1a5c6b, #17a2b8);">
+                            <i class="fas fa-cubes"></i>
+                            <h5>Salidas por Material</h5>
+                        </div>
+                        <div class="reporte-body">
+                            <p style="font-size:13px; color:#666; margin-bottom:14px;">
+                                Detalle de salidas de un material específico en un rango de fechas seleccionado.
+                            </p>
+                            <hr class="divider">
+
+                            <div class="row fecha-row">
+                                <div class="col-md-4 fecha-box">
+                                    <label>Fecha desde <span class="text-danger">*</span></label>
+                                    <input type="date" id="material-fecha-desde" class="form-control form-control-sm">
+                                </div>
+
+                                <div class="col-md-4 fecha-box">
+                                    <label>Fecha hasta <span class="text-danger">*</span></label>
+                                    <input type="date" id="material-fecha-hasta" class="form-control form-control-sm">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="field-label">Material <span class="text-danger">*</span></label>
+                                <select class="form-control form-control-sm" id="material-select" style="width:100%">
+                                    <option value="">Seleccione...</option>
+                                    @foreach($arrayMateriales as $mat)
+                                        <option value="{{ $mat->id }}">{{ $mat->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <button type="button" onclick="generarPdfPorMaterial()" class="btn-pdf"
+                                    style="background: linear-gradient(135deg, #1a5c6b, #17a2b8); color:#fff;
+                           box-shadow: 0 4px 14px rgba(23,162,184,.35); margin-top:0;">
+                                <i class="fas fa-file-pdf"></i> Generar PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+
             </div>
         </div>
     </section>
@@ -203,6 +249,12 @@
     <script>
 
         $('#entregado-select-departamento').select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $('body'),
+            language: { noResults: function () { return 'No encontrado'; } }
+        });
+
+        $('#material-select').select2({
             theme: 'bootstrap-5',
             dropdownParent: $('body'),
             language: { noResults: function () { return 'No encontrado'; } }
@@ -253,6 +305,30 @@
             }
 
             var url = "{{ url('admin/bodega/reportespdf/inicial/final') }}/" + desde + '/' + hasta;
+            window.open(url, '_blank');
+        }
+
+        function generarPdfPorMaterial() {
+            var desde  = document.getElementById('material-fecha-desde').value;
+            var hasta  = document.getElementById('material-fecha-hasta').value;
+            var idMat  = document.getElementById('material-select').value;
+
+            if (!desde || !hasta) {
+                toastr.error('Debes seleccionar fecha desde y fecha hasta');
+                return;
+            }
+
+            if (!idMat) {
+                toastr.error('Debes seleccionar un material');
+                return;
+            }
+
+            if (desde > hasta) {
+                toastr.error('La fecha "desde" no puede ser mayor que "hasta"');
+                return;
+            }
+
+            var url = "{{ url('admin/bodega/reportes/pdf/entregadopormaterial') }}/" + desde + '/' + hasta + '/' + idMat;
             window.open(url, '_blank');
         }
 
