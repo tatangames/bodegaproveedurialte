@@ -4,7 +4,7 @@
 @include('backend.urlglobal')
 
 <head>
-    <title>Bodega Informatica</title>
+    <title>Proveeduria</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ asset('css/login/bootstrap.min.css') }}">
@@ -117,7 +117,7 @@
 
 
                         <!-- TÍTULO  -->
-                        <h4 class="login-title">TECNOLOGIAS DE LA INFORMACION</h4>
+                        <h4 class="login-title">PROVEEDURIA Y BODEGA</h4>
                         <form class="login-form">
                             <div>
                                 <label class="font-500">Usuario</label>
@@ -125,8 +125,15 @@
                                        id="usuario" maxlength="100" autocomplete="off" type="text">
 
                                 <label class="font-500">Contraseña</label>
-                                <input class="form-control form-control-lg"
-                                       id="password" maxlength="100" type="password">
+                                <div class="position-relative">
+                                    <input class="form-control form-control-lg"
+                                           id="password" maxlength="100" type="password" style="padding-right: 50px;">
+                                    <span id="togglePassword"
+                                          onclick="togglePass()"
+                                          style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6c757d;">
+                                    <i id="eyeIcon" class="fas fa-eye"></i>
+                                </span>
+                                </div>
 
                                 <input type="button"
                                        value="INICIAR SESIÓN"
@@ -153,6 +160,21 @@
 
 
 <script type="text/javascript">
+
+    function togglePass() {
+        var input = document.getElementById('password');
+        var icon = document.getElementById('eyeIcon');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 
     // onkey Enter
     var input = document.getElementById("password");

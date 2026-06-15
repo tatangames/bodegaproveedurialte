@@ -612,13 +612,13 @@ ORDER BY codigo, descripcion
                         <img src='{$logoalcaldia}' style='height:38px'>
                     </td>
                     <td style='width:70%; text-align:left; color:#104e8c; font-size:13px; font-weight:bold; line-height:1.3;'>
-                        REPORTE DE INVENTARIO
+                        REPORTE DE MOVIMIENTO DE INVENTARIO
                     </td>
                 </tr>
             </table>
         </td>
         <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
-            CONTROL DE ENTRADAS / SALIDAS
+            REPORTE DE MOVIMIENTO DE INVENTARIO
         </td>
         <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
             <table width='100%' style='font-size:10px;'>
@@ -797,11 +797,16 @@ ORDER BY codigo, descripcion
 ";
         }
 
+        $infoGeneral = InformacionGeneral::where('id', 1)->first();
+        $spacer = "<div style='height: " . $infoGeneral->px_firmas . "px;'></div>";
+
         $html .= "
-<br><br><br><br><br><br><br>
-<div style='text-align:center; padding-top: 80px; font-size:16px;'>
-    F._____________________________<br>
-    <span style='font-weight:bold; font-size:16px;'>Unidad de Proveeduría y Bodega</span>
+" . $spacer . "
+<div style='text-align:center; font-size:16px;'>
+    F._____________________________<br><br>
+    <span style='display:block; margin-top:8px; font-weight:bold; font-size:16px;'>
+        Unidad de Proveeduría y Bodega
+    </span>
 </div>
 ";
 
