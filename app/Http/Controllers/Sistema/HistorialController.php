@@ -338,7 +338,7 @@ class HistorialController extends Controller
             $q->where('m.nombre', 'LIKE', '%' . $request->material . '%')
             )
             ->when($request->solicitud, fn($q) =>
-            $q->where('sd.numero_solicitud', 'LIKE', '%' . $request->solicitud . '%')
+            $q->where('sd.numero_solicitud', '=', $request->solicitud)
             )
             ->orderBy('sd.fecha', 'desc')
             ->orderBy('sd.id', 'desc')
