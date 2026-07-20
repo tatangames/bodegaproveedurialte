@@ -916,7 +916,7 @@ ORDER BY codigo, descripcion
                 <tr>
                     <td style='border-right:0.8px solid #000; padding:3px 5px;
                                 font-weight:bold; color:#000000;'>Vigencia:</td>
-                    <td style='padding:3px 5px; text-align:center; color:#000000;'>29/07/2026</td>
+                    <td style='padding:3px 5px; text-align:center; color:#000000;'>09/07/2026</td>
                 </tr>
             </table>
         </td>
