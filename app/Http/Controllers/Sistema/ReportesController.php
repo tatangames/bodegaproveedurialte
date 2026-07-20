@@ -26,7 +26,6 @@ class ReportesController extends Controller
 {
 
 
-
     public function vistaReporteGenerales()
     {
         $arrayDepartamento = Departamentos::orderBy('nombre')->get();
@@ -34,7 +33,6 @@ class ReportesController extends Controller
 
         return view('backend.reportes.vistareportegenerales', compact('arrayDepartamento', 'arrayMateriales'));
     }
-
 
 
     public function generarPDFExistencias()
@@ -61,8 +59,8 @@ class ReportesController extends Controller
                 ->sum('cantidad_salida');
 
             $cantidadActual =
-                (int) $fila->cantidad_inicial
-                - (int) $totalSalido;
+                (int)$fila->cantidad_inicial
+                - (int)$totalSalido;
 
             // ==========================================
             // SOLO PENDIENTES
@@ -86,7 +84,7 @@ class ReportesController extends Controller
                         ->get();
 
                 $arrayPendientes->push((object)[
-                    'nombreMaterial'  =>
+                    'nombreMaterial' =>
                         $material->nombre ?? '',
 
                     'cantidad_salida' =>
@@ -429,7 +427,7 @@ class ReportesController extends Controller
     public function reportePDFInicialPorPeriodos($desde, $hasta)
     {
         $start = Carbon::parse($desde)->startOfDay();
-        $end   = Carbon::parse($hasta)->endOfDay();
+        $end = Carbon::parse($hasta)->endOfDay();
 
         $desdeFormat = Carbon::parse($desde)->format('d/m/Y');
         $hastaFormat = Carbon::parse($hasta)->format('d/m/Y');
@@ -528,10 +526,10 @@ ORDER BY codigo, descripcion
         //   aunque el saldo final sea 0 => MOSTRAR
         // ==========================================================
         $rows = array_values(array_filter($rows, function ($r) {
-            $inicial  = (float) ($r->saldo_inicial_cant ?? 0);
-            $entradas = (float) ($r->entradas_mes_cant ?? 0);
-            $salidas  = (float) ($r->salidas_mes_cant ?? 0);
-            $final    = (float) ($r->saldo_final_cant ?? 0);
+            $inicial = (float)($r->saldo_inicial_cant ?? 0);
+            $entradas = (float)($r->entradas_mes_cant ?? 0);
+            $salidas = (float)($r->salidas_mes_cant ?? 0);
+            $final = (float)($r->saldo_final_cant ?? 0);
 
             if ($inicial == 0 && $entradas == 0 && $salidas == 0 && $final == 0) {
                 return false;
@@ -542,12 +540,12 @@ ORDER BY codigo, descripcion
 
         $totales = [
             'entradas_cant' => 0,
-            'salidas_cant'  => 0,
-            'final_cant'    => 0,
-            'entradas_money'=> 0.0,
+            'salidas_cant' => 0,
+            'final_cant' => 0,
+            'entradas_money' => 0.0,
             'salidas_money' => 0.0,
-            'final_money'   => 0.0,
-            'inicial_cant'  => 0,
+            'final_money' => 0.0,
+            'inicial_cant' => 0,
             'inicial_money' => 0.0,
         ];
 
@@ -555,46 +553,46 @@ ORDER BY codigo, descripcion
         $totalSaldoFinalCodigos = 0;
 
         foreach ($rows as $r) {
-            $totales['inicial_cant']   += (int) ($r->saldo_inicial_cant ?? 0);
-            $totales['entradas_cant']  += (int) ($r->entradas_mes_cant ?? 0);
-            $totales['salidas_cant']   += (int) ($r->salidas_mes_cant ?? 0);
-            $totales['final_cant']     += (int) ($r->saldo_final_cant ?? 0);
+            $totales['inicial_cant'] += (int)($r->saldo_inicial_cant ?? 0);
+            $totales['entradas_cant'] += (int)($r->entradas_mes_cant ?? 0);
+            $totales['salidas_cant'] += (int)($r->salidas_mes_cant ?? 0);
+            $totales['final_cant'] += (int)($r->saldo_final_cant ?? 0);
 
-            $totales['inicial_money']  += (float) ($r->saldo_inicial_money ?? 0);
-            $totales['entradas_money'] += (float) ($r->entradas_mes_money ?? 0);
-            $totales['salidas_money']  += (float) ($r->salidas_mes_money ?? 0);
-            $totales['final_money']    += (float) ($r->saldo_final_money ?? 0);
+            $totales['inicial_money'] += (float)($r->saldo_inicial_money ?? 0);
+            $totales['entradas_money'] += (float)($r->entradas_mes_money ?? 0);
+            $totales['salidas_money'] += (float)($r->salidas_mes_money ?? 0);
+            $totales['final_money'] += (float)($r->saldo_final_money ?? 0);
 
             $codigo = $r->codigo ?? 'SIN-CODIGO';
 
             if (!isset($sumPorCodigo[$codigo])) {
                 $sumPorCodigo[$codigo] = [
-                    'codigo'         => $codigo,
-                    'inicial_cant'   => 0,
-                    'entradas_cant'  => 0,
-                    'salidas_cant'   => 0,
-                    'final_cant'     => 0,
-                    'inicial_money'  => 0.0,
+                    'codigo' => $codigo,
+                    'inicial_cant' => 0,
+                    'entradas_cant' => 0,
+                    'salidas_cant' => 0,
+                    'final_cant' => 0,
+                    'inicial_money' => 0.0,
                     'entradas_money' => 0.0,
-                    'salidas_money'  => 0.0,
-                    'final_money'    => 0.0,
+                    'salidas_money' => 0.0,
+                    'final_money' => 0.0,
                 ];
             }
 
-            $sumPorCodigo[$codigo]['inicial_cant']   += (int) ($r->saldo_inicial_cant ?? 0);
-            $sumPorCodigo[$codigo]['entradas_cant']  += (int) ($r->entradas_mes_cant ?? 0);
-            $sumPorCodigo[$codigo]['salidas_cant']   += (int) ($r->salidas_mes_cant ?? 0);
-            $sumPorCodigo[$codigo]['final_cant']     += (int) ($r->saldo_final_cant ?? 0);
+            $sumPorCodigo[$codigo]['inicial_cant'] += (int)($r->saldo_inicial_cant ?? 0);
+            $sumPorCodigo[$codigo]['entradas_cant'] += (int)($r->entradas_mes_cant ?? 0);
+            $sumPorCodigo[$codigo]['salidas_cant'] += (int)($r->salidas_mes_cant ?? 0);
+            $sumPorCodigo[$codigo]['final_cant'] += (int)($r->saldo_final_cant ?? 0);
 
-            $sumPorCodigo[$codigo]['inicial_money']  += (float) ($r->saldo_inicial_money ?? 0);
-            $sumPorCodigo[$codigo]['entradas_money'] += (float) ($r->entradas_mes_money ?? 0);
-            $sumPorCodigo[$codigo]['salidas_money']  += (float) ($r->salidas_mes_money ?? 0);
-            $sumPorCodigo[$codigo]['final_money']    += (float) ($r->saldo_final_money ?? 0);
+            $sumPorCodigo[$codigo]['inicial_money'] += (float)($r->saldo_inicial_money ?? 0);
+            $sumPorCodigo[$codigo]['entradas_money'] += (float)($r->entradas_mes_money ?? 0);
+            $sumPorCodigo[$codigo]['salidas_money'] += (float)($r->salidas_mes_money ?? 0);
+            $sumPorCodigo[$codigo]['final_money'] += (float)($r->saldo_final_money ?? 0);
         }
 
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => sys_get_temp_dir(),
-            'format'  => 'LETTER',
+            'format' => 'LETTER',
             'orientation' => 'L'
         ]);
 
@@ -769,7 +767,7 @@ ORDER BY codigo, descripcion
 
             $j = 1;
             foreach ($sumPorCodigo as $s) {
-                $totalSaldoFinalCodigos += (float) $s['final_money'];
+                $totalSaldoFinalCodigos += (float)$s['final_money'];
 
                 $html .= "
         <tr>
@@ -820,7 +818,7 @@ ORDER BY codigo, descripcion
     public function generarPDFEntregados($desde, $hasta, $idDepartamento)
     {
         $start = Carbon::parse($desde)->startOfDay();
-        $end   = Carbon::parse($hasta)->endOfDay();
+        $end = Carbon::parse($hasta)->endOfDay();
 
         $desdeFormat = date("d-m-Y", strtotime($desde));
         $hastaFormat = date("d-m-Y", strtotime($hasta));
@@ -840,26 +838,26 @@ ORDER BY codigo, descripcion
         foreach ($arraySalidas as $fila) {
 
             $entradaDetalle = $fila->entradaDetalle;
-            $material       = $entradaDetalle->material ?? null;
+            $material = $entradaDetalle->material ?? null;
 
             if (!$material) {
                 continue;
             }
 
-            $precio       = (float) $entradaDetalle->precio;
+            $precio = (float)$entradaDetalle->precio;
             $multiplicado = $fila->cantidad_salida * $precio;
             $totalGeneral += $multiplicado;
 
             $arrayDetalle->push((object)[
-                'fechaFormat'     => date("d-m-Y", strtotime($fila->fecha)),
-                'nombreMaterial'  => $material->nombre ?? '',
-                'unidadMedida'    => $material->unidadMedida->nombre ?? '',
-                'cantidadSalida'  => $fila->cantidad_salida,
-                'precioFormat'    => "$" . number_format($precio, 6, '.', ','),
-                'multiplicado'    => "$" . number_format((float)$multiplicado, 6, '.', ','),
+                'fechaFormat' => date("d-m-Y", strtotime($fila->fecha)),
+                'nombreMaterial' => $material->nombre ?? '',
+                'unidadMedida' => $material->unidadMedida->nombre ?? '',
+                'cantidadSalida' => $fila->cantidad_salida,
+                'precioFormat' => "$" . number_format($precio, 6, '.', ','),
+                'multiplicado' => "$" . number_format((float)$multiplicado, 6, '.', ','),
                 'numeroSolicitud' => $fila->numero_solicitud ?? '',
-                'descripcion'     => $fila->descripcion ?? '',
-                'estado'          => $fila->estado,
+                'descripcion' => $fila->descripcion ?? '',
+                'estado' => $fila->estado,
             ]);
         }
 
@@ -867,14 +865,13 @@ ORDER BY codigo, descripcion
 
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => sys_get_temp_dir(),
-            'format'  => 'LETTER',
-            'mode'    => 'utf-8',
+            'format' => 'LETTER',
+            'mode' => 'utf-8',
         ]);
         $mpdf->SetTitle('Entregado a Unidad');
         $mpdf->showImageErrors = false;
 
         $logoalcaldia = 'images/gobiernologo.jpg';
-        $logosantaana = 'images/logo.png';
 
         $tabla = "
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
@@ -1001,7 +998,6 @@ ORDER BY codigo, descripcion
     }
 
 
-
     public function reporteEntregadoPorMaterial($desde, $hasta, $idmaterial)
     {
         $infoMaterial = Materiales::where('id', $idmaterial)->first();
@@ -1023,7 +1019,6 @@ ORDER BY codigo, descripcion
             ->get();
 
         foreach ($arrayBodegaSalidaDetalle as $filaP) {
-
             $filaP->fechaFormat = date('d-m-Y', strtotime($filaP->fecha));
 
             $unidad = "";
@@ -1039,60 +1034,94 @@ ORDER BY codigo, descripcion
         $mpdf->SetTitle('Salidas por Material');
         $mpdf->showImageErrors = false;
 
-        $logoalcaldia = 'images/gobiernologo.jpg';
-        $logosantaana = 'images/logo.png';
+        $logoalcaldia = 'images/logo.png';
 
+        // ── HEADER sin tablas anidadas ──────────────────────────────────────────
         $tabla = "
-<table style='width: 100%; border-collapse: collapse;'>
+<table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
     <tr>
-        <td style='width: 15%; text-align: left;'>
-            <img src='$logosantaana' alt='Santa Ana Norte' style='max-width: 100px; height: auto;'>
+        <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
+            <table width='100%'>
+                <tr>
+                    <td style='width:35%; text-align:left;'>
+                        <img src='{$logoalcaldia}' style='height:36px'>
+                    </td>
+                    <td style='width:65%; text-align:left; color:#003366;
+                                font-size:10px; font-weight:bold; line-height:1.3;'>
+                        SANTA ANA NORTE<br>EL SALVADOR
+                    </td>
+                </tr>
+            </table>
         </td>
-        <td style='width: 60%; text-align: center;'>
-            <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>ALCALDÍA MUNICIPAL DE SANTA ANA NORTE</h1>
-            <h2 style='font-size: 14px; margin: 0; color: #003366; text-transform: uppercase;'>UNIDAD DE PROVEEDURÍA Y BODEGA</h2>
+        <td style='width:54%; border-top:0.8px solid #000; border-bottom:0.8px solid #000;
+                    padding:8px; text-align:center; vertical-align:middle;'>
+            <div style='font-size:14px; font-weight:bold; color:#000000; letter-spacing:1px;'>
+               REPORTE DE SALIDAS POR MATERIAL
+            </div>
         </td>
-        <td style='width: 10%; text-align: right;'>
-            <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
+        <td style='width:22%; border:0.8px solid #000; padding:0; vertical-align:top;'>
+            <table width='100%' style='font-size:9px; border-collapse:collapse;'>
+                <tr>
+                    <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000;
+                                padding:3px 5px; font-weight:bold; color:#000000;'>Código:</td>
+                    <td style='border-bottom:0.8px solid #000; padding:3px 5px;
+                                text-align:center; color:#000000;'>
+                        PROV-003-REPO
+                    </td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000;
+                                padding:3px 5px; font-weight:bold; color:#000000;'>Versión:</td>
+                    <td style='border-bottom:0.8px solid #000; padding:3px 5px;
+                                text-align:center; color:#000000;'>
+                        000
+                    </td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; padding:3px 5px;
+                                font-weight:bold; color:#000000;'>Vigencia:</td>
+                    <td style='padding:3px 5px; text-align:center; color:#000000;'>09/07/2026</td>
+                </tr>
+            </table>
         </td>
     </tr>
-</table>
-<hr style='border: none; border-top: 2px solid #003366; margin: 0;'>
-";
+</table>";
 
+        // ── INFO MATERIAL Y PERÍODO ─────────────────────────────────────────────
         $tabla .= "
-
-
 <div style='text-align: left; margin-top: 10px;'>
     <p style='font-size: 13px; margin: 2px 0; color: #000;'>
-        Material: <strong>$infoMaterial->nombre</strong>
+        Material: <strong>{$infoMaterial->nombre}</strong>
     </p>
     <p style='font-size: 13px; margin: 2px 0; color: #000;'>
         Período: <strong>$desdeFormat</strong> al <strong>$hastaFormat</strong>
     </p>
-</div>
-";
+</div>";
 
+        // ── TABLA DE DATOS ──────────────────────────────────────────────────────
         $tabla .= "
-<table style='width: 100%; border-collapse: collapse; margin-top: 20px;'>
+<table style='width:100%; border-collapse:collapse; margin-top:20px;'>
     <tbody>
         <tr>
-            <th style='text-align: center; font-size: 13px; width: 20%; font-weight: bold; border: 1px solid black; padding: 4px;'>
-                F. Salida
+            <th style='text-align:center; font-size:13px; width:20%; font-weight:bold;
+                        border:1px solid black; padding:4px;'>
+                Fecha de salida
             </th>
-            <th style='text-align: center; font-size: 13px; width: 60%; font-weight: bold; border: 1px solid black; padding: 4px;'>
-                Unidad Alcaldía
+            <th style='text-align:center; font-size:13px; width:60%; font-weight:bold;
+                        border:1px solid black; padding:4px;'>
+                Unidad Solicitante
             </th>
-            <th style='text-align: center; font-size: 13px; width: 20%; font-weight: bold; border: 1px solid black; padding: 4px;'>
-                Cantidad Entregada
+            <th style='text-align:center; font-size:13px; width:20%; font-weight:bold;
+                        border:1px solid black; padding:4px;'>
+                Cantidad entregada
             </th>
-        </tr>
-";
+        </tr>";
 
         if ($arrayBodegaSalidaDetalle->isEmpty()) {
             $tabla .= "
         <tr>
-            <td colspan='3' style='text-align: center; font-size: 12px; border: 1px solid black; padding: 6px; color: #888;'>
+            <td colspan='3' style='text-align:center; font-size:12px;
+                                    border:1px solid black; padding:6px; color:#888;'>
                 Sin registros en el rango seleccionado.
             </td>
         </tr>";
@@ -1100,43 +1129,60 @@ ORDER BY codigo, descripcion
             foreach ($arrayBodegaSalidaDetalle as $fila) {
                 $tabla .= "
         <tr>
-            <td style='text-align: center; font-size: 12px; border: 1px solid black; padding: 3px;'>
-                $fila->fechaFormat
+            <td style='text-align:center; font-size:12px; border:1px solid black; padding:3px;'>
+                {$fila->fechaFormat}
             </td>
-            <td style='text-align: left; font-size: 12px; border: 1px solid black; padding: 3px;'>
-                $fila->unidad
+            <td style='text-align:left; font-size:12px; border:1px solid black; padding:3px;'>
+                {$fila->unidad}
             </td>
-            <td style='text-align: center; font-size: 12px; border: 1px solid black; padding: 3px;'>
-                $fila->cantidad_salida
+            <td style='text-align:center; font-size:12px; border:1px solid black; padding:3px;'>
+                {$fila->cantidad_salida}
             </td>
         </tr>";
             }
+
+            // ── FILA TOTALES ────────────────────────────────────────────────────
+            $totalCantidad = $arrayBodegaSalidaDetalle->sum('cantidad_salida');
+
+            $tabla .= "
+        <tr>
+            <td colspan='2' style='text-align:right; font-size:12px; font-weight:bold;
+                                    border:1px solid black; padding:3px;'>
+                Salidas Totales:
+            </td>
+            <td style='text-align:center; font-size:12px; font-weight:bold;
+                        border:1px solid black; padding:3px;'>
+                $totalCantidad
+            </td>
+        </tr>";
         }
 
         $tabla .= "
     </tbody>
-</table>
-";
+</table>";
 
+        // ── FIRMA ───────────────────────────────────────────────────────────────
         $infoGeneral = InformacionGeneral::where('id', 1)->first();
-        $spacer = "<div style='height: " . $infoGeneral->px_firmas . "px;'></div>";
+        $spacer = "<div style='height:{$infoGeneral->px_firmas}px;'></div>";
 
         $tabla .= "
-$spacer
-<div style='text-align:center; font-size:16px;'>
-    F._____________________________<br><br>
-    <span style='display:block; margin-top:8px; font-weight:bold; font-size:16px;'>
-        Unidad de Proveeduría y Bodega
-    </span>
-</div>
-";
+    $spacer
+    <div style='text-align:left; font-size:14px;'>
+        F._____________________________<br>
+        <span style='display:block; margin-top:2px; font-weight:bold; font-size:14px;'>
+            Unidad de proveeduría y bodega
+        </span>
+    </div>";
 
+        // ── RENDER PDF ──────────────────────────────────────────────────────────
         $stylesheet = file_get_contents('css/cssbodega.css');
         $mpdf->WriteHTML($stylesheet, 1);
-        $mpdf->setFooter('Página: {PAGENO}/{nb}');
         $mpdf->WriteHTML($tabla, 2);
         $mpdf->Output();
     }
+
+
+
 
 
 }
