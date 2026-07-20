@@ -877,23 +877,55 @@ ORDER BY codigo, descripcion
         $logosantaana = 'images/logo.png';
 
         $tabla = "
-    <table style='width: 100%; border-collapse: collapse;'>
-        <tr>
-            <td style='width: 15%; text-align: left;'>
-                <img src='$logosantaana' alt='Santa Ana Norte' style='max-width: 100px; height: auto;'>
-            </td>
-            <td style='width: 60%; text-align: center;'>
-                <h1 style='font-size: 16px; margin: 0; color: #003366; text-transform: uppercase;'>
-                    ALCALDÍA MUNICIPAL DE SANTA ANA NORTE
-                </h1>
-            </td>
-            <td style='width: 10%; text-align: right;'>
-                <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
-            </td>
-        </tr>
-    </table>
+<table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:6px;'>
+    <tr>
+        <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
+            <table width='100%'>
+                <tr>
+                    <td style='width:35%; text-align:left;'>
+                        <img src='{$logoalcaldia}' style='height:36px'>
+                    </td>
+                    <td style='width:65%; text-align:left; color:#003366;
+                                font-size:10px; font-weight:bold; line-height:1.3;'>
+                        SANTA ANA NORTE<br>EL SALVADOR
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <td style='width:54%; border-top:0.8px solid #000; border-bottom:0.8px solid #000;
+                    padding:8px; text-align:center; vertical-align:middle;'>
+            <div style='font-size:14px; font-weight:bold; color:#000000; letter-spacing:1px;'>
+               FICHA DE ENTREGA POR UNIDAD
+            </div>
+        </td>
+        <td style='width:22%; border:0.8px solid #000; padding:0; vertical-align:top;'>
+            <table width='100%' style='font-size:9px; border-collapse:collapse;'>
+                <tr>
+                    <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000;
+                                padding:3px 5px; font-weight:bold; color:#000000;'>Código:</td>
+                    <td style='border-bottom:0.8px solid #000; padding:3px 5px;
+                                text-align:center; color:#000000;'>
+                        PROV-001-FICH
+                    </td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000;
+                                padding:3px 5px; font-weight:bold; color:#000000;'>Versión:</td>
+                    <td style='border-bottom:0.8px solid #000; padding:3px 5px;
+                                text-align:center; color:#000000;'>
+                        001
+                    </td>
+                </tr>
+                <tr>
+                    <td style='border-right:0.8px solid #000; padding:3px 5px;
+                                font-weight:bold; color:#000000;'>Vigencia:</td>
+                    <td style='padding:3px 5px; text-align:center; color:#000000;'>29/07/2026</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 
-    <hr style='border: none; border-top: 2px solid #003366; margin: 0;'>
     ";
 
         $tabla .= "
@@ -949,12 +981,20 @@ ORDER BY codigo, descripcion
             </td>
             <td style='border: 1px solid black;'></td>
         </tr>
-    </tbody></table>";
+    </tbody></table>
+
+
+    <br><br>
+
+<div style='text-align:left; font-size:13px;'>
+    Ficha generada por:<br><br><br><br>
+    <strong>Unidad de proveeduría y bodega</strong>
+</div>
+
+    ";
 
         $stylesheet = file_get_contents('css/cssbodega.css');
         $mpdf->WriteHTML($stylesheet, 1);
-
-        $mpdf->setFooter('Página: {PAGENO}/{nb}');
         $mpdf->WriteHTML($tabla, 2);
 
         $mpdf->Output();
