@@ -13,8 +13,8 @@
             <th>Departamento</th>
             <th>N° Solicitud</th>
             <th class="text-center">Cantidad</th>
-            <th class="text-right">Precio Unit.</th>  {{-- NUEVO --}}
-            <th class="text-right">Subtotal</th>      {{-- NUEVO --}}
+            <th class="text-right">Precio Unit.</th>
+            <th class="text-right">Subtotal</th>
             <th class="text-center">Estado</th>
             <th class="text-center">Entregas</th>
             <th class="text-center">Acciones</th>
@@ -30,17 +30,12 @@
                 <td>{{ $salida->departamento ?? '—' }}</td>
                 <td>{{ $salida->numero_solicitud ?? '—' }}</td>
                 <td class="text-center">{{ $salida->cantidad_salida }}</td>
-
-                {{-- NUEVO: Precio unitario --}}
                 <td class="text-right">
                     ${{ number_format($salida->precio ?? 0, 2) }}
                 </td>
-
-                {{-- NUEVO: Subtotal --}}
                 <td class="text-right">
                     ${{ number_format($salida->subtotal ?? 0, 2) }}
                 </td>
-
                 <td class="text-center">
                     @if($salida->estado === 'finalizado')
                         <span class="badge badge-success">Finalizado</span>
@@ -59,19 +54,12 @@
                     <button class="btn btn-xs btn-info" onclick="verDetalle({{ $salida->id }})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
                     </button>
-
-                    @php
-                        $esMesActual = \Carbon\Carbon::parse($salida->fecha)->isSameMonth(\Carbon\Carbon::now());
-                    @endphp
-
-                    @if($esMesActual)
-                        <button class="btn btn-xs btn-warning" onclick="modalEditar({{ $salida->id }})" title="Editar">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-xs btn-danger" onclick="eliminar({{ $salida->id }})" title="Eliminar">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    @endif
+                    <button class="btn btn-xs btn-warning" onclick="modalEditar({{ $salida->id }})" title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-xs btn-danger" onclick="eliminar({{ $salida->id }})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
                 </td>
             </tr>
         @empty
@@ -83,7 +71,6 @@
         @endforelse
         </tbody>
 
-        {{-- NUEVO: Fila de total general --}}
         @if($arraySalidas->count() > 0)
             <tfoot>
             <tr class="table-dark font-weight-bold">

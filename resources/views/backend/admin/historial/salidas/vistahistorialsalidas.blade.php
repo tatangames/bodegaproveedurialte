@@ -55,7 +55,6 @@
                 </div>
                 <div class="modal-body">
 
-                    {{-- Info cabecera --}}
                     <div class="card card-outline card-secondary mb-3">
                         <div class="card-body py-2">
                             <div class="row">
@@ -89,7 +88,6 @@
                         </div>
                     </div>
 
-                    {{-- Entregas adicionales --}}
                     <h6 class="mb-2">
                         <i class="fas fa-truck mr-1 text-primary"></i>
                         Entregas adicionales registradas
@@ -266,8 +264,7 @@
             <div class="container-fluid">
                 <div class="card card-gray-dark">
                     <div class="card-header">
-                        <h3 class="card-title">Resultados</h3> <br>
-                        <span style="color: red">Solo se podra Editar y Borrar del MES actual, meses anteriores no podra borrar o editar</span>
+                        <h3 class="card-title">Resultados</h3>
                         <div class="card-tools">
                             <span class="badge badge-info" id="badge-total" style="display:none"></span>
                         </div>
@@ -316,6 +313,12 @@
                 allowClear: true,
                 language: { noResults: function () { return 'No encontrado'; } }
             });
+            $('#filtro-objeto').select2({
+                theme: 'bootstrap-5',
+                placeholder: '— Todos —',
+                allowClear: true,
+                language: { noResults: function () { return 'No encontrado'; } }
+            });
             $('#editar-tiposalida').select2({
                 theme: 'bootstrap-5',
                 dropdownParent: $('#modalEditar'),
@@ -326,15 +329,6 @@
                 dropdownParent: $('#modalEditar'),
                 language: { noResults: function () { return 'No encontrado'; } }
             });
-
-
-            $('#filtro-objeto').select2({
-                theme: 'bootstrap-5',
-                placeholder: '— Todos —',
-                allowClear: true,
-                language: { noResults: function () { return 'No encontrado'; } }
-            });
-
         });
 
         // ── Inicializar DataTable ─────────────────────────────────────
@@ -352,7 +346,6 @@
                 responsive:   true,
                 pagingType:   'full_numbers',
                 lengthMenu:   [[50, 100, -1], [50, 100, 'Todo']],
-                // Excluir la columna de acciones del ordenamiento y búsqueda
                 columnDefs: [
                     { orderable: false, targets: [11] },
                     { searchable: false, targets: [11] }
@@ -382,22 +375,22 @@
 
         // ── Buscar con filtros ────────────────────────────────────────
         function buscarConFiltros() {
-            const params = new URLSearchParams();
+            const params    = new URLSearchParams();
             const tipo      = $('#filtro-tiposalida').val();
             const depto     = $('#filtro-departamento').val();
             const desde     = $('#filtro-fecha-desde').val();
             const hasta     = $('#filtro-fecha-hasta').val();
             const material  = $('#filtro-material').val().trim();
             const solicitud = $('#filtro-solicitud').val().trim();
-            const objeto = $('#filtro-objeto').val();
+            const objeto    = $('#filtro-objeto').val();
 
-            if (tipo)      params.append('tiposalida',   tipo);
-            if (depto)     params.append('departamento', depto);
-            if (desde)     params.append('fecha_desde',  desde);
-            if (hasta)     params.append('fecha_hasta',  hasta);
-            if (material)  params.append('material',     material);
-            if (solicitud) params.append('solicitud',    solicitud);
-            if (objeto) params.append('objeto_especifico', objeto);
+            if (tipo)      params.append('tiposalida',        tipo);
+            if (depto)     params.append('departamento',      depto);
+            if (desde)     params.append('fecha_desde',       desde);
+            if (hasta)     params.append('fecha_hasta',       hasta);
+            if (material)  params.append('material',          material);
+            if (solicitud) params.append('solicitud',         solicitud);
+            if (objeto)    params.append('objeto_especifico', objeto);
 
             const url = RUTA_TABLA + (params.toString() ? '?' + params.toString() : '');
 
@@ -417,7 +410,7 @@
         function limpiarFiltros() {
             $('#filtro-tiposalida').val('').trigger('change');
             $('#filtro-departamento').val('').trigger('change');
-            $('#filtro-objeto').val('').trigger('change');   // ← NUEVO
+            $('#filtro-objeto').val('').trigger('change');
             $('#filtro-fecha-desde').val('');
             $('#filtro-fecha-hasta').val('');
             $('#filtro-material').val('');
@@ -450,8 +443,8 @@
                     }
 
                     var s = response.data.salida;
-                    $('#det-fecha').text(s.fecha              ? formatearFecha(s.fecha) : '—');
-                    $('#det-tipo').text(s.tipo_salida         || '—');
+                    $('#det-fecha').text(s.fecha               ? formatearFecha(s.fecha) : '—');
+                    $('#det-tipo').text(s.tipo_salida          || '—');
                     $('#det-solicitud').text(s.numero_solicitud || '—');
                     $('#det-departamento').text(s.departamento  || '—');
                     $('#det-material').text(s.material          || '—');
