@@ -96,11 +96,18 @@
                             </p>
                             <hr class="divider">
 
+                            <div class="form-group form-check" style="margin-bottom:14px;">
+                                <input type="checkbox" class="form-check-input" id="inventario-check-conteo">
+                                <label class="form-check-label" for="inventario-check-conteo" style="font-size:13px;">
+                                    Agregar columnas de conteo físico y diferencia
+                                </label>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6 d-flex">
                                     <button type="button" onclick="generarPdfInventario()" class="btn-pdf"
                                             style="background: linear-gradient(135deg, #1a4a6b, #1a73e8); color:#fff;
-                               box-shadow: 0 4px 14px rgba(26,115,232,.35); margin-top:0;">
+                       box-shadow: 0 4px 14px rgba(26,115,232,.35); margin-top:0;">
                                         <i class="fas fa-file-pdf"></i> Generar PDF
                                     </button>
                                 </div>
@@ -286,7 +293,9 @@
 
 
         function generarPdfInventario() {
-            window.open("{{ url('admin/reporte/pdf/inventario') }}/", '_blank');
+            var incluirConteo = document.getElementById('inventario-check-conteo').checked ? 1 : 0;
+            var url = "{{ url('admin/reporte/pdf/inventario') }}/" + incluirConteo;
+            window.open(url, '_blank');
         }
 
         // ── Reporte de Entradas/Salidas por Período ────────────────────

@@ -35,8 +35,10 @@ class ReportesController extends Controller
     }
 
 
-    public function generarPDFExistencias()
+    public function generarPDFExistencias($conteo = 0)
     {
+        $conteo = (int) $conteo === 1;
+
         // ── Existencias actuales: entradas_detalle con cantidad disponible > 0 ──
         $arrayInfo = EntradasDetalle::with('material.objetoEspecifico', 'material.unidadMedida', 'entrada')
             ->get();
@@ -154,7 +156,7 @@ class ReportesController extends Controller
 
         $mpdf = new \Mpdf\Mpdf([
             'tempDir' => sys_get_temp_dir(),
-            'format' => 'LETTER',
+            'format' => $conteo ? 'LETTER-L' : 'LETTER',
             'mode' => 'utf-8',
         ]);
         $mpdf->SetTitle('Existencias General');
@@ -175,7 +177,7 @@ class ReportesController extends Controller
             </h1>
         </td>
         <td style='width: 10%; text-align: right;'>
-            <img src='$logoalcaldia' alt='Gobierno de El Salvador' style='max-width: 60px; height: auto;'>
+
         </td>
     </tr>
 </table>
@@ -195,6 +197,27 @@ class ReportesController extends Controller
 </div>
 ";
 
+        // ── Anchos y padding según si se piden columnas de conteo físico ──
+        if ($conteo) {
+            $wObjEsp    = '12%';
+            $wProducto  = '26%';
+            $wUM        = '8%';
+            $wCantidad  = '10%';
+            $wPrecio    = '11%';
+            $wTotal     = '11%';
+            $wConteo    = '11%';
+            $wDiferencia = '11%';
+            $tdPadding  = '8px';
+        } else {
+            $wObjEsp    = '15%';
+            $wProducto  = '35%';
+            $wUM        = '10%';
+            $wCantidad  = '13%';
+            $wPrecio    = '12%';
+            $wTotal     = '15%';
+            $tdPadding  = '3px';
+        }
+
         // ── Tabla principal ──
         $tabla .= "
 <table id='tablaFor'
@@ -205,29 +228,42 @@ class ReportesController extends Controller
     <tbody>
 
         <tr>
-            <th style='text-align: center; font-size:14px; width: 40%; font-weight: bold; border: 1px solid black;'>
+            <th style='text-align: center; font-size:14px; width: $wObjEsp; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
+                Obj. Específico
+            </th>
+
+            <th style='text-align: center; font-size:14px; width: $wProducto; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
                 Producto
             </th>
 
-            <th style='text-align: center; font-size:14px; width: 10%; font-weight: bold; border: 1px solid black;'>
+            <th style='text-align: center; font-size:14px; width: $wUM; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
                 U.M
             </th>
 
-            <th style='text-align: center; font-size:14px; width: 13%; font-weight: bold; border: 1px solid black;'>
+            <th style='text-align: center; font-size:14px; width: $wCantidad; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
                 Cantidad
             </th>
 
-            <th style='text-align: center; font-size:14px; width: 12%; font-weight: bold; border: 1px solid black;'>
+            <th style='text-align: center; font-size:14px; width: $wPrecio; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
                 Precio
             </th>
 
-            <th style='text-align: center; font-size:14px; width: 13%; font-weight: bold; border: 1px solid black;'>
+            <th style='text-align: center; font-size:14px; width: $wTotal; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
                 Total
+            </th>";
+
+        if ($conteo) {
+            $tabla .= "
+            <th style='text-align: center; font-size:14px; width: $wConteo; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
+                Conteo Físico
             </th>
 
-            <th style='text-align: center; font-size:14px; width: 15%; font-weight: bold; border: 1px solid black;'>
-                Obj. Específico
-            </th>
+            <th style='text-align: right; font-size:14px; width: $wDiferencia; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
+                Diferencia
+            </th>";
+        }
+
+        $tabla .= "
         </tr>
 ";
 
@@ -236,41 +272,66 @@ class ReportesController extends Controller
             $tabla .= "
     <tr>
 
-        <td style='text-align: left; font-size:12px; border: 1px solid black; padding: 3px;'>
-            $fila->nombreMaterial
-        </td>
-
-        <td style='text-align: center; font-size:12px; border: 1px solid black;'>
-            $fila->unidadMedida
-        </td>
-
-        <td style='text-align: center; font-size:12px; border: 1px solid black;'>
-            $fila->cantidadActual
-        </td>
-
-        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: 3px;'>
-            $fila->precioFormat
-        </td>
-
-        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: 3px;'>
-            $fila->multiplicado
-        </td>
-
-        <td style='text-align: center; font-size:12px; border: 1px solid black;'>
+        <td style='text-align: center; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
             $fila->nombreCodigo
         </td>
 
+        <td style='text-align: left; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            $fila->nombreMaterial
+        </td>
+
+        <td style='text-align: center; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            $fila->unidadMedida
+        </td>
+
+        <td style='text-align: center; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            $fila->cantidadActual
+        </td>
+
+        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            $fila->precioFormat
+        </td>
+
+        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            $fila->multiplicado
+        </td>";
+
+            if ($conteo) {
+                $tabla .= "
+        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            &nbsp;
+        </td>
+
+        <td style='text-align: right; font-size:12px; border: 1px solid black; padding: $tdPadding;'>
+            &nbsp;
+        </td>";
+            }
+
+            $tabla .= "
     </tr>";
         }
 
+        // Fila de total:
+        // Etiqueta "Total" cubre Obj.Específico + Producto + U.M + Cantidad (4 columnas)
+        // Valor cubre Precio + Total (2 columnas)
+        // Si hay conteo, se agregan 2 celdas vacías para Conteo Físico y Diferencia
         $tabla .= "
     <tr>
-        <td colspan='4' style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+        <td colspan='4' style='text-align: right; font-size:14px; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
             Total
         </td>
-        <td colspan='2' style='text-align: center; font-size:13px; font-weight: bold; border: 1px solid black; padding: 3px;'>
+        <td colspan='2' style='text-align: center; font-size:13px; font-weight: bold; border: 1px solid black; padding: $tdPadding;'>
             $totalColumnaFmt
-        </td>
+        </td>";
+
+        if ($conteo) {
+            $tabla .= "
+        <td colspan='2' style='border: 1px solid black; padding: $tdPadding;'>
+            &nbsp;
+        </td>";
+        }
+
+        $tabla .= "
     </tr>
 </tbody></table>";
 
@@ -299,7 +360,8 @@ class ReportesController extends Controller
                            font-size:14px;
                            width:28%;
                            font-weight:bold;
-                           border:1px solid black;'>
+                           border:1px solid black;
+                           padding: $tdPadding;'>
 
                     Producto
                 </th>
@@ -308,7 +370,8 @@ class ReportesController extends Controller
                            font-size:14px;
                            width:12%;
                            font-weight:bold;
-                           border:1px solid black;'>
+                           border:1px solid black;
+                           padding: $tdPadding;'>
 
                     Cant. Salida
                 </th>
@@ -317,7 +380,8 @@ class ReportesController extends Controller
                            font-size:14px;
                            width:25%;
                            font-weight:bold;
-                           border:1px solid black;'>
+                           border:1px solid black;
+                           padding: $tdPadding;'>
 
                     Descripción Salida
                 </th>
@@ -326,7 +390,8 @@ class ReportesController extends Controller
                            font-size:14px;
                            width:35%;
                            font-weight:bold;
-                           border:1px solid black;'>
+                           border:1px solid black;
+                           padding: $tdPadding;'>
 
                     Detalle de entregas
                 </th>
@@ -342,8 +407,8 @@ class ReportesController extends Controller
 
                     $detalleEntregas =
                         "<span style='font-style: italic; color:#888;'>
-                    Sin entregas registradas
-                </span>";
+                Sin entregas registradas
+            </span>";
 
                 } else {
 
@@ -376,7 +441,7 @@ class ReportesController extends Controller
             <td style='text-align:left;
                        font-size:14px;
                        border:1px solid black;
-                       padding:3px;
+                       padding:$tdPadding;
                        vertical-align:top;'>
 
                 {$pend->nombreMaterial}
@@ -385,6 +450,7 @@ class ReportesController extends Controller
             <td style='text-align:center;
                        font-size:14px;
                        border:1px solid black;
+                       padding:$tdPadding;
                        vertical-align:top;'>
 
                 {$pend->cantidad_salida}
@@ -394,7 +460,7 @@ class ReportesController extends Controller
             <td style='text-align:left;
                        font-size:13px;
                        border:1px solid black;
-                       padding:3px;
+                       padding:$tdPadding;
                        vertical-align:top;'>
 
                 {$descripcionSalida}
@@ -403,7 +469,7 @@ class ReportesController extends Controller
             <td style='text-align:left;
                        font-size:14px;
                        border:1px solid black;
-                       padding:3px;'>
+                       padding:$tdPadding;'>
 
                 {$detalleEntregas}
             </td>
@@ -422,7 +488,6 @@ class ReportesController extends Controller
         $mpdf->WriteHTML($tabla, 2);
         $mpdf->Output();
     }
-
 
     public function reportePDFInicialPorPeriodos($desde, $hasta)
     {
