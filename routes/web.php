@@ -142,7 +142,8 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/admin/reporte/pdf/entregados/{desde}/{hasta}/{idunidad}', [ReportesController::class,'generarPDFEntregados']);
     Route::get('/admin/bodega/reportes/pdf/entregadopormaterial/{desde}/{hasta}/{idmaterial}', [ReportesController::class, 'reporteEntregadoPorMaterial']);
 
-
+    Route::get('/admin/reporte/quehaentrado/pdf/{desde}/{hasta}/{tipo}', [ReportesController::class, 'pdfQueHaEntradoProyectos']);
+    Route::get('/admin/reporte/quehasalido/pdf/{desde}/{hasta}/{tipo}', [ReportesController::class, 'pdfQueHaSalidoProyectos']);
 
 
 
