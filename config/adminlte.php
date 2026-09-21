@@ -357,11 +357,6 @@ return [
                     'icon' => 'far fa-circle',
                     'route' => 'admin.salida.registro.index',
                 ],
-                [
-                    'text' => 'Pendientes',
-                    'icon' => 'far fa-circle',
-                    'route' => 'admin.pendientes.index',
-                ],
 
             ],
         ],

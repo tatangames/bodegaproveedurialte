@@ -288,7 +288,6 @@
                                     <th style="width:10%; min-width:110px">N° Solicitud</th>
                                     <th style="width:16%; min-width:140px">Descripción</th>
                                     <th style="width:16%; min-width:140px">Departamento</th>
-                                    <th style="width:11%; min-width:110px" class="text-center">Estado</th>
                                     <th style="width:7%;  min-width:70px">Opciones</th>
                                 </tr>
                                 </thead>
@@ -525,15 +524,6 @@
                         '</select>' +
                         '</td>' +
 
-                        // Estado toggle
-                        '<td class="text-center">' +
-                        '<input name="estadoArray[]" type="hidden" data-estadoSalida="finalizado">' +
-                        '<button type="button" class="btn btn-success btn-sm btn-estado" ' +
-                        'onclick="toggleEstado(this)" data-estado="finalizado">' +
-                        '<i class="fas fa-check-circle mr-1"></i> Finalizado' +
-                        '</button>' +
-                        '</td>' +
-
                         // Opciones
                         '<td>' +
                         '<button type="button" class="btn btn-danger btn-sm btn-block" onclick="borrarFila(this)">' +
@@ -549,29 +539,6 @@
             document.getElementById('inputBuscador').value = '';
             $('.droplista').html('').hide();
             toastr.success('Material agregado al detalle');
-        }
-
-
-        // ── Toggle estado por fila ────────────────────────────────────
-        function toggleEstado(btn) {
-            var estadoActual = $(btn).attr('data-estado');
-            var hiddenEstado = $(btn).siblings('input[name="estadoArray[]"]');
-
-            if (estadoActual === 'pendiente') {
-                $(btn)
-                    .attr('data-estado', 'finalizado')
-                    .removeClass('btn-warning')
-                    .addClass('btn-success')
-                    .html('<i class="fas fa-check-circle mr-1"></i> Finalizado');
-                hiddenEstado.attr('data-estadoSalida', 'finalizado');
-            } else {
-                $(btn)
-                    .attr('data-estado', 'pendiente')
-                    .removeClass('btn-success')
-                    .addClass('btn-warning')
-                    .html('<i class="fas fa-clock mr-1"></i> Pendiente');
-                hiddenEstado.attr('data-estadoSalida', 'pendiente');
-            }
         }
 
         // ── Guardar salida ────────────────────────────────────────────
@@ -626,31 +593,6 @@
                 return;
             }
 
-            // ── Validar descripción obligatoria si estado es PENDIENTE ────────────
-            var sinDescripcion = false;
-            var filaDescError  = 0;
-
-            $('#matriz tbody tr').each(function (index) {
-                var estadoFila = $(this).find('input[name="estadoArray[]"]').attr('data-estadoSalida');
-
-                if (estadoFila === 'pendiente') {
-                    var descFila  = $(this).find('input[name="descripcionItemArray[]"]').val().trim();
-                    var descFinal = descripcionGlobal !== '' ? descripcionGlobal : descFila;
-
-                    if (!descFinal || descFinal === '') {
-                        sinDescripcion = true;
-                        filaDescError  = index + 1;
-                        $(this).css('background', '#f8d7da');
-                        return false;
-                    }
-                }
-            });
-
-            if (sinDescripcion) {
-                toastr.error('Fila #' + filaDescError + ': La descripción es obligatoria cuando el estado es Pendiente');
-                return;
-            }
-
             // ── Validar departamento obligatorio si es SALIDA CON SOLICITUD ───────
             if (parseInt(tiposalida) === 1) {
 
@@ -680,8 +622,6 @@
                 .map(function () { return $(this).attr('data-idmaterialArray'); }).get();
             var salidaCantidad        = $("input[name='salidaArray[]']")
                 .map(function () { return $(this).attr('data-cantidadSalida'); }).get();
-            var salidaEstado          = $("input[name='estadoArray[]']")
-                .map(function () { return $(this).attr('data-estadoSalida'); }).get();
             var salidaDepartamento    = $("select[name='departamentoArray[]']")
                 .map(function () { return $(this).val(); }).get();
             var salidaFechaItem       = $("input[name='fechaItemArray[]']")
@@ -701,7 +641,6 @@
                 contenedorArray.push({
                     infoIdEntradaDeta:   idEntradaDetalle[p],
                     infoCantidad:        salidaCantidad[p],
-                    infoEstado:          salidaEstado[p],
                     infoTipoSalida:      tiposalida,
                     infoDepartamento:    deptoFinal,
                     infoFechaItem:       fechaFinal,

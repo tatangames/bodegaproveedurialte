@@ -4,11 +4,7 @@ namespace App\Http\Controllers\Sistema;
 
 use App\Http\Controllers\Controller;
 use App\Models\Departamentos;
-use App\Models\Entradas;
-use App\Models\EntradasDetalle;
-use App\Models\InformacionGeneral;
 use App\Models\Materiales;
-use App\Models\Salidas;
 use App\Models\SalidasDetalle;
 use App\Models\TipoSalida;
 use App\Models\UnidadMedida;
@@ -31,7 +27,6 @@ class SalidasController extends Controller
         return view('backend.admin.repuestos.salidas.vistasalidaregistro',
             compact('arrayTipoSalida', 'arrayDepartamentos'));
     }
-
 
 
     public function guardarSalida(Request $request)
@@ -59,7 +54,7 @@ class SalidasController extends Controller
             foreach ($contenedor as $item) {
                 $id = $item['infoIdEntradaDeta'];
                 if (!isset($acumulado[$id])) $acumulado[$id] = 0;
-                $acumulado[$id] += (int) $item['infoCantidad'];
+                $acumulado[$id] += (int)$item['infoCantidad'];
             }
 
             // ── Validar stock acumulado + obtener fecha de entrada ────────
@@ -84,7 +79,7 @@ class SalidasController extends Controller
                     ->where('id_entrada_detalle', $idEntradaDetalle)
                     ->sum('cantidad_salida');
 
-                $disponible = (int) $entradaInfo->cantidad_inicial - (int) $totalSalido;
+                $disponible = (int)$entradaInfo->cantidad_inicial - (int)$totalSalido;
 
                 if ($cantidadSalida > $disponible) {
                     DB::rollback();
@@ -95,10 +90,10 @@ class SalidasController extends Controller
                         ->value('m.nombre');
 
                     return [
-                        'success'         => 2,
+                        'success' => 2,
                         'nombre_material' => $nombreMaterial ?? 'Material desconocido',
                         'cantidad_pedida' => $cantidadSalida,
-                        'disponible'      => $disponible,
+                        'disponible' => $disponible,
                     ];
                 }
             }
@@ -106,7 +101,7 @@ class SalidasController extends Controller
             // ── Validar fecha de salida no menor a la fecha de entrada (por ítem) ──
             foreach ($contenedor as $item) {
                 $idEntradaDetalle = $item['infoIdEntradaDeta'];
-                $fechaSalidaItem  = $item['infoFechaItem'] ?? null;
+                $fechaSalidaItem = $item['infoFechaItem'] ?? null;
 
                 if (empty($fechaSalidaItem)) continue;
 
@@ -114,7 +109,7 @@ class SalidasController extends Controller
                 if (empty($fechaEntrada)) continue;
 
                 $fEntrada = substr($fechaEntrada, 0, 10);
-                $fSalida  = substr($fechaSalidaItem, 0, 10);
+                $fSalida = substr($fechaSalidaItem, 0, 10);
 
                 if (strtotime($fSalida) < strtotime($fEntrada)) {
                     DB::rollback();
@@ -125,29 +120,26 @@ class SalidasController extends Controller
                         ->value('m.nombre');
 
                     return [
-                        'success'         => 3,
+                        'success' => 3,
                         'nombre_material' => $nombreMaterial ?? 'Material desconocido',
-                        'fecha_entrada'   => date('d-m-Y', strtotime($fEntrada)),
-                        'fecha_salida'    => date('d-m-Y', strtotime($fSalida)),
+                        'fecha_entrada' => date('d-m-Y', strtotime($fEntrada)),
+                        'fecha_salida' => date('d-m-Y', strtotime($fSalida)),
                     ];
                 }
             }
 
             // ── Guardar cada ítem directo en salidas_detalle ──────────────
             foreach ($contenedor as $item) {
-                $detalle                     = new SalidasDetalle();
-                $detalle->id_entrada_detalle = (int) $item['infoIdEntradaDeta'];
-                $detalle->id_tiposalida      = (int) $item['infoTipoSalida'];
-                $detalle->cantidad_salida    = (int) $item['infoCantidad'];
-                $detalle->estado             = in_array($item['infoEstado'], ['pendiente', 'finalizado'])
-                    ? $item['infoEstado']
-                    : 'pendiente';
+                $detalle = new SalidasDetalle();
+                $detalle->id_entrada_detalle = (int)$item['infoIdEntradaDeta'];
+                $detalle->id_tiposalida = (int)$item['infoTipoSalida'];
+                $detalle->cantidad_salida = (int)$item['infoCantidad'];
 
                 // Campos por ítem (ya vienen resueltos desde el JS — global sobreescribe fila)
-                $detalle->fecha            = !empty($item['infoFechaItem'])       ? $item['infoFechaItem']          : null;
-                $detalle->numero_solicitud = !empty($item['infoSolicitudItem'])   ? $item['infoSolicitudItem']      : null;
-                $detalle->descripcion      = !empty($item['infoDescripcionItem']) ? $item['infoDescripcionItem']    : null;
-                $detalle->id_departamento  = !empty($item['infoDepartamento'])    ? (int) $item['infoDepartamento'] : null;
+                $detalle->fecha = !empty($item['infoFechaItem']) ? $item['infoFechaItem'] : null;
+                $detalle->numero_solicitud = !empty($item['infoSolicitudItem']) ? $item['infoSolicitudItem'] : null;
+                $detalle->descripcion = !empty($item['infoDescripcionItem']) ? $item['infoDescripcionItem'] : null;
+                $detalle->id_departamento = !empty($item['infoDepartamento']) ? (int)$item['infoDepartamento'] : null;
 
                 $detalle->save();
             }
@@ -271,201 +263,8 @@ class SalidasController extends Controller
 
 
 
-// ── Index: listar pendientes ──────────────────────────────────────────────────
-    public function indexPendienteEntrega()
-    {
-        // salidas_detalle ya tiene fecha, numero_solicitud, descripcion directamente
-        // (sin join a tabla salidas que ya no existe)
-        $pendientes = DB::table('salidas_detalle as sd')
-            ->join('entradas_detalle as ed', 'ed.id', '=', 'sd.id_entrada_detalle')
-            ->join('materiales as m', 'm.id', '=', 'ed.id_material')
-            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
-            ->select(
-                'sd.id as id_salida_detalle',
-                'sd.fecha',
-                'sd.numero_solicitud',
-                'sd.descripcion',
-                'm.nombre as material',
-                'sd.cantidad_salida',
-                'dep.nombre as departamento'
-            )
-            ->where('sd.estado', 'pendiente')
-            ->orderBy('sd.fecha', 'asc')
-            ->orderBy('sd.id', 'asc')
-            ->get();
-
-        $arrayDepartamentos = Departamentos::orderBy('nombre')->get();
-
-        return view('backend.admin.repuestos.pendiente.vistapendiente',
-            compact('pendientes', 'arrayDepartamentos'));
-    }
-
-// ── Agregar nueva entrega a un ítem pendiente ─────────────────────────────────
-    public function registrarSalidaParcial(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_salida_detalle' => 'required|exists:salidas_detalle,id',
-            'id_departamento'   => 'nullable|exists:departamentos,id',
-            'cantidad'          => 'required|integer|min:1',
-            'fecha_entrega'     => 'required|date',
-            'observacion'       => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) return ['success' => 0];
-
-        try {
-            DB::table('salidas_detalle_entregas')->insert([
-                'id_salida_detalle' => $request->id_salida_detalle,
-                'id_departamento'   => $request->id_departamento ?: null,
-                'cantidad'          => $request->cantidad,
-                'fecha_entrega'     => $request->fecha_entrega,
-                'observacion'       => $request->observacion ?: null,
-                'numero_solicitud' => $request->numero_solicitud,
-                'created_at'        => now(),
-                'updated_at'        => now(),
-            ]);
-
-            return ['success' => 10];
-
-        } catch (\Throwable $e) {
-            Log::error('registrarSalidaParcial: ' . $e);
-            return ['success' => 99];
-        }
-    }
-
-// ── Marcar ítem como finalizado manualmente ───────────────────────────────────
-    public function finalizarDetalle(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_salida_detalle' => 'required|exists:salidas_detalle,id',
-        ]);
-
-        if ($validator->fails()) return ['success' => 0];
-
-        try {
-            DB::table('salidas_detalle')
-                ->where('id', $request->id_salida_detalle)
-                ->update(['estado' => 'finalizado']);
-
-            return ['success' => 10];
-
-        } catch (\Throwable $e) {
-            Log::error('finalizarDetalle: ' . $e);
-            return ['success' => 99];
-        }
-    }
 
 
-    public function detalleEntregas(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id_salida_detalle' => 'required|exists:salidas_detalle,id',
-        ]);
 
-        if ($validator->fails()) return ['success' => 0];
-
-        // ── Info del kit (cabecera del modal) ─────────────────────────────
-        $kit = DB::table('salidas_detalle as sd')
-            ->join('entradas_detalle as ed', 'ed.id', '=', 'sd.id_entrada_detalle')
-            ->join('materiales as m', 'm.id', '=', 'ed.id_material')
-            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sd.id_departamento')
-            ->leftJoin('tipo_salida as ts', 'ts.id', '=', 'sd.id_tiposalida')
-            ->select(
-                'm.nombre as material',
-                'sd.fecha',
-                'sd.numero_solicitud',
-                'sd.descripcion',
-                'sd.cantidad_salida',
-                'dep.nombre as departamento',
-                'ts.nombre as tipo_salida'
-            )
-            ->where('sd.id', $request->id_salida_detalle)
-            ->first();
-
-        // ── Entregas registradas ──────────────────────────────────────────
-        $entregas = DB::table('salidas_detalle_entregas as sde')
-            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sde.id_departamento')
-            ->select(
-                'sde.id',
-                'sde.id_departamento',
-                'sde.cantidad',
-                'sde.fecha_entrega',
-                'sde.observacion',
-                'dep.nombre as departamento',
-                'sde.numero_solicitud',
-            )
-            ->where('sde.id_salida_detalle', $request->id_salida_detalle)
-            ->orderBy('sde.created_at', 'asc')
-            ->get();
-
-        return ['success' => 10, 'kit' => $kit, 'entregas' => $entregas];
-    }
-
-// ── Cargar datos de una entrega para editar ───────────────────────────────────
-    public function editarEntrega(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:salidas_detalle_entregas,id',
-        ]);
-
-        if ($validator->fails()) return ['success' => 0];
-
-        $entrega = DB::table('salidas_detalle_entregas')
-            ->where('id', $request->id)
-            ->first();
-
-        return ['success' => 10, 'entrega' => $entrega];
-    }
-
-// ── Actualizar entrega ────────────────────────────────────────────────────────
-    public function actualizarEntrega(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id'              => 'required|exists:salidas_detalle_entregas,id',
-            'id_departamento' => 'nullable|exists:departamentos,id',
-            'cantidad'        => 'required|integer|min:1',
-            'fecha_entrega'   => 'required|date',
-            'observacion'     => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) return ['success' => 0];
-
-        try {
-            DB::table('salidas_detalle_entregas')
-                ->where('id', $request->id)
-                ->update([
-                    'id_departamento' => $request->id_departamento ?: null,
-                    'cantidad'        => $request->cantidad,
-                    'fecha_entrega'   => $request->fecha_entrega,
-                    'observacion'     => $request->observacion ?: null,
-                    'numero_solicitud' => $request->solicitud,
-                    'updated_at'      => now(),
-                ]);
-
-            return ['success' => 10];
-
-        } catch (\Throwable $e) {
-            Log::error('actualizarEntrega: ' . $e);
-            return ['success' => 99];
-        }
-    }
-
-// ── Eliminar entrega ──────────────────────────────────────────────────────────
-    public function eliminarEntrega(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'id' => 'required|exists:salidas_detalle_entregas,id',
-        ]);
-
-        if ($validator->fails()) return ['success' => 0];
-
-        try {
-            DB::table('salidas_detalle_entregas')->where('id', $request->id)->delete();
-            return ['success' => 10];
-        } catch (\Throwable $e) {
-            Log::error('eliminarEntrega: ' . $e);
-            return ['success' => 99];
-        }
-    }
 
 }

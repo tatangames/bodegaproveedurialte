@@ -23,9 +23,6 @@ return new class extends Migration
 
             $table->integer('cantidad_salida');
 
-            // PARA PODER SEGUIR AGREGANDOLE MAS SALIDAS
-            $table->enum('estado', ['pendiente', 'finalizado'])->default('pendiente');
-
             $table->foreign('id_tiposalida')->references('id')->on('tipo_salida');
             $table->foreign('id_entrada_detalle')->references('id')->on('entradas_detalle');
             $table->foreign('id_departamento')->references('id')->on('departamentos');

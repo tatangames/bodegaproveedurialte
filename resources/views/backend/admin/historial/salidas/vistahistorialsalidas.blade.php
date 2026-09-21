@@ -88,30 +88,6 @@
                         </div>
                     </div>
 
-                    <h6 class="mb-2">
-                        <i class="fas fa-truck mr-1 text-primary"></i>
-                        Entregas adicionales registradas
-                    </h6>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-sm">
-                            <thead class="thead-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Fecha</th>
-                                <th>N° Solicitud</th>
-                                <th>Departamento</th>
-                                <th class="text-center">Cantidad</th>
-                                <th>Observación</th>
-                            </tr>
-                            </thead>
-                            <tbody id="det-entregas-tbody">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted">—</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
@@ -155,13 +131,6 @@
                             @foreach($arrayDepartamentos as $dep)
                                 <option value="{{ $dep->id }}">{{ $dep->nombre }}</option>
                             @endforeach
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Estado <span class="text-danger">*</span></label>
-                        <select id="editar-estado" class="form-control">
-                            <option value="finalizado">Finalizado</option>
-                            <option value="pendiente">Pendiente</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -347,8 +316,8 @@
                 pagingType:   'full_numbers',
                 lengthMenu:   [[50, 100, -1], [50, 100, 'Todo']],
                 columnDefs: [
-                    { orderable: false, targets: [11] },
-                    { searchable: false, targets: [11] }
+                    { orderable: false, targets: [8] },
+                    { searchable: false, targets: [8] }
                 ],
                 language: {
                     sProcessing:   'Procesando...',
@@ -428,9 +397,6 @@
             $('#det-departamento').text('—');
             $('#det-material').text('—');
             $('#det-descripcion').text('—');
-            $('#det-entregas-tbody').html(
-                '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>'
-            );
             $('#modalDetalle').modal('show');
 
             var formData = new FormData();
@@ -449,29 +415,6 @@
                     $('#det-departamento').text(s.departamento  || '—');
                     $('#det-material').text(s.material          || '—');
                     $('#det-descripcion').text(s.descripcion    || '—');
-
-                    var entregas = response.data.entregas;
-                    $('#det-entregas-tbody').empty();
-
-                    if (!entregas || entregas.length === 0) {
-                        $('#det-entregas-tbody').html(
-                            '<tr><td colspan="6" class="text-center text-muted">Sin entregas adicionales</td></tr>'
-                        );
-                        return;
-                    }
-
-                    $.each(entregas, function (i, e) {
-                        $('#det-entregas-tbody').append(
-                            '<tr>' +
-                            '<td>' + (i + 1) + '</td>' +
-                            '<td>' + formatearFecha(e.fecha_entrega) + '</td>' +
-                            '<td>' + (e.numero_solicitud || '<span class="text-muted">—</span>') + '</td>' +
-                            '<td>' + (e.departamento     || '<span class="text-muted">Sin departamento</span>') + '</td>' +
-                            '<td class="text-center">' + e.cantidad + '</td>' +
-                            '<td>' + (e.observacion      || '<span class="text-muted">—</span>') + '</td>' +
-                            '</tr>'
-                        );
-                    });
                 })
                 .catch(function () { toastr.error('Error al cargar el detalle'); });
         }
@@ -495,7 +438,6 @@
                     $('#editar-descripcion').val(s.descripcion ?? '');
                     $('#editar-tiposalida').val(s.id_tiposalida ?? '').trigger('change');
                     $('#editar-departamento').val(s.id_departamento ?? '').trigger('change');
-                    $('#editar-estado').val(s.estado ?? 'finalizado');
                     $('#modalEditar').modal('show');
                 })
                 .catch(function () { closeLoading(); toastr.error('Error al obtener información'); });
@@ -508,7 +450,6 @@
             var depto       = $('#editar-departamento').val();
             var solicitud   = $('#editar-solicitud').val().trim();
             var descripcion = $('#editar-descripcion').val().trim();
-            var estado      = $('#editar-estado').val();
 
             if (!fecha) { toastr.error('La fecha es requerida'); return; }
             if (!tipo)  { toastr.error('El tipo de salida es requerido'); return; }
@@ -521,7 +462,6 @@
             formData.append('id_departamento',  depto);
             formData.append('numero_solicitud', solicitud);
             formData.append('descripcion',      descripcion);
-            formData.append('estado',           estado);
 
             axios.post(RUTA_EDITAR_SAVE, formData)
                 .then(function (response) {

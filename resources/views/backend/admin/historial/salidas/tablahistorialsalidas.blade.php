@@ -6,8 +6,7 @@
     <table class="table table-bordered table-striped table-hover table-sm" id="tabla-historial">
         <thead class="thead-dark">
         <tr>
-            <th>#</th>
-            <th>Fecha</th>
+            <th style="width: 8%">Fecha</th>
             <th>Material</th>
             <th>Tipo Salida</th>
             <th>Departamento</th>
@@ -15,16 +14,15 @@
             <th class="text-center">Cantidad</th>
             <th class="text-right">Precio Unit.</th>
             <th class="text-right">Subtotal</th>
-            <th class="text-center">Estado</th>
-            <th class="text-center">Entregas</th>
             <th class="text-center">Acciones</th>
         </tr>
         </thead>
         <tbody>
         @forelse($arraySalidas as $key => $salida)
             <tr>
-                <td>{{ $key + 1 }}</td>
-                <td>{{ \Carbon\Carbon::parse($salida->fecha)->format('d-m-Y') }}</td>
+                <td data-order="{{ \Carbon\Carbon::parse($salida->fecha)->format('Y-m-d') }}">
+                    {{ \Carbon\Carbon::parse($salida->fecha)->format('d-m-Y') }}
+                </td>
                 <td>{{ $salida->material }}</td>
                 <td>{{ $salida->tipo_salida ?? '—' }}</td>
                 <td>{{ $salida->departamento ?? '—' }}</td>
@@ -35,20 +33,6 @@
                 </td>
                 <td class="text-right">
                     ${{ number_format($salida->subtotal ?? 0, 2) }}
-                </td>
-                <td class="text-center">
-                    @if($salida->estado === 'finalizado')
-                        <span class="badge badge-success">Finalizado</span>
-                    @else
-                        <span class="badge badge-warning">Pendiente</span>
-                    @endif
-                </td>
-                <td class="text-center">
-                    @if($salida->total_entregas > 0)
-                        <span class="badge badge-info">{{ $salida->total_entregas }}</span>
-                    @else
-                        <span class="text-muted">—</span>
-                    @endif
                 </td>
                 <td class="text-center text-nowrap">
                     <button class="btn btn-xs btn-info" onclick="verDetalle({{ $salida->id }})" title="Ver detalle">
@@ -64,7 +48,7 @@
             </tr>
         @empty
             <tr>
-                <td colspan="12" class="text-center text-muted py-3">
+                <td colspan="9" class="text-center text-muted py-3">
                     No se encontraron registros con los filtros aplicados.
                 </td>
             </tr>
@@ -74,11 +58,11 @@
         @if($arraySalidas->count() > 0)
             <tfoot>
             <tr class="table-dark font-weight-bold">
-                <td colspan="8" class="text-right">TOTAL GENERAL:</td>
+                <td colspan="7" class="text-right">TOTAL GENERAL:</td>
                 <td class="text-right">
                     ${{ number_format($totalGeneral, 2) }}
                 </td>
-                <td colspan="3"></td>
+                <td></td>
             </tr>
             </tfoot>
         @endif

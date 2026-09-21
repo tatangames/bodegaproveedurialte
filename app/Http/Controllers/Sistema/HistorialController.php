@@ -319,15 +319,13 @@ class HistorialController extends Controller
                 'sd.numero_solicitud',
                 'sd.descripcion',
                 'sd.cantidad_salida',
-                'sd.estado',
                 'm.nombre as material',
                 'ts.nombre as tipo_salida',
                 'dep.nombre as departamento',
                 'ed.precio',
                 'oe.codigo as objeto_codigo',       // ← NUEVO
                 'oe.nombre as objeto_nombre',        // ← NUEVO
-                DB::raw('(sd.cantidad_salida * ed.precio) as subtotal'),
-                DB::raw('(SELECT COUNT(*) FROM salidas_detalle_entregas WHERE id_salida_detalle = sd.id) as total_entregas')
+                DB::raw('(sd.cantidad_salida * ed.precio) as subtotal')
             )
             ->when($request->tiposalida, fn($q) =>
             $q->where('sd.id_tiposalida', $request->tiposalida)
@@ -371,7 +369,6 @@ class HistorialController extends Controller
                 'sd.descripcion',
                 'sd.id_tiposalida',
                 'sd.id_departamento',
-                'sd.estado',
                 'ts.nombre as tipo_salida',
                 'dep.nombre as departamento'
             )
@@ -403,8 +400,6 @@ class HistorialController extends Controller
                     'id_departamento'  => $request->id_departamento ?: null,
                     'numero_solicitud' => $request->numero_solicitud ?: null,
                     'descripcion'      => $request->descripcion      ?: null,
-                    'estado'           => in_array($request->estado, ['pendiente', 'finalizado'])
-                        ? $request->estado : 'finalizado',
                 ]);
 
             return ['success' => 1];
@@ -426,11 +421,6 @@ class HistorialController extends Controller
 
         DB::beginTransaction();
         try {
-            // Eliminar entregas adicionales primero
-            DB::table('salidas_detalle_entregas')
-                ->where('id_salida_detalle', $request->id)
-                ->delete();
-
             DB::table('salidas_detalle')
                 ->where('id', $request->id)
                 ->delete();
@@ -459,7 +449,6 @@ class HistorialController extends Controller
                 'sd.numero_solicitud',
                 'sd.descripcion',
                 'sd.cantidad_salida',
-                'sd.estado',
                 'm.nombre as material',
                 'ts.nombre as tipo_salida',
                 'dep.nombre as departamento'
@@ -469,20 +458,7 @@ class HistorialController extends Controller
 
         if (!$salida) return ['success' => 0];
 
-        $entregas = DB::table('salidas_detalle_entregas as sde')
-            ->leftJoin('departamentos as dep', 'dep.id', '=', 'sde.id_departamento')
-            ->select(
-                'sde.id',
-                'sde.cantidad',
-                'sde.fecha_entrega',
-                'sde.observacion',
-                'dep.nombre as departamento'
-            )
-            ->where('sde.id_salida_detalle', $request->id)
-            ->orderBy('sde.created_at', 'asc')
-            ->get();
-
-        return ['success' => 1, 'salida' => $salida, 'entregas' => $entregas];
+        return ['success' => 1, 'salida' => $salida];
     }
 
 
