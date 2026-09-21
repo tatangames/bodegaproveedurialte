@@ -1601,8 +1601,6 @@ class ReportesController extends Controller
     }
 
 
-
-
     public function pdfQueHaSalidoProyectos($desde, $hasta, $tipo = 2)
     {
         $fechaHoy     = Carbon::now('America/El_Salvador')->format('d-m-Y');
@@ -1683,37 +1681,35 @@ class ReportesController extends Controller
         // ════════════════════════════════════════════════════════════════
         if ($tipo == 1) {
 
-            $query = Salidas::with([
-                'detalle.entradaDetalle.material.unidadMedida',
-                'detalle.entradaDetalle.material.objetoEspecifico',
+            $query = SalidasDetalle::with([
+                'entradaDetalle.material.unidadMedida',
+                'entradaDetalle.material.objetoEspecifico',
             ]);
             if (!$sinFecha) $query->whereBetween('fecha', [$start, $end]);
             $arraySalidas = $query->orderBy('fecha', 'ASC')->get();
 
             $dataArray = [];
 
-            foreach ($arraySalidas as $salida) {
-                foreach ($salida->detalle as $det) {
-                    $entDet = $det->entradaDetalle;
-                    if (!$entDet || !$entDet->material) continue;
+            foreach ($arraySalidas as $det) {
+                $entDet = $det->entradaDetalle;
+                if (!$entDet || !$entDet->material) continue;
 
-                    $idMat  = $entDet->id_material;
-                    $precio = (float) ($entDet->precio ?? 0);
-                    $clave  = $idMat . '|' . number_format($precio, 4, '.', '');
+                $idMat  = $entDet->id_material;
+                $precio = (float) ($entDet->precio ?? 0);
+                $clave  = $idMat . '|' . number_format($precio, 4, '.', '');
 
-                    if (!isset($dataArray[$clave])) {
-                        $dataArray[$clave] = [
-                            'objespec' => $entDet->material->objetoEspecifico->codigo ?? '—',
-                            'nombre'   => $entDet->material->nombre ?? '',
-                            'medida'   => $entDet->material->unidadMedida->nombre ?? '',
-                            'cantidad' => 0,
-                            'total'    => 0,
-                            'precio'   => $precio,
-                        ];
-                    }
-                    $dataArray[$clave]['cantidad'] += $det->cantidad_salida;
-                    $dataArray[$clave]['total']    += ($precio * $det->cantidad_salida);
+                if (!isset($dataArray[$clave])) {
+                    $dataArray[$clave] = [
+                        'objespec' => $entDet->material->objetoEspecifico->codigo ?? '—',
+                        'nombre'   => $entDet->material->nombre ?? '',
+                        'medida'   => $entDet->material->unidadMedida->nombre ?? '',
+                        'cantidad' => 0,
+                        'total'    => 0,
+                        'precio'   => $precio,
+                    ];
                 }
+                $dataArray[$clave]['cantidad'] += $det->cantidad_salida;
+                $dataArray[$clave]['total']    += ($precio * $det->cantidad_salida);
             }
 
             usort($dataArray, function ($a, $b) {
@@ -1748,7 +1744,6 @@ class ReportesController extends Controller
                 $granTotal         += $info['total'];
                 $sumaTotalCantidad += $info['cantidad'];
 
-                // ── Acumular en resumen ──
                 if (!isset($resumenObjEsp[$info['objespec']])) {
                     $resumenObjEsp[$info['objespec']] = ['cantidad' => 0, 'total' => 0];
                 }
@@ -1769,7 +1764,6 @@ class ReportesController extends Controller
         </tr>";
             }
 
-            // Último subtotal
             if ($codigoActual !== null) {
                 $cantFmt  = number_format($subtotalCantCod, 2);
                 $montoFmt = number_format($subtotalCodigo, 4);
@@ -1787,50 +1781,66 @@ class ReportesController extends Controller
 </table>";
 
             // ════════════════════════════════════════════════════════════════
-            // TIPO 2: SEPARADO
+            // TIPO 2: SEPARADO (agrupado por fecha + número de solicitud + departamento)
             // ════════════════════════════════════════════════════════════════
         } else {
 
-            $query = Salidas::with([
-                'equipo',
-                'detalle.entradaDetalle.material.unidadMedida',
-                'detalle.entradaDetalle.material.objetoEspecifico',
+            $query = SalidasDetalle::with([
+                'departamento',
+                'entradaDetalle.material.unidadMedida',
+                'entradaDetalle.material.objetoEspecifico',
             ]);
             if (!$sinFecha) $query->whereBetween('fecha', [$start, $end]);
             $arraySalidas = $query->orderBy('fecha', 'ASC')->get();
 
-            foreach ($arraySalidas as $salida) {
-                $fechaFmt    = date('d-m-Y', strtotime($salida->fecha));
-                $descripcion = $salida->descripcion ?? '';
-                $fichaNombre = $salida->ficha_nombre    ?? '';
-                $fichaTalon  = $salida->ficha_talonario ?? '';
-                $equipo      = $salida->equipo->nombre  ?? '';
+            // Agrupar filas planas en "bloques" (fecha + numero_solicitud + departamento)
+            $grupos = [];
+            foreach ($arraySalidas as $det) {
+                $clave = $det->fecha . '|' . ($det->numero_solicitud ?? '') . '|' . ($det->id_departamento ?? '0');
+
+                if (!isset($grupos[$clave])) {
+                    $grupos[$clave] = [
+                        'fecha'            => $det->fecha,
+                        'numero_solicitud' => $det->numero_solicitud ?? '',
+                        'departamento'     => $det->departamento->nombre ?? '—',
+                        'descripcion'      => $det->descripcion ?? '',
+                        'detalles'         => [],
+                    ];
+                }
+                $grupos[$clave]['detalles'][] = $det;
+            }
+
+            foreach ($grupos as $grupo) {
+                $fechaFmt    = date('d-m-Y', strtotime($grupo['fecha']));
+                $descripcion = $grupo['descripcion'];
+                $solicitud   = $grupo['numero_solicitud'];
+                $departamento = $grupo['departamento'];
 
                 $tabla .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:2px; border:0.8px solid #ccc;'>
 
     <tr>
         <td style='width:15%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>
-            Equipo
+            Departamento
         </td>
         <td colspan='3' style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>
-            $equipo
+            $departamento
         </td>
     </tr>
 
     <tr>
         <td style='width:15%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>
-            Ficha
+            Fecha
         </td>
         <td style='width:35%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>
-            $fichaNombre
+            $fechaFmt
         </td>
 
         <td style='width:15%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>
-            Talonario
+            N.º Solicitud
         </td>
         <td style='width:35%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>
-            $fichaTalon
+            $solicitud
         </td>
     </tr>
 
@@ -1850,7 +1860,7 @@ class ReportesController extends Controller
                 $subtotal         = 0;
                 $subtotalCantidad = 0;
 
-                foreach ($salida->detalle as $det) {
+                foreach ($grupo['detalles'] as $det) {
                     $entDet = $det->entradaDetalle;
                     if (!$entDet || !$entDet->material) continue;
 
@@ -1866,7 +1876,6 @@ class ReportesController extends Controller
                     $sumaTotalCantidad += $cantidad;
                     $subtotalCantidad  += $cantidad;
 
-                    // ── Acumular en resumen ──
                     if (!isset($resumenObjEsp[$objEsp])) {
                         $resumenObjEsp[$objEsp] = ['cantidad' => 0, 'total' => 0];
                     }
@@ -1917,7 +1926,7 @@ class ReportesController extends Controller
         // ════════════════════════════════════════════════════════════════
         // CUADRO RESUMEN POR OBJETO ESPECÍFICO
         // ════════════════════════════════════════════════════════════════
-        ksort($resumenObjEsp); // Ordenar por código de Obj. Esp.
+        ksort($resumenObjEsp);
 
         $tabla .= "
 <div style='height:18px; line-height:18px; font-size:1px;'>&nbsp;</div>
@@ -1948,7 +1957,6 @@ class ReportesController extends Controller
             $filaIndex++;
         }
 
-        // Fila de totales del resumen
         $tabla .= "
         <tr style='background:#e9ecef;'>
             <td style='font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #bbb;'>TOTAL</td>
@@ -1973,6 +1981,7 @@ class ReportesController extends Controller
         $mpdf->WriteHTML($tabla, 2);
         $mpdf->Output('salidas_' . date('Ymd_His') . '.pdf', 'I');
     }
+
 
 
 

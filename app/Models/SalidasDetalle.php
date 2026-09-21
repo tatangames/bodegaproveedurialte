@@ -37,4 +37,11 @@ class SalidasDetalle extends Model
         return $this->estado === 'pendiente';
     }
 
+    public function departamento()
+    {
+        return $this->belongsTo(Departamentos::class, 'id_departamento', 'id');
+        // Ajusta 'Departamentos::class' al nombre real de tu modelo de departamentos
+    }
+
+
 }
