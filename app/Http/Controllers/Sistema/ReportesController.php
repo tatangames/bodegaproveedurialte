@@ -57,25 +57,21 @@ class ReportesController extends Controller
 
             $objEspecifico = $material->objetoEspecifico ?? null;
 
-            $totalSalido = SalidasDetalle::where('id_entrada_detalle', $fila->id)
-                ->sum('cantidad_salida');
+            // Todas las salidas de esta entrada (se usan para existencias y pendientes)
+            $salidasFila = SalidasDetalle::where('id_entrada_detalle', $fila->id)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $totalSalido = $salidasFila->sum('cantidad_salida');
 
             $cantidadActual =
                 (int)$fila->cantidad_inicial
                 - (int)$totalSalido;
 
             // ==========================================
-            // SOLO PENDIENTES
+            // SOLO PENDIENTES (entregado < cantidad_salida)
             // ==========================================
-            $pendientesQuery = SalidasDetalle::where(
-                'id_entrada_detalle',
-                $fila->id
-            )
-                ->where('estado', 'pendiente')
-                ->orderBy('id', 'asc')
-                ->get();
-
-            foreach ($pendientesQuery as $pend) {
+            foreach ($salidasFila as $pend) {
 
                 $entregas =
                     SalidasDetalleEntregas::where(
@@ -84,6 +80,13 @@ class ReportesController extends Controller
                     )
                         ->orderBy('fecha_entrega', 'asc')
                         ->get();
+
+                $totalEntregado = (float) $entregas->sum('cantidad');
+
+                // Si ya se entregó todo, no está pendiente
+                if ($totalEntregado >= (float) $pend->cantidad_salida) {
+                    continue;
+                }
 
                 $arrayPendientes->push((object)[
                     'nombreMaterial' =>
@@ -415,11 +418,6 @@ class ReportesController extends Controller
                     $lineas = [];
 
                     foreach ($pend->entregas as $ent) {
-
-                        $fechaEnt = date(
-                            'd-m-Y',
-                            strtotime($ent->fecha_entrega)
-                        );
 
                         $obs = $ent->observacion ?: '';
 
