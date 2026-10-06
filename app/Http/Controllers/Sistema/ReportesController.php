@@ -8,12 +8,7 @@ use App\Models\Entradas;
 use App\Models\EntradasDetalle;
 use App\Models\InformacionGeneral;
 use App\Models\Materiales;
-use App\Models\Salidas;
 use App\Models\SalidasDetalle;
-use App\Models\SalidasDetalleEntregas;
-use App\Models\TipoProyecto;
-use App\Models\Transferencia;
-use App\Models\TransferenciaDetalle;
 use App\Models\UnidadMedida;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,6 +30,7 @@ class ReportesController extends Controller
     }
 
 
+
     public function generarPDFExistencias($conteo = 0)
     {
         $conteo = (int) $conteo === 1;
@@ -45,7 +41,6 @@ class ReportesController extends Controller
 
         $totalColumna = 0;
         $arrayDetalle = collect();
-        $arrayPendientes = collect();
 
         foreach ($arrayInfo as $fila) {
 
@@ -57,54 +52,12 @@ class ReportesController extends Controller
 
             $objEspecifico = $material->objetoEspecifico ?? null;
 
-            // Todas las salidas de esta entrada (se usan para existencias y pendientes)
-            $salidasFila = SalidasDetalle::where('id_entrada_detalle', $fila->id)
-                ->orderBy('id', 'asc')
-                ->get();
-
-            $totalSalido = $salidasFila->sum('cantidad_salida');
+            $totalSalido = SalidasDetalle::where('id_entrada_detalle', $fila->id)
+                ->sum('cantidad_salida');
 
             $cantidadActual =
                 (int)$fila->cantidad_inicial
                 - (int)$totalSalido;
-
-            // ==========================================
-            // SOLO PENDIENTES (entregado < cantidad_salida)
-            // ==========================================
-            foreach ($salidasFila as $pend) {
-
-                $entregas =
-                    SalidasDetalleEntregas::where(
-                        'id_salida_detalle',
-                        $pend->id
-                    )
-                        ->orderBy('fecha_entrega', 'asc')
-                        ->get();
-
-                $totalEntregado = (float) $entregas->sum('cantidad');
-
-                // Si ya se entregó todo, no está pendiente
-                if ($totalEntregado >= (float) $pend->cantidad_salida) {
-                    continue;
-                }
-
-                $arrayPendientes->push((object)[
-                    'nombreMaterial' =>
-                        $material->nombre ?? '',
-
-                    'cantidad_salida' =>
-                        $pend->cantidad_salida,
-
-                    'unidadMedida' =>
-                        $material->unidadMedida->nombre ?? '',
-
-                    'descripcion' =>
-                        $pend->descripcion ?? '',
-
-                    'entregas' =>
-                        $entregas,
-                ]);
-            }
 
             // ==========================================
             // SOLO EXISTENCIAS > 0
@@ -154,7 +107,6 @@ class ReportesController extends Controller
 
         $totalColumnaFmt = "$" . number_format((float)$totalColumna, 6, '.', ',');
         $arrayDetalle = $arrayDetalle->sortBy('nombreMaterial')->values();
-        $arrayPendientes = $arrayPendientes->sortBy('nombreMaterial')->values();
         $fechaFormat = date("d-m-Y", strtotime(Carbon::now('America/El_Salvador')));
 
         $mpdf = new \Mpdf\Mpdf([
@@ -338,154 +290,17 @@ class ReportesController extends Controller
     </tr>
 </tbody></table>";
 
-        // ── Tabla de pendientes ──
-        if ($arrayPendientes->isNotEmpty()) {
-
-            $tabla .= "
-    <div style='text-align: left; margin-top: 25px;'>
-        <h1 style='font-size: 14px; margin: 0; color: #000;'>
-            KITS PENDIENTES / ABIERTOS
-        </h1>
-    </div>
-    ";
-
-            $tabla .= "
-    <table id='tablaPendientes'
-           style='width: 100%;
-                  border-collapse: collapse;
-                  margin-top: 10px'>
-
-        <tbody>
-
-            <tr>
-
-                <th style='text-align:center;
-                           font-size:14px;
-                           width:28%;
-                           font-weight:bold;
-                           border:1px solid black;
-                           padding: $tdPadding;'>
-
-                    Producto
-                </th>
-
-                <th style='text-align:center;
-                           font-size:14px;
-                           width:12%;
-                           font-weight:bold;
-                           border:1px solid black;
-                           padding: $tdPadding;'>
-
-                    Cant. Salida
-                </th>
-
-                <th style='text-align:center;
-                           font-size:14px;
-                           width:25%;
-                           font-weight:bold;
-                           border:1px solid black;
-                           padding: $tdPadding;'>
-
-                    Descripción Salida
-                </th>
-
-                <th style='text-align:center;
-                           font-size:14px;
-                           width:35%;
-                           font-weight:bold;
-                           border:1px solid black;
-                           padding: $tdPadding;'>
-
-                    Detalle de entregas
-                </th>
-
-            </tr>
-    ";
-
-            foreach ($arrayPendientes as $pend) {
-
-                $detalleEntregas = '';
-
-                if ($pend->entregas->isEmpty()) {
-
-                    $detalleEntregas =
-                        "<span style='font-style: italic; color:#888;'>
-                Sin entregas registradas
-            </span>";
-
-                } else {
-
-                    $lineas = [];
-
-                    foreach ($pend->entregas as $ent) {
-
-                        $obs = $ent->observacion ?: '';
-
-                        $lineas[] =
-                            "{$ent->cantidad} {$pend->unidadMedida} - {$obs}";
-                    }
-
-                    $detalleEntregas = implode('<br>', $lineas);
-                }
-
-                $descripcionSalida =
-                    !empty($pend->descripcion)
-                        ? $pend->descripcion
-                        : '-';
-
-                $tabla .= "
-        <tr>
-
-            <td style='text-align:left;
-                       font-size:14px;
-                       border:1px solid black;
-                       padding:$tdPadding;
-                       vertical-align:top;'>
-
-                {$pend->nombreMaterial}
-            </td>
-
-            <td style='text-align:center;
-                       font-size:14px;
-                       border:1px solid black;
-                       padding:$tdPadding;
-                       vertical-align:top;'>
-
-                {$pend->cantidad_salida}
-                {$pend->unidadMedida}
-            </td>
-
-            <td style='text-align:left;
-                       font-size:13px;
-                       border:1px solid black;
-                       padding:$tdPadding;
-                       vertical-align:top;'>
-
-                {$descripcionSalida}
-            </td>
-
-            <td style='text-align:left;
-                       font-size:14px;
-                       border:1px solid black;
-                       padding:$tdPadding;'>
-
-                {$detalleEntregas}
-            </td>
-
-        </tr>";
-            }
-
-            $tabla .= "
-        </tbody>
-    </table>";
-        }
-
         $stylesheet = file_get_contents('css/cssbodega.css');
         $mpdf->WriteHTML($stylesheet, 1);
         $mpdf->setFooter('Página: {PAGENO}/{nb}');
         $mpdf->WriteHTML($tabla, 2);
         $mpdf->Output();
     }
+
+
+
+
+
 
     public function reportePDFInicialPorPeriodos($desde, $hasta)
     {
