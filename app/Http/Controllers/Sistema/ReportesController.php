@@ -1067,6 +1067,7 @@ class ReportesController extends Controller
 
 
 
+
     public function pdfQueHaEntradoProyectos($desde, $hasta, $tipo = 2)
     {
         $sinFecha     = ($desde === 'null' || $desde === '' || $hasta === 'null' || $hasta === '');
@@ -1083,41 +1084,41 @@ class ReportesController extends Controller
 
         $encabezado = "
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif;'>
-    <tr>
-        <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
-            <table width='100%'><tr>
-                <td style='width:30%; text-align:left;'><img src='{$logoalcaldia}' style='height:38px'></td>
-                <td style='width:70%; text-align:left; color:#104e8c; font-size:13px; font-weight:bold; line-height:1.3;'>SANTA ANA NORTE<br>EL SALVADOR</td>
-            </tr></table>
-        </td>
-        <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
-            REPORTE DE MATERIALES RECIBIDOS
-        </td>
-        <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
-            <table width='100%' style='font-size:10px;'>
-                <tr>
-                    <td width='40%' style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Código:</strong></td>
-                    <td width='60%' style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'></td>
-                </tr>
-                <tr>
-                    <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Versión:</strong></td>
-                    <td style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>000</td>
-                </tr>
-                <tr>
-                    <td style='border-right:0.8px solid #000; padding:4px 6px;'><strong>Fecha de vigencia:</strong></td>
-                    <td style='padding:4px 6px; text-align:center;'></td>
-                </tr>
-            </table>
-        </td>
-    </tr>
+<tr>
+    <td style='width:25%; border:0.8px solid #000; padding:6px 8px;'>
+        <table width='100%'><tr>
+            <td style='width:30%; text-align:left;'><img src='{$logoalcaldia}' style='height:38px'></td>
+            <td style='width:70%; text-align:left; color:#104e8c; font-size:13px; font-weight:bold; line-height:1.3;'>SANTA ANA NORTE<br>EL SALVADOR</td>
+        </tr></table>
+    </td>
+    <td style='width:50%; border-top:0.8px solid #000; border-bottom:0.8px solid #000; padding:6px 8px; text-align:center; font-size:15px; font-weight:bold;'>
+        REPORTE DE MATERIALES RECIBIDOS
+    </td>
+    <td style='width:25%; border:0.8px solid #000; padding:0; vertical-align:top;'>
+        <table width='100%' style='font-size:10px;'>
+            <tr>
+                <td width='40%' style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Código:</strong></td>
+                <td width='60%' style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'></td>
+            </tr>
+            <tr>
+                <td style='border-right:0.8px solid #000; border-bottom:0.8px solid #000; padding:4px 6px;'><strong>Versión:</strong></td>
+                <td style='border-bottom:0.8px solid #000; padding:4px 6px; text-align:center;'>000</td>
+            </tr>
+            <tr>
+                <td style='border-right:0.8px solid #000; padding:4px 6px;'><strong>Fecha de vigencia:</strong></td>
+                <td style='padding:4px 6px; text-align:center;'></td>
+            </tr>
+        </table>
+    </td>
+</tr>
 </table><br>
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:8px;'>
-    <tr>
-        <td style='width:15%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; font-weight:bold; background:#f5f5f5;'>PERIODO</td>
-        <td style='width:50%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>$fechaLabel</td>
-        <td style='width:15%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; font-weight:bold; background:#f5f5f5; text-align:center;'>FECHA</td>
-        <td style='width:20%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; text-align:center;'>$fechaHoy</td>
-    </tr>
+<tr>
+    <td style='width:15%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; font-weight:bold; background:#f5f5f5;'>PERIODO</td>
+    <td style='width:50%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px;'>$fechaLabel</td>
+    <td style='width:15%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; font-weight:bold; background:#f5f5f5; text-align:center;'>FECHA</td>
+    <td style='width:20%; border:0.8px solid #ccc; padding:6px 8px; font-size:11px; text-align:center;'>$fechaHoy</td>
+</tr>
 </table>";
 
         $granTotal         = 0;
@@ -1130,17 +1131,17 @@ class ReportesController extends Controller
         // ── CABECERA COLUMNAS ─────────────────────────────────────────────
         $theadEntradas = "
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:8px; border:0.8px solid #aaa;'>
-    <thead>
-        <tr style='background:#6c757d;'>
-            <td style='font-weight:bold; width:11%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Cod. Presu.</td>
-            <td style='font-weight:bold; width:32%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Material</td>
-            <td style='font-weight:bold; width:12%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Medida</td>
-            <td style='font-weight:bold; width:10%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Cantidad</td>
-            <td style='font-weight:bold; width:14%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Precio Unit.</td>
-            <td style='font-weight:bold; width:14%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Total (\$)</td>
-        </tr>
-    </thead>
-    <tbody>";
+<thead>
+    <tr style='background:#6c757d;'>
+        <td style='font-weight:bold; width:11%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Cod. Presu.</td>
+        <td style='font-weight:bold; width:32%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Material</td>
+        <td style='font-weight:bold; width:12%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Medida</td>
+        <td style='font-weight:bold; width:10%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Cantidad</td>
+        <td style='font-weight:bold; width:14%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Precio Unit.</td>
+        <td style='font-weight:bold; width:14%; font-size:11px; color:#fff; padding:5px 6px; border:0.8px solid #888;'>Total (\$)</td>
+    </tr>
+</thead>
+<tbody>";
 
         // ════════════════════════════════════════════════════════════════
         // TIPO 1: JUNTOS
@@ -1193,20 +1194,20 @@ class ReportesController extends Controller
                     $cantFmt  = number_format($subtotalCantCod, 2);
                     $montoFmt = number_format($subtotalCodigo, 4);
                     $tabla .= "
-        <tr style='background:#e9ecef;'>
-            <td colspan='3' style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>SUBTOTAL [{$codigoActual}]</td>
-            <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>$cantFmt</td>
-            <td style='background:#e9ecef; border:0.8px solid #bbb;'></td>
-            <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>\$ $montoFmt</td>
-        </tr>";
+    <tr style='background:#e9ecef;'>
+        <td colspan='3' style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>SUBTOTAL [{$codigoActual}]</td>
+        <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>$cantFmt</td>
+        <td style='background:#e9ecef; border:0.8px solid #bbb;'></td>
+        <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>\$ $montoFmt</td>
+    </tr>";
                     $subtotalCodigo  = 0;
                     $subtotalCantCod = 0;
                 }
 
-                $codigoActual      = $info['objespec'];
-                $subtotalCodigo   += $info['total'];
-                $subtotalCantCod  += $info['cantidad'];
-                $granTotal        += $info['total'];
+                $codigoActual       = $info['objespec'];
+                $subtotalCodigo    += $info['total'];
+                $subtotalCantCod   += $info['cantidad'];
+                $granTotal         += $info['total'];
                 $sumaTotalCantidad += $info['cantidad'];
 
                 // ── Acumular en resumen ──
@@ -1220,30 +1221,30 @@ class ReportesController extends Controller
                 $totalFmt  = number_format($info['total'], 4);
 
                 $tabla .= "
-        <tr>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['objespec']}</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['nombre']}</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['medida']}</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['cantidad']}</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $precioFmt</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $totalFmt</td>
-        </tr>";
+    <tr>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['objespec']}</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['nombre']}</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['medida']}</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>{$info['cantidad']}</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $precioFmt</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $totalFmt</td>
+    </tr>";
             }
 
             if ($codigoActual !== null) {
                 $cantFmt  = number_format($subtotalCantCod, 2);
                 $montoFmt = number_format($subtotalCodigo, 4);
                 $tabla .= "
-        <tr style='background:#e9ecef;'>
-            <td colspan='3' style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>SUBTOTAL [{$codigoActual}]</td>
-            <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>$cantFmt</td>
-            <td style='background:#e9ecef; border:0.8px solid #bbb;'></td>
-            <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>\$ $montoFmt</td>
-        </tr>";
+    <tr style='background:#e9ecef;'>
+        <td colspan='3' style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>SUBTOTAL [{$codigoActual}]</td>
+        <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>$cantFmt</td>
+        <td style='background:#e9ecef; border:0.8px solid #bbb;'></td>
+        <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>\$ $montoFmt</td>
+    </tr>";
             }
 
             $tabla .= "
-    </tbody>
+</tbody>
 </table>";
 
             // ════════════════════════════════════════════════════════════════
@@ -1252,7 +1253,6 @@ class ReportesController extends Controller
         } else {
 
             $query = Entradas::with([
-                'tipoEntrada',
                 'tipoCompra',
                 'proveedor',
                 'detalle.material.unidadMedida',
@@ -1263,29 +1263,29 @@ class ReportesController extends Controller
 
             foreach ($arrayEntradas as $entrada) {
                 $fechaFmt    = date('d-m-Y', strtotime($entrada->fecha));
-                $tipoEntrada = $entrada->tipoEntrada->nombre   ?? '';
-                $tipoCompra  = $entrada->tipoCompra->nombre    ?? '';
-                $proveedor   = $entrada->proveedor->nombre     ?? '—';
-                $factura     = $entrada->factura               ?? '';
-                $descripcion = $entrada->descripcion           ?? '';
+                $tipoCompra  = $entrada->tipoCompra->nombre ?? '';
+                $proveedor   = $entrada->proveedor->nombre  ?? '—';
+                $factura     = $entrada->factura            ?? '';
+                $descripcion = $entrada->descripcion        ?? '';
 
                 $tabla .= "
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif; margin-bottom:2px; border:0.8px solid #ccc;'>
-    <tr>
-        <td style='width:13%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Fecha</td>
-        <td style='width:20%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$fechaFmt</td>
-        <td style='width:15%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Tipo Entrada</td>
-        <td style='width:20%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$tipoEntrada</td>
-        <td style='width:12%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Tipo Compra</td>
-        <td style='width:20%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$tipoCompra</td>
-    </tr>
-    <tr>
-        <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Factura</td>
-        <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$factura</td>
-        <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Proveedor</td>
-        <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$proveedor</td>
-        <td colspan='2' style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$descripcion</td>
-    </tr>
+<tr>
+    <td style='width:15%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Fecha</td>
+    <td style='width:35%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$fechaFmt</td>
+    <td style='width:15%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Tipo Compra</td>
+    <td style='width:35%; border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$tipoCompra</td>
+</tr>
+<tr>
+    <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Factura</td>
+    <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$factura</td>
+    <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Proveedor</td>
+    <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$proveedor</td>
+</tr>
+<tr>
+    <td style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px; font-weight:bold; background:#f5f5f5;'>Descripción</td>
+    <td colspan='3' style='border:0.8px solid #ccc; padding:5px 7px; font-size:11px;'>$descripcion</td>
+</tr>
 </table>";
 
                 $tabla .= $theadEntradas;
@@ -1317,27 +1317,27 @@ class ReportesController extends Controller
                     $totalFmt  = number_format($total, 4);
 
                     $tabla .= "
-        <tr>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$objEsp</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$nombreMat</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$medida</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$cantidad</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $precioFmt</td>
-            <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $totalFmt</td>
-        </tr>";
+    <tr>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$objEsp</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$nombreMat</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$medida</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>$cantidad</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $precioFmt</td>
+        <td style='font-size:11px; padding:4px 6px; border:0.8px solid #ccc;'>\$ $totalFmt</td>
+    </tr>";
                 }
 
                 $subtotalFmt         = number_format($subtotal, 4);
                 $subtotalCantidadFmt = number_format($subtotalCantidad, 2);
 
                 $tabla .= "
-        <tr style='background:#e9ecef;'>
-            <td colspan='3' style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>Subtotal cantidad:</td>
-            <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>$subtotalCantidadFmt</td>
-            <td style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>Subtotal:</td>
-            <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>\$ $subtotalFmt</td>
-        </tr>
-    </tbody>
+    <tr style='background:#e9ecef;'>
+        <td colspan='3' style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>Subtotal cantidad:</td>
+        <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>$subtotalCantidadFmt</td>
+        <td style='font-weight:bold; font-size:11px; text-align:right; padding:4px 6px; border:0.8px solid #bbb;'>Subtotal:</td>
+        <td style='font-weight:bold; font-size:11px; padding:4px 6px; border:0.8px solid #bbb;'>\$ $subtotalFmt</td>
+    </tr>
+</tbody>
 </table><br>";
             }
         }
@@ -1348,10 +1348,10 @@ class ReportesController extends Controller
 
         $tabla .= "
 <table width='100%' style='margin-top:10px; border-collapse:collapse;'>
-    <tr>
-        <td style='font-weight:bold; font-size:13px; text-align:right; border-top:2px solid #000; padding-top:6px;'>TOTAL GENERAL:&nbsp;&nbsp;</td>
-        <td style='font-weight:bold; font-size:13px; width:18%; border-top:2px solid #000; padding-top:6px;'>\$ $granTotalFmt</td>
-    </tr>
+<tr>
+    <td style='font-weight:bold; font-size:13px; text-align:right; border-top:2px solid #000; padding-top:6px;'>TOTAL GENERAL:&nbsp;&nbsp;</td>
+    <td style='font-weight:bold; font-size:13px; width:18%; border-top:2px solid #000; padding-top:6px;'>\$ $granTotalFmt</td>
+</tr>
 </table>";
 
         // ════════════════════════════════════════════════════════════════
@@ -1362,18 +1362,18 @@ class ReportesController extends Controller
         $tabla .= "
 <div style='height:18px; line-height:18px; font-size:1px;'>&nbsp;</div>
 <table width='100%' style='border-collapse:collapse; font-family:Arial, sans-serif;'>
-    <thead>
-        <tr style='background:#6c757d;'>
-            <td colspan='2' style='color:#fff; font-weight:bold; font-size:12px; padding:6px 8px; border:0.8px solid #888; text-align:center; letter-spacing:0.5px;'>
-                RESUMEN POR CODIGO PRESUPUESTARIO
-            </td>
-        </tr>
-        <tr style='background:#6c757d;'>
-            <td style='color:#fff; font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #888; width:40%;'>Cod. Presu.</td>
-            <td style='color:#fff; font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #888; width:60%; text-align:right;'>Monto Total (\$)</td>
-        </tr>
-    </thead>
-    <tbody>";
+<thead>
+    <tr style='background:#6c757d;'>
+        <td colspan='2' style='color:#fff; font-weight:bold; font-size:12px; padding:6px 8px; border:0.8px solid #888; text-align:center; letter-spacing:0.5px;'>
+            RESUMEN POR CODIGO PRESUPUESTARIO
+        </td>
+    </tr>
+    <tr style='background:#6c757d;'>
+        <td style='color:#fff; font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #888; width:40%;'>Cod. Presu.</td>
+        <td style='color:#fff; font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #888; width:60%; text-align:right;'>Monto Total (\$)</td>
+    </tr>
+</thead>
+<tbody>";
 
         $filaIndex = 0;
         foreach ($resumenObjEsp as $codigo => $datos) {
@@ -1381,19 +1381,19 @@ class ReportesController extends Controller
             $montoFmt = number_format($datos['total'], 4);
 
             $tabla .= "
-        <tr style='background:{$bgFila};'>
-            <td style='font-size:11px; font-weight:bold; padding:5px 8px; border:0.8px solid #ccc;'>{$codigo}</td>
-            <td style='font-size:11px; padding:5px 8px; border:0.8px solid #ccc; text-align:right;'>\$ {$montoFmt}</td>
-        </tr>";
+    <tr style='background:{$bgFila};'>
+        <td style='font-size:11px; font-weight:bold; padding:5px 8px; border:0.8px solid #ccc;'>{$codigo}</td>
+        <td style='font-size:11px; padding:5px 8px; border:0.8px solid #ccc; text-align:right;'>\$ {$montoFmt}</td>
+    </tr>";
             $filaIndex++;
         }
 
         $tabla .= "
-        <tr style='background:#e9ecef;'>
-            <td style='font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #bbb;'>TOTAL</td>
-            <td style='font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #bbb; text-align:right;'>\$ {$granTotalFmt}</td>
-        </tr>
-    </tbody>
+    <tr style='background:#e9ecef;'>
+        <td style='font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #bbb;'>TOTAL</td>
+        <td style='font-weight:bold; font-size:11px; padding:5px 8px; border:0.8px solid #bbb; text-align:right;'>\$ {$granTotalFmt}</td>
+    </tr>
+</tbody>
 </table>";
 
         $mpdf = new \Mpdf\Mpdf([
@@ -1412,6 +1412,8 @@ class ReportesController extends Controller
         $mpdf->WriteHTML($tabla, 2);
         $mpdf->Output('entradas_' . date('Ymd_His') . '.pdf', 'I');
     }
+
+
 
 
     public function pdfQueHaSalidoProyectos($desde, $hasta, $tipo = 2)

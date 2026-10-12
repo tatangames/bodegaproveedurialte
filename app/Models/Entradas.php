@@ -24,6 +24,7 @@ class Entradas extends Model
         return $this->hasMany(EntradasDetalle::class, 'id_entradas');
     }
 
+
     public function tipoCompra()
     {
         return $this->belongsTo(TipoCompra::class, 'id_tipocompra');
